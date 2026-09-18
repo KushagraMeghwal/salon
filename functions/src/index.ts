@@ -22,6 +22,8 @@ import { FakeRazorpayConnectService } from './razorpay/fakeConnectService';
 import { createPaymentOrder as createOrderCore } from './razorpay/payments';
 import type { BaseDeps, Deps } from './razorpay/types';
 import { processWebhook } from './razorpay/webhook';
+import { NoopReminderProvider, type ReminderProvider } from './reminders/provider';
+import { sendDueReminders } from './reminders/reminders';
 
 if (!getApps().length) initializeApp();
 
@@ -129,4 +131,13 @@ export const razorpayWebhook = onRequest({ region: REGION, secrets: [RAZORPAY_WE
 // ---------- housekeeping ----------
 export const releaseUnpaidHolds = onSchedule({ region: REGION, schedule: 'every 5 minutes' }, async () => {
   await releaseExpiredHolds({ db: getFirestore(), now: () => new Date() });
+});
+
+/** Reminder channel. TODO(whatsapp): return the WhatsApp Cloud API provider here once Meta templates are approved. */
+function getReminderProvider(): ReminderProvider {
+  return new NoopReminderProvider();
+}
+
+export const sendReminders = onSchedule({ region: REGION, schedule: 'every 30 minutes' }, async () => {
+  await sendDueReminders({ db: getFirestore(), now: () => new Date() }, getReminderProvider());
 });

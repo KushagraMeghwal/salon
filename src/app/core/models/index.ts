@@ -205,7 +205,10 @@ export interface CustomerSession {
 
 /** Per-salon customer record (mirrors salons/{id}/customers in Firestore). */
 export interface CustomerRecord {
+  /** Customer key: `p_<last10digits>` of the phone (`n_<name>` when there is none). Same as the Firestore doc id. */
   id: string;
+  /** Firebase uid once the customer has signed in; null for walk-ins. */
+  uid?: string | null;
   name: string;
   phone: string;
   visits: number;

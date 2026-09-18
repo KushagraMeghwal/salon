@@ -106,7 +106,8 @@ export interface FsStaff {
   serviceIds: string[];
   days: boolean[]; // Monday..Sunday
   photoUrl: string | null;
-  active: boolean;
+  active: boolean; // employed / listed
+  status?: 'on-duty' | 'off'; // can be seated from the walk-in queue right now (defaults to off)
   order?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -185,6 +186,7 @@ export interface FsBooking {
   source: 'online' | 'owner' | 'walk-in';
   holdExpiresAt?: Timestamp | null; // while status == 'held'
   confirmedAt?: Timestamp;
+  reminderSentAt?: Timestamp; // set by the reminder job once a reminder was actually sent
   payment: {
     mode: 'online' | 'salon';
     // none = no order yet, pending = order created / awaiting webhook, paid = captured (webhook), failed, refunded
@@ -228,14 +230,38 @@ export interface FsBill {
   createdAt: Timestamp;
 }
 
-// salons/{id}/customers/{uid}
+// salons/{id}/customers/{customerKey}  (customerKey = p_<last10digits>, see shared/src/customer.ts)
 export interface FsCustomer {
+  uid: string | null; // set when the customer has an account; the rules let that user read their own record
   name: string;
   phone: string;
   noShowCount: number; // per-salon, drives requireOnlineAfterNoShows
   visits: number;
   totalSpent: number;
   lastVisit?: string;
+}
+
+// salons/{id}/queue/{itemId}: today's walk-in queue (owner-run; billing stamps the bill fields server-side)
+export type FsQueueStage = 'waiting' | 'in-chair' | 'done';
+export interface FsQueueItem {
+  stage: FsQueueStage; // clients may write waiting / in-chair only; 'done' is set by the billing function
+  client: string;
+  phone: string;
+  service: string;
+  category: string;
+  price: number;
+  duration: number;
+  requestedStaffId: string | null;
+  staffId: string | null;
+  station: number | null;
+  source: 'walkin' | 'app';
+  arrivedAt: number; // minute of day
+  startedAt: number | null;
+  billNo?: string; // function-only
+  payMethod?: PayMethod; // function-only
+  billedAt?: string; // function-only
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 /** salons/{id}/staffDays/{staffId_YYYY-MM-DD}: locks used inside the booking transaction. */
@@ -262,9 +288,10 @@ export const FS = {
   staffStats: (id: string, staffId: string) => `salons/${id}/staffStats/${staffId}`,
   bookings: (id: string) => `salons/${id}/bookings`,
   bills: (id: string) => `salons/${id}/bills`,
-  customer: (id: string, uid: string) => `salons/${id}/customers/${uid}`,
+  customer: (id: string, customerKey: string) => `salons/${id}/customers/${customerKey}`,
   stats: (id: string, key: string) => `salons/${id}/stats/${key}`,
   payout: (id: string) => `salons/${id}/private/payout`,
   billing: (id: string) => `salons/${id}/private/billing`,
+  queue: (id: string) => `salons/${id}/queue`,
   staffDay: (id: string, staffId: string, date: string) => `salons/${id}/staffDays/${staffId}_${date}`,
 } as const;

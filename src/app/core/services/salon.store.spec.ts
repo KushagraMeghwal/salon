@@ -49,6 +49,19 @@ describe('SalonStore', () => {
     expect(bill.taxable + bill.cgst + bill.sgst).toBe(1890);
   });
 
+  it('keys customer records by phone (p_<last10>), so walk-ins and repeat visits share one record', () => {
+    const before = store.customers().length;
+    store.touchCustomer('Amit', '+91 90000 11111', { visit: true, spent: 400 });
+    store.touchCustomer('Amit S', '9000011111', { visit: true, spent: 100 }, 'uid-1');
+    const rec = store.customers().filter((c) => c.id === 'p_9000011111');
+    expect(rec).toHaveLength(1);
+    expect(store.customers().length).toBe(before + 1);
+    expect(rec[0]).toMatchObject({ visits: 2, totalSpent: 500, uid: 'uid-1', name: 'Amit' });
+    store.touchCustomer('Walk In Guest', '', { visit: true, spent: 50 });
+    expect(store.customers().some((c) => c.id === 'n_walk-in-guest')).toBe(true);
+    expect(store.noShowsOf('090000 11111')).toBe(0);
+  });
+
   it('issues sequential invoice numbers', () => {
     const line = [{ serviceId: 's1', name: 'Cut', price: 100, qty: 1, staffId: 'st1' }];
     const a = store.createBill({ client: 'A', phone: '', method: 'Cash', discount: 0, lines: line });

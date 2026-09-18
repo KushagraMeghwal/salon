@@ -27,6 +27,7 @@ export const COL = {
   webhookEvents: 'webhookEvents', // {eventId} -> idempotency ledger
 } as const;
 
+// TODO(pre-launch, KMS): accessToken / refreshToken are plaintext in this server-only doc. Encrypt them (see connect.ts and tokens.ts).
 export interface ConnectionDoc {
   accessToken: string;
   refreshToken: string;

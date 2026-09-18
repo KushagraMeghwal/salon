@@ -43,7 +43,8 @@ beforeEach(async () => {
     await setDoc(doc(db, `salons/${SALON}/private/payout`), { bankName: 'HDFC' });
     await setDoc(doc(db, `salons/${SALON}/private/billing`), { plan: 'pro' });
     await setDoc(doc(db, `salons/${SALON}/bills/bl1`), { total: 500 });
-    await setDoc(doc(db, `salons/${SALON}/customers/c1`), { noShowCount: 1 });
+    await setDoc(doc(db, `salons/${SALON}/customers/p_9876543210`), { uid: 'c1', name: 'Ananya', noShowCount: 1 });
+    await setDoc(doc(db, `salons/${SALON}/customers/p_9820144521`), { uid: null, name: 'Walk-in', noShowCount: 0 });
     await setDoc(doc(db, `salons/${SALON}/bookings/b1`), { customerId: 'c1', staffId: 'stf1', date: '2026-10-01' });
     await setDoc(doc(db, `salons/${SALON}/bookings/b2`), { customerId: 'c2', staffId: 'stf2', date: '2026-10-01' });
     await setDoc(doc(db, 'slugs/luxe'), { salonId: SALON });
@@ -109,6 +110,41 @@ describe('razorpay connection', () => {
   it('clients cannot write bookings, so payment state can only be set by the verified webhook', async () => {
     await assertFails(updateDoc(doc(customer('c1'), `salons/${SALON}/bookings/b1`), { status: 'confirmed', 'payment.status': 'paid' }));
     await assertFails(updateDoc(doc(owner(), `salons/${SALON}/bookings/b1`), { status: 'confirmed', 'payment.status': 'paid' }));
+  });
+});
+
+describe('walk-in queue and stylist on-duty status', () => {
+  const item = { stage: 'waiting', client: 'Amit', phone: '', service: 'Haircut', category: 'Hair', price: 450, duration: 45, requestedStaffId: null, staffId: null, station: null, source: 'walkin', arrivedAt: 600, startedAt: null };
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), `salons/${SALON}/queue/q1`), item);
+    });
+  });
+  it('the owner runs the queue; a stylist of the salon can only watch; customers and other salons see nothing', async () => {
+    await assertSucceeds(setDoc(doc(owner(), `salons/${SALON}/queue/q2`), item));
+    await assertSucceeds(updateDoc(doc(owner(), `salons/${SALON}/queue/q1`), { stage: 'in-chair', staffId: 'stf1', station: 1, startedAt: 620 }));
+    await assertSucceeds(getDoc(doc(stylist(), `salons/${SALON}/queue/q1`)));
+    await assertFails(updateDoc(doc(stylist(), `salons/${SALON}/queue/q1`), { stage: 'in-chair' }));
+    await assertFails(getDoc(doc(customer('c1'), `salons/${SALON}/queue/q1`)));
+    await assertFails(getDoc(doc(otherOwner(), `salons/${SALON}/queue/q1`)));
+    await assertFails(setDoc(doc(otherOwner(), `salons/${SALON}/queue/q3`), item));
+    await assertSucceeds(deleteDoc(doc(owner(), `salons/${SALON}/queue/q1`)));
+  });
+  it('clients cannot mark a queue entry billed or done: those fields belong to the billing function', async () => {
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}/queue/q1`), { billNo: 'CH/26-27/00001', payMethod: 'Cash', billedAt: '2026-10-01' }));
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}/queue/q1`), { stage: 'done' }));
+  });
+  it('queue entries are validated', async () => {
+    await assertFails(setDoc(doc(owner(), `salons/${SALON}/queue/bad1`), { ...item, price: -5 }));
+    await assertFails(setDoc(doc(owner(), `salons/${SALON}/queue/bad2`), { ...item, source: 'other' }));
+    await assertFails(setDoc(doc(owner(), `salons/${SALON}/queue/bad3`), { ...item, arrivedAt: 5000 }));
+    await assertFails(setDoc(doc(owner(), `salons/${SALON}/queue/bad4`), { ...item, extra: true }));
+  });
+  it('the owner sets stylist on-duty status; only on-duty/off are allowed; stylists cannot change it', async () => {
+    await assertSucceeds(updateDoc(doc(owner(), `salons/${SALON}/staff/stf1`), { status: 'on-duty' }));
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}/staff/stf1`), { status: 'busy' }));
+    await assertFails(updateDoc(doc(stylist(), `salons/${SALON}/staff/stf1`), { status: 'on-duty' }));
+    await assertSucceeds(getDoc(doc(anon(), `salons/${SALON}/staff/stf1`)));
   });
 });
 
@@ -231,10 +267,12 @@ describe('billing, customers, payouts and locks', () => {
     await assertSucceeds(setDoc(doc(admin(), `salons/${SALON}/private/billing`), { plan: 'pro' }));
   });
   it('customer records: owner reads all, customers only their own, no one writes', async () => {
-    await assertSucceeds(getDoc(doc(owner(), `salons/${SALON}/customers/c1`)));
-    await assertSucceeds(getDoc(doc(customer('c1'), `salons/${SALON}/customers/c1`)));
-    await assertFails(getDoc(doc(customer('c2'), `salons/${SALON}/customers/c1`)));
-    await assertFails(updateDoc(doc(customer('c1'), `salons/${SALON}/customers/c1`), { noShowCount: 0 }));
+    await assertSucceeds(getDoc(doc(owner(), `salons/${SALON}/customers/p_9876543210`)));
+    await assertSucceeds(getDoc(doc(owner(), `salons/${SALON}/customers/p_9820144521`)));
+    await assertSucceeds(getDoc(doc(customer('c1'), `salons/${SALON}/customers/p_9876543210`)));
+    await assertFails(getDoc(doc(customer('c2'), `salons/${SALON}/customers/p_9876543210`)));
+    await assertFails(getDoc(doc(customer('c1'), `salons/${SALON}/customers/p_9820144521`))); // a walk-in record (no uid) is not theirs
+    await assertFails(updateDoc(doc(customer('c1'), `salons/${SALON}/customers/p_9876543210`), { noShowCount: 0 }));
   });
   it('availability locks are never client accessible', async () => {
     await assertFails(getDoc(doc(owner(), `salons/${SALON}/staffDays/stf1_2026-10-01`)));

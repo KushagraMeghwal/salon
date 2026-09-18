@@ -79,6 +79,8 @@ export async function handleCallback(d: Deps, q: { code?: string; state?: string
       refreshExpiresAt: Timestamp.fromMillis(now.getTime() + REFRESH_TOKEN_TTL_MS),
       updatedAt: stamp,
     };
+    // TODO(pre-launch, KMS): encrypt accessToken/refreshToken before writing (Cloud KMS envelope encryption, key in
+    // Secret Manager/KMS, decrypt only in getValidAccessToken). Tokens are stored in plaintext today; see docs/LAUNCH-CHECKLIST.md.
     await d.db.doc(`${COL.connections}/${salonId}`).set(conn);
     await salonRef(d, salonId).set(
       { paymentProvider: 'razorpay', paymentConnection: { status: 'CONNECTED', razorpayAccountId: t.accountId, oauthConnectedAt: stamp, lastVerifiedAt: stamp } },
@@ -102,6 +104,7 @@ export async function disconnect(d: Deps, salonId: string): Promise<void> {
   const snap = await ref.get();
   if (snap.exists) {
     const c = snap.data() as ConnectionDoc;
+    // TODO(pre-launch, KMS): decrypt c.accessToken / c.refreshToken here before revoking.
     // Best effort: a failed revoke must not leave the salon connected locally.
     for (const [token, hint] of [[c.accessToken, 'access_token'], [c.refreshToken, 'refresh_token']] as const) {
       try {

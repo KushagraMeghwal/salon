@@ -22,7 +22,7 @@ Roles come from **Auth custom claims**, set only by Cloud Functions: `role` (`cu
 | `salons/{id}/stats/{key}` | day/week/month earnings aggregates | owner | functions |
 | `salons/{id}/bookings/{id}` | appointments | owner; assigned stylist; the booking's customer | **functions only** |
 | `salons/{id}/bills/{id}` | invoices (prices GST-inclusive; tax breakdown only if the salon is GST registered) | owner | **functions only** |
-| `salons/{id}/customers/{uid}` | per-salon visits and `noShowCount` | owner; the customer (own) | functions |
+| `salons/{id}/customers/{customerKey}` | per-salon visits and `noShowCount`. Key is `p_<last10digits>` of the phone (walk-ins included); `uid` is stored once the customer has an account | owner; the customer whose `uid` is on the record | functions |
 | `salons/{id}/private/payout` | masked bank details | owner | owner |
 | `salons/{id}/private/billing` | plan, trial, status | owner, superadmin | functions, superadmin |
 | `salons/{id}/staffDays/{staff_date}` | locks used by the booking transaction | nobody | functions |

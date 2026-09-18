@@ -83,6 +83,12 @@ export function istNow(now: Date): { date: string; minutes: number } {
   return { date: shifted.toISOString().slice(0, 10), minutes: shifted.getUTCHours() * 60 + shifted.getUTCMinutes() };
 }
 
+/** YYYY-MM-DD plus `n` calendar days. */
+export function addDays(date: string, n: number): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
 /** The instant a booking starts, given its salon-local date and start minute. */
 export function bookingStartMs(date: string, startMin: number): number {
   const [y, m, d] = date.split('-').map(Number);

@@ -35,6 +35,8 @@ export async function getValidAccessToken(d: Deps, salonId: string): Promise<{ a
     }
 
     try {
+      // TODO(pre-launch, KMS): step.c.* are read in plaintext here and rewritten below; decrypt on read and re-encrypt on write
+      // together with connect.ts (same key), or refresh will corrupt encrypted tokens.
       const r = await d.svc.refresh(step.c.refreshToken);
       const stamp = Timestamp.fromDate(d.now());
       await ref.update({

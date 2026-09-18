@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  GSTIN_PATTERN, bookingStartMs, cancellationFee, checkSalonRules, clampDiscount, customerKey, effectiveTiming, istNow, overlaps,
+  GSTIN_PATTERN, addDays, bookingStartMs, cancellationFee, checkSalonRules, clampDiscount, customerKey, effectiveTiming, istNow, overlaps,
   phoneKey, priceServices, slotStarts, splitGst, toHHmm, toMin, toPaise, weekdayIndex,
 } from '../src';
 
@@ -45,6 +45,11 @@ describe('time', () => {
   it('weekday index is Monday-based and timezone independent', () => {
     expect(weekdayIndex('2030-06-03')).toBe(0); // Monday
     expect(weekdayIndex('2030-06-09')).toBe(6); // Sunday
+  });
+  it('addDays crosses month and year ends', () => {
+    expect(addDays('2030-01-31', 1)).toBe('2030-02-01');
+    expect(addDays('2030-12-31', 2)).toBe('2031-01-02');
+    expect(addDays('2030-03-01', -1)).toBe('2030-02-28');
   });
   it('IST conversion', () => {
     expect(istNow(new Date('2030-06-03T06:00:00Z'))).toEqual({ date: '2030-06-03', minutes: 11 * 60 + 30 });

@@ -3,7 +3,7 @@ import {
   Bill, BillLine, Booking, Holiday, BreakSettings, CatalogService, DayTiming, PayMethod,
   CustomerRecord, QueueItem, SalonProfile, SalonSettings, StaffMember, StaffStats,
 } from '../models';
-import { cancellationFee, checkSalonRules, clampDiscount, effectiveTiming, overlaps, phoneKey, splitGst, weekdayIndex } from '@chairly/shared';
+import { cancellationFee, checkSalonRules, customerKey, clampDiscount, effectiveTiming, overlaps, phoneKey, splitGst, weekdayIndex } from '@chairly/shared';
 import { dateKey, slugify, toMin } from '../utils/time';
 
 const STORAGE_KEY = 'chairly.salon.v1';
@@ -101,16 +101,16 @@ const COUPONS: Record<string, { type: 'percent' | 'flat'; value: number; label: 
 };
 
 const SEED_CUSTOMERS: CustomerRecord[] = [
-  { id: 'cu1', name: 'Ananya Roy', phone: '+91 98765 43210', visits: 6, totalSpent: 7250, lastVisit: plusDays(-6), noShowCount: 0 },
-  { id: 'cu2', name: 'Rohan Kapoor', phone: '+91 98201 44521', visits: 11, totalSpent: 14980, lastVisit: plusDays(-2), noShowCount: 0 },
-  { id: 'cu3', name: 'Kavita Deshmukh', phone: '+91 97652 11984', visits: 9, totalSpent: 32400, lastVisit: plusDays(-9), noShowCount: 1 },
-  { id: 'cu4', name: 'Tanya Varma', phone: '+91 99001 22334', visits: 4, totalSpent: 5900, lastVisit: plusDays(-14), noShowCount: 0 },
-  { id: 'cu5', name: 'Simran Kaur', phone: '+91 98710 33410', visits: 7, totalSpent: 21300, lastVisit: plusDays(-4), noShowCount: 0 },
-  { id: 'cu6', name: 'Gaurav Sethi', phone: '+91 98330 11223', visits: 3, totalSpent: 3300, lastVisit: plusDays(-31), noShowCount: 2 },
-  { id: 'cu7', name: 'Zayn Merchant', phone: '+91 99882 11094', visits: 5, totalSpent: 9400, lastVisit: plusDays(-11), noShowCount: 0 },
-  { id: 'cu8', name: 'Pooja Nambiar', phone: '+91 98450 77332', visits: 8, totalSpent: 18650, lastVisit: plusDays(-1), noShowCount: 0 },
-  { id: 'cu9', name: 'Meera Sen', phone: '+91 97120 54109', visits: 2, totalSpent: 7600, lastVisit: plusDays(-45), noShowCount: 3 },
-  { id: 'cu10', name: 'Devraj Roy', phone: '+91 98111 22334', visits: 12, totalSpent: 11400, lastVisit: plusDays(-3), noShowCount: 0 },
+  { id: 'p_9876543210', name: 'Ananya Roy', phone: '+91 98765 43210', visits: 6, totalSpent: 7250, lastVisit: plusDays(-6), noShowCount: 0 },
+  { id: 'p_9820144521', name: 'Rohan Kapoor', phone: '+91 98201 44521', visits: 11, totalSpent: 14980, lastVisit: plusDays(-2), noShowCount: 0 },
+  { id: 'p_9765211984', name: 'Kavita Deshmukh', phone: '+91 97652 11984', visits: 9, totalSpent: 32400, lastVisit: plusDays(-9), noShowCount: 1 },
+  { id: 'p_9900122334', name: 'Tanya Varma', phone: '+91 99001 22334', visits: 4, totalSpent: 5900, lastVisit: plusDays(-14), noShowCount: 0 },
+  { id: 'p_9871033410', name: 'Simran Kaur', phone: '+91 98710 33410', visits: 7, totalSpent: 21300, lastVisit: plusDays(-4), noShowCount: 0 },
+  { id: 'p_9833011223', name: 'Gaurav Sethi', phone: '+91 98330 11223', visits: 3, totalSpent: 3300, lastVisit: plusDays(-31), noShowCount: 2 },
+  { id: 'p_9988211094', name: 'Zayn Merchant', phone: '+91 99882 11094', visits: 5, totalSpent: 9400, lastVisit: plusDays(-11), noShowCount: 0 },
+  { id: 'p_9845077332', name: 'Pooja Nambiar', phone: '+91 98450 77332', visits: 8, totalSpent: 18650, lastVisit: plusDays(-1), noShowCount: 0 },
+  { id: 'p_9712054109', name: 'Meera Sen', phone: '+91 97120 54109', visits: 2, totalSpent: 7600, lastVisit: plusDays(-45), noShowCount: 3 },
+  { id: 'p_9811122334', name: 'Devraj Roy', phone: '+91 98111 22334', visits: 12, totalSpent: 11400, lastVisit: plusDays(-3), noShowCount: 0 },
 ];
 
 export interface FreeSlot { staffId: string; start: number; end: number }
@@ -507,18 +507,20 @@ export class SalonStore {
 
   noShowsOf(phone: string) {
     const k = this.phoneKey(phone);
-    return k ? this.customers().find((c) => this.phoneKey(c.phone) === k)?.noShowCount ?? 0 : 0;
+    return k ? this.customers().find((c) => c.id === `p_${k}`)?.noShowCount ?? 0 : 0;
   }
 
   /** Creates or updates the per-salon customer record (a Cloud Function does this in Firestore later). */
-  touchCustomer(name: string, phone: string, change: { visit?: boolean; spent?: number; noShow?: boolean }) {
-    const key = this.phoneKey(phone);
+  touchCustomer(name: string, phone: string, change: { visit?: boolean; spent?: number; noShow?: boolean }, uid: string | null = null) {
+    // Same key the Firestore document will have: salons/{id}/customers/p_<last10digits> (n_<name> without a phone).
+    const id = customerKey(phone, name);
     const today = dateKey(new Date());
     this.customers.update((list) => {
-      const i = list.findIndex((c) => (key ? this.phoneKey(c.phone) === key : c.name.toLowerCase() === name.toLowerCase()));
-      const base: CustomerRecord = i >= 0 ? list[i] : { id: 'cu' + Date.now().toString(36), name, phone: phone || '', visits: 0, totalSpent: 0, lastVisit: '', noShowCount: 0 };
+      const i = list.findIndex((c) => c.id === id);
+      const base: CustomerRecord = i >= 0 ? list[i] : { id, uid, name, phone: phone || '', visits: 0, totalSpent: 0, lastVisit: '', noShowCount: 0 };
       const next: CustomerRecord = {
         ...base,
+        uid: base.uid ?? uid,
         name: base.name || name,
         phone: base.phone || phone,
         visits: base.visits + (change.visit ? 1 : 0),

@@ -197,6 +197,9 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
         }
 
         @if (tab() === 'payments') {
+          <!-- TODO(remove with the real Firestore/auth wiring): the mock "Payout Accounts & Banking Settlement" bank card below
+               is replaced by the Razorpay connection (bank + KYC live on Razorpay). Delete the card, openBank()/removeBank(),
+               the bank modal and SalonSettings.bank when the mock stores are replaced. Tracked in docs/LAUNCH-CHECKLIST.md. -->
           <div [class]="card + ' lg:p-7 space-y-5'" data-testid="razorpay-card">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
               <div>

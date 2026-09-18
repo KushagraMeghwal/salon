@@ -25,7 +25,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
             <span class="text-label-md font-label-md font-semibold tracking-wide">🎉 Congratulations! Your salon is officially live.</span>
           </div>
           <h1 class="text-headline-xl-mobile md:text-headline-xl font-headline-xl text-on-surface tracking-tight mb-2">Welcome to your new digital salon front</h1>
-          <p class="text-body-md font-body-md text-tertiary max-w-xl mx-auto">Your booking profile, schedule, and team slots are published to the web. Start accepting instant client bookings today.</p>
+          <p class="text-body-md font-body-md text-muted max-w-xl mx-auto">Your booking profile, schedule, and team slots are published to the web. Start accepting instant client bookings today.</p>
         </div>
 
         <div class="w-full max-w-5xl bg-surface-container-lowest rounded-2xl p-6 md:p-7 border border-outline-variant/30 shadow-level-1 mb-8 relative overflow-hidden">
@@ -40,7 +40,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span> ACTIVE
                   </span>
                 </div>
-                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-sm font-body-sm text-tertiary">
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-body-sm font-body-sm text-muted">
                   <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">location_on</span> {{ area() }}</span>
                   <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">phone</span> +91 {{ store.profile().phone }}</span>
                   <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-primary">schedule</span> {{ hoursLabel() }}</span>
@@ -64,7 +64,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
                 <span class="px-2 py-0.5 rounded text-label-sm font-label-sm bg-primary/10 text-primary font-medium">Instant Booking</span>
               </div>
               <h3 class="text-headline-sm font-headline-sm text-on-surface mb-1">Salon QR Code Kit</h3>
-              <p class="text-body-sm font-body-sm text-tertiary mb-5">Scan to Book Appointment Directly. Place at checkout counters, mirrors, and waiting areas.</p>
+              <p class="text-body-sm font-body-sm text-muted mb-5">Scan to Book Appointment Directly. Place at checkout counters, mirrors, and waiting areas.</p>
               <div class="p-5 bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col items-center justify-center">
                 <div class="relative bg-surface-container-lowest p-3.5 rounded-lg shadow-sm border border-outline-variant/20 flex items-center justify-center">
                   @if (qr()) {
@@ -74,14 +74,14 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
                     <div class="w-44 h-44 rounded bg-surface-container animate-pulse"></div>
                   }
                 </div>
-                <span class="mt-3 text-label-sm font-label-sm text-tertiary flex items-center gap-1 justify-center"><span class="material-symbols-outlined text-[14px]">smartphone</span> Point camera to view interactive menu</span>
+                <span class="mt-3 text-label-sm font-label-sm text-muted flex items-center gap-1 justify-center"><span class="material-symbols-outlined text-[14px]">smartphone</span> Point camera to view interactive menu</span>
               </div>
             </div>
             <div class="mt-5 space-y-2 no-print">
               <a [href]="qr()" download="salon-booking-qr.png" class="w-full py-2 px-3 bg-surface-container hover:bg-surface-container-high text-on-surface text-label-md font-label-md rounded-lg flex items-center justify-center gap-2 transition-colors duration-150 font-medium active:scale-[0.99]">
                 <span class="material-symbols-outlined text-[18px] text-primary">download</span><span>Download QR (PNG)</span>
               </a>
-              <button type="button" (click)="print()" class="w-full py-2 px-3 bg-transparent hover:bg-surface-container-low text-tertiary hover:text-on-surface text-label-md font-label-md rounded-lg flex items-center justify-center gap-2 border border-outline-variant/30 transition-colors duration-150 active:scale-[0.99]">
+              <button type="button" (click)="print()" class="w-full py-2 px-3 bg-transparent hover:bg-surface-container-low text-muted hover:text-on-surface text-label-md font-label-md rounded-lg flex items-center justify-center gap-2 border border-outline-variant/30 transition-colors duration-150 active:scale-[0.99]">
                 <span class="material-symbols-outlined text-[18px]">print</span><span>Print Table Standee</span>
               </button>
             </div>
@@ -91,19 +91,19 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
             <div class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/30 shadow-level-1 hover:shadow-level-2 transition-all duration-200">
               <div class="flex items-center justify-between mb-3">
                 <span class="inline-flex items-center gap-1.5 text-label-sm font-label-sm font-semibold tracking-wider text-primary uppercase"><span class="material-symbols-outlined text-[16px]">link</span> Online Booking Link</span>
-                <span class="text-label-sm font-label-sm text-tertiary hidden sm:inline">SSL Secured &amp; Mobile Optimized</span>
+                <span class="text-label-sm font-label-sm text-muted hidden sm:inline">SSL Secured &amp; Mobile Optimized</span>
               </div>
               <h3 class="text-headline-sm font-headline-sm text-on-surface mb-1">Your Dedicated Booking Web Address</h3>
-              <p class="text-body-sm font-body-sm text-tertiary mb-4">Share this link in your Instagram bio, Google Business Profile, and SMS notifications.</p>
+              <p class="text-body-sm font-body-sm text-muted mb-4">Share this link in your Instagram bio, Google Business Profile, and SMS notifications.</p>
               <div class="flex items-center gap-2 p-1.5 bg-surface-container-low rounded-xl border border-outline-variant/40 focus-within:ring-2 focus-within:ring-primary mb-4 transition-all">
-                <div class="pl-3 text-tertiary flex items-center"><span class="material-symbols-outlined text-[18px]">globe</span></div>
+                <div class="pl-3 text-muted flex items-center"><span class="material-symbols-outlined text-[18px]">globe</span></div>
                 <input class="flex-1 min-w-0 bg-transparent border-0 text-body-md font-body-md text-on-surface focus:ring-0 focus:outline-none px-2 py-1 font-mono select-all" readonly type="text" aria-label="Booking link" [value]="link()" />
                 <button type="button" (click)="copy()" class="px-4 py-2 text-on-primary rounded-lg text-label-md font-label-md font-semibold transition-all duration-150 flex items-center gap-1.5 active:scale-95 shadow-sm" [class]="copied() ? 'bg-emerald-600' : 'bg-primary hover:bg-primary-container'">
                   <span class="material-symbols-outlined text-[16px]">{{ copied() ? 'check' : 'content_copy' }}</span><span>{{ copied() ? 'Copied!' : 'Copy Link' }}</span>
                 </button>
               </div>
               <div>
-                <div class="text-label-sm font-label-sm text-tertiary mb-3 font-medium">Quick share to customer channels:</div>
+                <div class="text-label-sm font-label-sm text-muted mb-3 font-medium">Quick share to customer channels:</div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <a class="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all text-on-surface group" [href]="whatsapp()" target="_blank" rel="noopener"><span class="material-symbols-outlined text-[18px] text-emerald-600 group-hover:scale-110 transition-transform">chat</span><span class="text-label-md font-label-md font-medium">WhatsApp</span></a>
                   <button type="button" (click)="copyFor('Instagram')" class="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-outline-variant/30 hover:border-primary hover:bg-primary/5 transition-all text-on-surface group"><span class="material-symbols-outlined text-[18px] text-pink-600 group-hover:scale-110 transition-transform">photo_camera</span><span class="text-label-md font-label-md font-medium">Instagram</span></button>
@@ -124,7 +124,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
                     <div class="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-label-md font-label-md font-bold shrink-0 mt-0.5">{{ i + 1 }}</div>
                     <div class="flex-1">
                       <div class="text-body-md font-body-md font-semibold text-on-surface">{{ n.title }}</div>
-                      <div class="text-body-sm font-body-sm text-tertiary">{{ n.text }}</div>
+                      <div class="text-body-sm font-body-sm text-muted">{{ n.text }}</div>
                     </div>
                     <span class="material-symbols-outlined text-outline-variant text-[18px]">{{ n.icon }}</span>
                   </div>
@@ -135,7 +135,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
         </div>
 
         <div class="w-full max-w-5xl bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/30 shadow-level-1 flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
-          <div class="flex items-center gap-2 text-tertiary text-body-sm font-body-sm"><span class="material-symbols-outlined text-primary text-[18px]">verified_user</span><span>Need adjustments? You can modify services, stylists, and working hours anytime.</span></div>
+          <div class="flex items-center gap-2 text-muted text-body-sm font-body-sm"><span class="material-symbols-outlined text-primary text-[18px]">verified_user</span><span>Need adjustments? You can modify services, stylists, and working hours anytime.</span></div>
           <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
             <button type="button" (click)="preview()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border-[1.5px] border-primary text-primary hover:bg-primary/5 text-label-lg font-label-lg transition-all duration-150 text-center font-medium flex items-center justify-center gap-2 active:scale-[0.99]"><span class="material-symbols-outlined text-[18px]">visibility</span><span>Preview Client Booking Page</span></button>
             <a routerLink="/owner/dashboard" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-container text-on-primary text-label-lg font-label-lg font-semibold shadow-md hover:shadow-lg transition-all duration-150 text-center flex items-center justify-center gap-2 active:scale-[0.99]"><span>Go to Salon Dashboard &amp; Calendar</span><span class="material-symbols-outlined text-[18px]">arrow_forward</span></a>
@@ -143,7 +143,7 @@ export const PUBLIC_BASE_URL = 'https://chairly.app';
         </div>
       </main>
 
-      <footer class="w-full border-t border-outline-variant/20 py-4 px-8 mt-auto bg-surface-container-lowest/60 text-center text-body-sm font-body-sm text-tertiary">
+      <footer class="w-full border-t border-outline-variant/20 py-4 px-8 mt-auto bg-surface-container-lowest/60 text-center text-body-sm font-body-sm text-muted">
         Powered by <span class="font-semibold text-primary">Chairly</span>
       </footer>
     </div>

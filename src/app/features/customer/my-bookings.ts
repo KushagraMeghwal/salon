@@ -51,7 +51,6 @@ import { RescheduleSheet } from './reschedule-sheet';
               <div class="w-11 h-11 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-sm border-2 border-surface-container-lowest shadow-sm shrink-0">{{ initials(stylistName(b)) }}</div>
               <div class="min-w-0"><div class="text-headline-sm font-headline-sm text-on-surface leading-tight truncate">{{ stylistName(b) }}</div><div class="text-label-sm font-label-sm text-on-surface-variant truncate">{{ store.staffById(b.staffId)?.title }}</div></div>
             </div>
-            @if (rating(b.staffId); as r) { <div class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-lg shrink-0"><span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span><span class="text-label-md font-label-md text-on-surface font-semibold">{{ r.rating }}</span><span class="text-body-sm text-outline">({{ r.reviews }})</span></div> }
           </div>
 
           <div class="mt-space-sm pt-space-xs border-t border-surface-container space-y-1.5">
@@ -163,10 +162,6 @@ export class MyBookings implements OnInit {
   }
   stylistName(b: Booking) {
     return this.store.staffById(b.staffId)?.name ?? 'Stylist';
-  }
-  rating(id: string) {
-    const st = this.store.stats().find((s) => s.staffId === id);
-    return st && st.rating > 0 ? st : null;
   }
   lines(b: Booking) {
     return b.services?.length ? b.services : [{ name: b.serviceName, price: b.price, duration: b.duration }];

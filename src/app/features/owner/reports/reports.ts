@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { UiService } from '../../../core/services/ui.service';
@@ -11,7 +10,7 @@ import { PERIODS, PeriodKey } from './reports.data';
 
 @Component({
   selector: 'app-reports',
-  imports: [RouterLink, Topbar, LineChart, DonutChart],
+  imports: [Topbar, LineChart, DonutChart],
   template: `
     <app-topbar>
       <div left class="flex items-center gap-4">
@@ -43,44 +42,28 @@ import { PERIODS, PeriodKey } from './reports.data';
       <div class="px-4 md:px-8 py-7">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <div class="flex items-center gap-2 font-body-sm text-body-sm text-tertiary mb-1"><span>Analytics</span><span class="text-outline-variant">•</span><span>Financial Suite</span><span class="text-outline-variant">•</span><span class="text-primary font-medium">{{ d().range }}</span></div>
+            <div class="flex items-center gap-2 font-body-sm text-body-sm text-muted mb-1"><span>Analytics</span><span class="text-outline-variant">•</span><span>Financial Suite</span><span class="text-outline-variant">•</span><span class="text-primary font-medium">{{ d().range }}</span></div>
             <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface tracking-tight">Financial Analytics &amp; Salon Insights</h1>
           </div>
           <div class="inline-flex items-center gap-2 self-start sm:self-auto px-3 py-1 rounded-full bg-surface-container border border-outline-variant/30 text-on-surface-variant font-label-sm text-label-sm"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span>{{ d().compare }}</span></div>
         </div>
 
-        @if (!insightHidden()) {
-          <div class="mb-7 p-4 bg-surface-container-lowest border-l-4 border-primary rounded-xl shadow-level-1 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-start gap-3.5">
-              <div class="p-2 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">bolt</span></div>
-              <div>
-                <div class="flex items-center gap-2"><span class="font-headline-sm text-headline-sm text-on-surface font-bold">Actionable Operations Insight</span><span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">High Priority</span></div>
-                <p class="font-body-md text-body-md text-tertiary mt-0.5">{{ d().insight }}</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <a routerLink="/owner/staff" class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-xs">Adjust Staff Roster</a>
-              <button type="button" aria-label="Dismiss insight" (click)="insightHidden.set(true)" class="p-1.5 rounded-lg text-tertiary hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
-            </div>
-          </div>
-        }
-
         <section aria-label="Financial Summary Key Metrics" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-7">
           <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/20 shadow-level-1 hover:border-primary/40 transition-all flex flex-col justify-between">
-            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-tertiary">Net Revenue</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ inr(d().revenue) }}</span></div><div class="p-2.5 rounded-xl bg-primary/10 text-primary"><span class="material-symbols-outlined text-[24px]">payments</span></div></div>
-            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ revDelta() }}%</span><span class="text-tertiary">vs {{ inr(d().prevRevenue) }} prev.</span></div>
+            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-muted">Net Revenue</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ inr(d().revenue) }}</span></div><div class="p-2.5 rounded-xl bg-primary/10 text-primary"><span class="material-symbols-outlined text-[24px]">payments</span></div></div>
+            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ revDelta() }}%</span><span class="text-muted">vs {{ inr(d().prevRevenue) }} prev.</span></div>
           </div>
           <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/20 shadow-level-1 hover:border-primary/40 transition-all flex flex-col justify-between">
-            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-tertiary">Total Footfall</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ d().footfall }}</span></div><div class="p-2.5 rounded-xl bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[24px]">group</span></div></div>
-            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ d().footfallDelta }}%</span><span class="text-tertiary">{{ d().booked }} booked • {{ d().walkin }} walk-in</span></div>
+            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-muted">Total Footfall</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ d().footfall }}</span></div><div class="p-2.5 rounded-xl bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[24px]">group</span></div></div>
+            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ d().footfallDelta }}%</span><span class="text-muted">{{ d().booked }} booked • {{ d().walkin }} walk-in</span></div>
           </div>
           <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/20 shadow-level-1 hover:border-primary/40 transition-all flex flex-col justify-between">
-            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-tertiary">Average Ticket Size</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ inr(d().avgTicket) }}</span></div><div class="p-2.5 rounded-xl bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[24px]">receipt_long</span></div></div>
-            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ d().avgDelta }}%</span><span class="text-tertiary">per completed bill</span></div>
+            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-muted">Average Ticket Size</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ inr(d().avgTicket) }}</span></div><div class="p-2.5 rounded-xl bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined text-[24px]">receipt_long</span></div></div>
+            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">trending_up</span> +{{ d().avgDelta }}%</span><span class="text-muted">per completed bill</span></div>
           </div>
           <div class="bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/20 shadow-level-1 hover:border-primary/40 transition-all flex flex-col justify-between">
-            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-tertiary">Customer Retention Rate</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ d().retention }}%</span></div><div class="p-2.5 rounded-xl bg-secondary/10 text-secondary"><span class="material-symbols-outlined text-[24px]">loyalty</span></div></div>
-            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> +{{ d().retentionDelta }}%</span><span class="text-tertiary">{{ d().returning }} returning patrons</span></div>
+            <div class="flex items-start justify-between"><div class="flex flex-col"><span class="font-label-md text-label-md text-muted">Customer Retention Rate</span><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface mt-1">{{ d().retention }}%</span></div><div class="p-2.5 rounded-xl bg-secondary/10 text-secondary"><span class="material-symbols-outlined text-[24px]">loyalty</span></div></div>
+            <div class="mt-4 pt-3 border-t border-outline-variant/15 flex items-center justify-between font-label-sm text-label-sm"><span class="inline-flex items-center gap-1 text-primary font-semibold"><span class="material-symbols-outlined text-[16px]">arrow_upward</span> +{{ d().retentionDelta }}%</span><span class="text-muted">{{ d().returning }} returning patrons</span></div>
           </div>
         </section>
 
@@ -88,22 +71,22 @@ import { PERIODS, PeriodKey } from './reports.data';
           <div class="lg:col-span-8 bg-surface-container-lowest p-4 md:p-6 rounded-2xl border border-outline-variant/20 shadow-level-1 flex flex-col justify-between">
             <div>
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Earnings &amp; Revenue Trend</h2><p class="font-body-sm text-body-sm text-tertiary">Revenue velocity compared against the previous period</p></div>
+                <div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Earnings &amp; Revenue Trend</h2><p class="font-body-sm text-body-sm text-muted">Revenue velocity compared against the previous period</p></div>
                 <div class="flex items-center gap-4 font-label-sm text-label-sm">
                   <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-primary"></span><span class="text-on-surface font-medium">This Period</span></div>
-                  <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-outline-variant/70"></span><span class="text-tertiary">Previous</span></div>
+                  <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-outline-variant/70"></span><span class="text-muted">Previous</span></div>
                 </div>
               </div>
               <div class="flex flex-wrap items-center gap-x-6 gap-y-1 py-2 px-3.5 bg-surface-container-low rounded-xl mb-4 text-body-sm">
-                <div><span class="text-tertiary">Peak:</span> <span class="font-semibold text-on-surface ml-1">{{ peakLabel() }} ({{ inr(peak()) }})</span></div>
+                <div><span class="text-muted">Peak:</span> <span class="font-semibold text-on-surface ml-1">{{ peakLabel() }} ({{ inr(peak()) }})</span></div>
                 <div class="h-3.5 w-px bg-outline-variant/30 hidden sm:block"></div>
-                <div><span class="text-tertiary">Average:</span> <span class="font-semibold text-on-surface ml-1">{{ inr(avg()) }}</span></div>
+                <div><span class="text-muted">Average:</span> <span class="font-semibold text-on-surface ml-1">{{ inr(avg()) }}</span></div>
                 <div class="h-3.5 w-px bg-outline-variant/30 hidden sm:block"></div>
-                <div class="hidden sm:block"><span class="text-tertiary">Growth:</span> <span class="font-semibold text-primary ml-1">+{{ revDelta() }}%</span></div>
+                <div class="hidden sm:block"><span class="text-muted">Growth:</span> <span class="font-semibold text-primary ml-1">+{{ revDelta() }}%</span></div>
               </div>
             </div>
             <div class="relative w-full h-64 pt-2 pl-10 cursor-crosshair" (mousemove)="hover($event)" (mouseleave)="hoverIdx.set(null)" role="img" aria-label="Revenue trend chart">
-              <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-tertiary font-label-sm text-label-sm opacity-50">
+              <div class="absolute inset-0 flex flex-col justify-between pointer-events-none text-muted font-label-sm text-label-sm opacity-50">
                 @for (g of grid(); track g) { <div class="border-b border-outline-variant/20 flex justify-between pr-2"><span>{{ g }}</span></div> }
               </div>
               <app-line-chart [series]="series()" [yMax]="yMax()" />
@@ -113,15 +96,15 @@ import { PERIODS, PeriodKey } from './reports.data';
                 </div>
               }
             </div>
-            <div class="flex justify-between items-center text-tertiary font-label-sm text-label-sm pt-4 border-t border-outline-variant/20 mt-2 pl-10">
+            <div class="flex justify-between items-center text-muted font-label-sm text-label-sm pt-4 border-t border-outline-variant/20 mt-2 pl-10">
               @for (l of d().labels; track l) { <span>{{ l }}</span> }
             </div>
           </div>
 
           <div class="lg:col-span-4 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-level-1 flex flex-col justify-between">
-            <div><div class="flex items-center justify-between mb-1"><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Payment Split</h2></div><p class="font-body-sm text-body-sm text-tertiary mb-4">Channels of completed settlements</p></div>
+            <div><div class="flex items-center justify-between mb-1"><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Payment Split</h2></div><p class="font-body-sm text-body-sm text-muted mb-4">Channels of completed settlements</p></div>
             <app-donut-chart [segments]="donut()">
-              <span class="font-label-sm text-label-sm text-tertiary">Total Received</span>
+              <span class="font-label-sm text-label-sm text-muted">Total Received</span>
               <span class="font-headline-md text-headline-md font-bold text-on-surface">{{ short(d().revenue) }}</span>
               <span class="text-[11px] text-primary font-semibold">100% Settled</span>
             </app-donut-chart>
@@ -134,24 +117,24 @@ import { PERIODS, PeriodKey } from './reports.data';
         </section>
 
         <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-          <div class="lg:col-span-8 bg-surface-container-lowest p-4 md:p-6 rounded-2xl border border-outline-variant/20 shadow-level-1 flex flex-col justify-between">
+          <div class="lg:col-span-12 bg-surface-container-lowest p-4 md:p-6 rounded-2xl border border-outline-variant/20 shadow-level-1 flex flex-col justify-between">
             <div>
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-                <div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Top Performing Services</h2><p class="font-body-sm text-body-sm text-tertiary">Ranked by volume count &amp; total gross revenue</p></div>
+                <div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Top Performing Services</h2><p class="font-body-sm text-body-sm text-muted">Ranked by volume count &amp; total gross revenue</p></div>
                 <div class="flex items-center gap-2">
-                  <button type="button" (click)="sortBy.set('revenue')" class="px-3 py-1 text-label-sm rounded-lg transition-colors" [class]="sortBy() === 'revenue' ? 'bg-primary/10 text-primary font-semibold' : 'text-tertiary hover:bg-surface-container'">By Revenue</button>
-                  <button type="button" (click)="sortBy.set('volume')" class="px-3 py-1 text-label-sm rounded-lg transition-colors" [class]="sortBy() === 'volume' ? 'bg-primary/10 text-primary font-semibold' : 'text-tertiary hover:bg-surface-container'">By Bookings</button>
+                  <button type="button" (click)="sortBy.set('revenue')" class="px-3 py-1 text-label-sm rounded-lg transition-colors" [class]="sortBy() === 'revenue' ? 'bg-primary/10 text-primary font-semibold' : 'text-muted hover:bg-surface-container'">By Revenue</button>
+                  <button type="button" (click)="sortBy.set('volume')" class="px-3 py-1 text-label-sm rounded-lg transition-colors" [class]="sortBy() === 'volume' ? 'bg-primary/10 text-primary font-semibold' : 'text-muted hover:bg-surface-container'">By Bookings</button>
                 </div>
               </div>
               <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[520px]">
-                  <thead><tr class="border-b border-outline-variant/30 text-tertiary font-label-sm text-label-sm"><th class="pb-3 pl-1 font-semibold"># SERVICE NAME</th><th class="pb-3 text-center font-semibold">VOLUME</th><th class="pb-3 font-semibold">REVENUE SHARE</th><th class="pb-3 text-right pr-1 font-semibold">GROSS VALUE</th></tr></thead>
+                  <thead><tr class="border-b border-outline-variant/30 text-muted font-label-sm text-label-sm"><th class="pb-3 pl-1 font-semibold"># SERVICE NAME</th><th class="pb-3 text-center font-semibold">VOLUME</th><th class="pb-3 font-semibold">REVENUE SHARE</th><th class="pb-3 text-right pr-1 font-semibold">GROSS VALUE</th></tr></thead>
                   <tbody class="divide-y divide-outline-variant/15 font-body-md text-body-md">
                     @for (s of services(); track s.name; let i = $index) {
                       <tr class="hover:bg-surface-container/40 transition-colors">
-                        <td class="py-3.5 pl-1"><div class="flex items-center gap-3"><span class="w-6 h-6 rounded-md flex items-center justify-center font-bold text-label-sm shrink-0" [class]="i === 0 ? 'bg-primary-fixed text-on-primary-fixed' : 'bg-surface-container-high text-on-surface'">{{ i + 1 }}</span><div><span class="font-bold text-on-surface block">{{ s.name }}</span><span class="font-body-sm text-body-sm text-tertiary">{{ s.meta }}</span></div></div></td>
-                        <td class="py-3.5 text-center font-semibold text-on-surface">{{ s.volume }} <span class="text-tertiary text-body-sm font-normal">slots</span></td>
-                        <td class="py-3.5 w-1/3"><div class="w-full bg-surface-container rounded-full h-2.5 overflow-hidden"><div class="bg-primary h-2.5 rounded-full transition-all" [style.width.%]="s.bar"></div></div><span class="text-[11px] text-tertiary block mt-1 font-medium">{{ s.share }}% of gross billing</span></td>
+                        <td class="py-3.5 pl-1"><div class="flex items-center gap-3"><span class="w-6 h-6 rounded-md flex items-center justify-center font-bold text-label-sm shrink-0" [class]="i === 0 ? 'bg-primary-fixed text-on-primary-fixed' : 'bg-surface-container-high text-on-surface'">{{ i + 1 }}</span><div><span class="font-bold text-on-surface block">{{ s.name }}</span><span class="font-body-sm text-body-sm text-muted">{{ s.meta }}</span></div></div></td>
+                        <td class="py-3.5 text-center font-semibold text-on-surface">{{ s.volume }} <span class="text-muted text-body-sm font-normal">slots</span></td>
+                        <td class="py-3.5 w-1/3"><div class="w-full bg-surface-container rounded-full h-2.5 overflow-hidden"><div class="bg-primary h-2.5 rounded-full transition-all" [style.width.%]="s.bar"></div></div><span class="text-[11px] text-muted block mt-1 font-medium">{{ s.share }}% of gross billing</span></td>
                         <td class="py-3.5 text-right pr-1 font-bold text-on-surface">{{ inr(s.revenue) }}</td>
                       </tr>
                     }
@@ -159,32 +142,13 @@ import { PERIODS, PeriodKey } from './reports.data';
                 </table>
               </div>
             </div>
-            <div class="mt-4 pt-4 border-t border-outline-variant/20 flex items-center justify-between"><span class="font-body-sm text-body-sm text-tertiary">Showing {{ services().length }} of {{ store.selectedServices().length }} catalog services</span></div>
+            <div class="mt-4 pt-4 border-t border-outline-variant/20 flex items-center justify-between"><span class="font-body-sm text-body-sm text-muted">Showing {{ services().length }} of {{ store.selectedServices().length }} catalog services</span></div>
           </div>
 
-          <div class="lg:col-span-4 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/20 shadow-level-1 flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between mb-1"><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">Category Margins</h2><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">Profits</span></div>
-              <p class="font-body-sm text-body-sm text-tertiary mb-5">Net margin after staff commissions &amp; consumables</p>
-              <div class="space-y-4">
-                @for (m of margins(); track m.name) {
-                  <div>
-                    <div class="flex justify-between items-center mb-1"><span class="font-label-md text-label-md text-on-surface font-semibold">{{ m.name }}</span><span class="font-label-md text-label-md font-bold" [class]="m.pct < 50 ? 'text-secondary' : 'text-primary'">{{ m.pct }}% margin</span></div>
-                    <div class="w-full bg-surface-container rounded-full h-2"><div class="h-2 rounded-full transition-all" [class]="m.pct < 50 ? 'bg-secondary' : 'bg-primary'" [style.width.%]="m.pct"></div></div>
-                    <div class="flex justify-between text-[11px] text-tertiary mt-1"><span>Revenue: {{ inr(m.revenue) }}</span><span>{{ m.costLabel }}: {{ inr(m.cost) }}</span></div>
-                  </div>
-                }
-              </div>
-            </div>
-            <div class="mt-6 pt-4 border-t border-outline-variant/20 bg-surface-container-low p-3.5 rounded-xl">
-              <div class="flex items-center justify-between"><span class="font-label-sm text-label-sm text-tertiary font-medium">Total Consumable Cost</span><span class="font-headline-sm text-headline-sm font-bold text-on-surface">{{ inr(totalCost()) }}</span></div>
-              <div class="flex items-center justify-between mt-1"><span class="font-label-sm text-label-sm text-tertiary font-medium">Estimated Net Salon Profit</span><span class="font-headline-sm text-headline-sm font-bold text-primary">{{ inr(netProfit()) }}</span></div>
-            </div>
-          </div>
         </section>
 
-        <footer class="pt-6 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between text-tertiary font-body-sm text-body-sm gap-2">
-          <div class="flex items-center gap-3"><span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[16px]">check_circle</span> GST Compliant Invoicing</span></div>
+        <footer class="pt-6 border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between text-muted font-body-sm text-body-sm gap-2">
+          <div class="flex items-center gap-3">@if (store.settings().gstRegistered) { <span class="flex items-center gap-1 text-primary"><span class="material-symbols-outlined text-[16px]">check_circle</span> GST Compliant Invoicing</span> }</div>
           <div>Powered by <span class="font-semibold text-primary">Chairly</span></div>
         </footer>
       </div>
@@ -200,7 +164,6 @@ export class Reports {
 
   protected readonly period = signal<PeriodKey>('month');
   protected readonly sortBy = signal<'revenue' | 'volume'>('revenue');
-  protected readonly insightHidden = signal(false);
   protected readonly hoverIdx = signal<number | null>(null);
 
   protected readonly d = computed(() => PERIODS[this.period()]);
@@ -238,9 +201,6 @@ export class Reports {
     const max = Math.max(...list.map((s) => s[key]));
     return list.map((s) => ({ ...s, bar: Math.round((s[key] / max) * 100), share: ((s.revenue / this.d().revenue) * 100).toFixed(1) }));
   });
-  protected readonly margins = computed(() => this.d().margins.map((m) => ({ ...m, pct: Math.round(((m.revenue - m.cost) / m.revenue) * 100) })));
-  protected readonly totalCost = computed(() => this.d().margins.reduce((a, m) => a + m.cost, 0));
-  protected readonly netProfit = computed(() => this.d().margins.reduce((a, m) => a + (m.revenue - m.cost), 0));
 
   pointLabel(i: number) {
     const d = this.d();

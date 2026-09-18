@@ -10,7 +10,7 @@ const BADGE: Record<SubscriptionStatus, string> = {
   active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   trial: 'bg-amber-50 text-amber-800 border-amber-200',
   suspended: 'bg-error-container text-on-error-container border-error/20',
-  expired: 'bg-gray-100 text-tertiary border-outline-variant/30',
+  expired: 'bg-gray-100 text-muted border-outline-variant/30',
 };
 
 @Component({
@@ -31,11 +31,11 @@ const BADGE: Record<SubscriptionStatus, string> = {
       <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
         <div class="overflow-x-auto custom-scrollbar">
           <table class="w-full text-left border-collapse min-w-[760px]">
-            <thead><tr class="bg-surface-container-low/70 border-b border-outline-variant/20 font-label-md text-label-md text-tertiary uppercase tracking-wider"><th class="py-3 px-4 font-semibold">Salon</th><th class="py-3 px-3 font-semibold">Plan</th><th class="py-3 px-3 font-semibold">Trial ends</th><th class="py-3 px-3 font-semibold">Status</th><th class="py-3 px-4 font-semibold text-right">Actions</th></tr></thead>
+            <thead><tr class="bg-surface-container-low/70 border-b border-outline-variant/20 font-label-md text-label-md text-muted uppercase tracking-wider"><th class="py-3 px-4 font-semibold">Salon</th><th class="py-3 px-3 font-semibold">Plan</th><th class="py-3 px-3 font-semibold">Trial ends</th><th class="py-3 px-3 font-semibold">Status</th><th class="py-3 px-4 font-semibold text-right">Actions</th></tr></thead>
             <tbody class="divide-y divide-outline-variant/15 text-body-sm">
               @for (s of list(); track s.id) {
                 <tr class="hover:bg-surface-container-low transition-colors">
-                  <td class="py-3.5 px-4"><p class="font-label-lg text-label-lg font-bold text-on-surface">{{ s.name }}</p><p class="text-[11px] text-tertiary">{{ s.owner }} • {{ s.city }}</p></td>
+                  <td class="py-3.5 px-4"><p class="font-label-lg text-label-lg font-bold text-on-surface">{{ s.name }}</p><p class="text-[11px] text-muted">{{ s.owner }} • {{ s.city }}</p></td>
                   <td class="py-3.5 px-3 font-semibold text-on-surface">{{ s.plan }}</td>
                   <td class="py-3.5 px-3"><p class="text-on-surface">{{ s.trialEndsAt }}</p>@if (s.status === 'trial') { <span class="text-[11px] text-amber-700 font-medium">{{ store.daysLeft(s.trialEndsAt) }} days left</span> }</td>
                   <td class="py-3.5 px-3"><span class="inline-flex items-center px-2.5 py-1 rounded-full text-label-sm font-semibold border capitalize" [class]="badge[s.status]">{{ s.status }}</span></td>
@@ -49,7 +49,7 @@ const BADGE: Record<SubscriptionStatus, string> = {
             </tbody>
           </table>
         </div>
-        <div class="p-4 bg-surface-container-low/40 border-t border-outline-variant/20 text-body-sm text-tertiary">Showing {{ list().length }} of {{ store.rows().length }} salons</div>
+        <div class="p-4 bg-surface-container-low/40 border-t border-outline-variant/20 text-body-sm text-muted">Showing {{ list().length }} of {{ store.rows().length }} salons</div>
       </div>
     </div>
 

@@ -10,7 +10,7 @@ import { BTN_GHOST } from '../../../shared/ui/form-classes';
 import { Modal } from '../../../shared/ui/modal';
 
 const PX_PER_MIN = 1.6; // 48px per 30-minute row
-const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Progress', completed: 'Completed', confirmed: 'Confirmed', vip: 'VIP Slot', cancelled: 'Cancelled' };
+const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Progress', completed: 'Completed', confirmed: 'Confirmed', vip: 'VIP Slot', cancelled: 'Cancelled', 'no-show': 'No-show' };
 
 @Component({
   selector: 'app-calendar',
@@ -26,8 +26,6 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
         @if (!isToday()) { <button type="button" (click)="goToday()" class="hidden sm:block text-label-md font-label-md text-primary hover:underline">Today</button> }
         <div class="hidden md:flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
           <button type="button" class="px-3 py-1 rounded bg-surface-container-lowest font-label-md text-label-md text-primary font-semibold shadow-xs">Day</button>
-          <button type="button" (click)="toast.info('Week view arrives in a later phase')" class="px-3 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface">Week</button>
-          <button type="button" (click)="toast.info('Month view arrives in a later phase')" class="px-3 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface">Month</button>
         </div>
         <div class="hidden xl:flex items-center gap-2 px-2.5 py-1 bg-primary/10 rounded-full"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="font-label-sm text-label-sm text-primary">Live Floor Sync</span></div>
       </div>
@@ -85,11 +83,11 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
                     </div>
 
                     @if (!works(s.id)) {
-                      <div class="absolute inset-x-2 top-4 text-center text-label-md font-label-md text-tertiary">Not working today</div>
+                      <div class="absolute inset-x-2 top-4 text-center text-label-md font-label-md text-muted">Not working today</div>
                     } @else {
                       @if (breakBlock(); as b) {
                         <div class="absolute left-2 right-2 rounded-xl px-3 diagonal-stripes bg-surface-container-high/60 border border-outline-variant/40 flex items-center justify-center text-center z-10 pointer-events-none" [style.top.px]="b.top" [style.height.px]="b.height">
-                          <span class="font-label-md text-label-md text-tertiary flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">restaurant</span> Lunch Break</span>
+                          <span class="font-label-md text-label-md text-muted flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">restaurant</span> Lunch Break</span>
                         </div>
                       }
                       @for (bk of bookingsOf(s.id); track bk.id) {
@@ -202,6 +200,9 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
           @if (b.notes) { <p class="text-body-sm bg-surface-container-low p-2 rounded">{{ b.notes }}</p> }
           <div class="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-outline-variant/20">
             <button type="button" [class]="ghost + ' text-error!'" (click)="cancelBooking(b)">Cancel booking</button>
+            @if (b.status === 'confirmed' || b.status === 'vip') {
+              <button type="button" [class]="ghost + ' text-error!'" (click)="markNoShow(b)">Mark no-show</button>
+            }
             @if (b.status !== 'in-progress' && b.status !== 'completed') {
               <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md border border-primary text-primary hover:bg-primary/5" (click)="setStatus(b, 'in-progress')">Start service</button>
             }
@@ -338,8 +339,14 @@ export class CalendarPage {
   open(b: Booking) {
     this.selected.set(b);
   }
+  markNoShow(b: Booking) {
+    this.store.markNoShow(b.id);
+    this.selected.set(null);
+    this.toast.info(`${b.client} marked as a no-show`);
+  }
   setStatus(b: Booking, status: Booking['status']) {
-    this.store.updateBooking(b.id, { status });
+    if (status === 'completed') this.store.completeBooking(b.id);
+    else this.store.updateBooking(b.id, { status });
     this.selected.set(null);
     this.toast.success(`${b.client}: ${STATUS_LABEL[status].toLowerCase()}`);
   }

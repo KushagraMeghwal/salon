@@ -78,6 +78,7 @@ export class OwnerSidebar {
     { path: '/owner/dashboard', label: 'Dashboard', icon: 'dashboard' },
     { path: '/owner/calendar', label: 'Calendar', icon: 'calendar_today' },
     { path: '/owner/quick-bill', label: 'Quick Bill', icon: 'point_of_sale' },
+    { path: '/owner/customers', label: 'Customers', icon: 'groups' },
     { path: '/owner/staff', label: 'Staff', icon: 'badge' },
     { path: '/owner/reports', label: 'Reports', icon: 'analytics' },
     { path: '/owner/settings', label: 'Settings', icon: 'settings' },

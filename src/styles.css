@@ -5,13 +5,21 @@
 /* Design tokens ported 1:1 from the Stitch Tailwind config (v3 CDN -> v4 @theme) */
 @theme {
   --color-surface-container-high: #deeaef;
-  --color-tertiary: #4f5f62;
+  --color-tertiary: #006a43;
+  --color-tertiary-container: #008656;
+  --color-tertiary-fixed: #86f9bc;
+  --color-tertiary-fixed-dim: #69dca1;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #f6fff6;
+  --color-on-tertiary-fixed: #002112;
+  --color-on-tertiary-fixed-variant: #005233;
+  --color-muted: #4f5f62;
   --color-on-primary-fixed: #00201b;
   --color-on-error: #ffffff;
   --color-primary: #00685b;
   --color-surface-bright: #f2fbff;
   --color-surface-variant: #d8e4ea;
-  --color-tertiary-fixed-dim: #b9c9ce;
+  --color-muted-fixed-dim: #b9c9ce;
   --color-on-secondary-fixed: #3c0700;
   --color-surface-container: #e4f0f5;
   --color-secondary-container: #fd7958;
@@ -27,14 +35,14 @@
   --color-surface-container-lowest: #ffffff;
   --color-background: #f2fbff;
   --color-on-secondary-fixed-variant: #862208;
-  --color-on-tertiary-container: #f8fdff;
-  --color-on-tertiary-fixed-variant: #3a494d;
+  --color-on-muted-container: #f8fdff;
+  --color-on-muted-fixed-variant: #3a494d;
   --color-inverse-on-surface: #e7f3f8;
   --color-on-secondary: #ffffff;
-  --color-on-tertiary: #ffffff;
+  --color-on-muted: #ffffff;
   --color-primary-fixed-dim: #65dac4;
   --color-on-primary-container: #f4fffb;
-  --color-tertiary-container: #68777b;
+  --color-muted-container: #68777b;
   --color-on-error-container: #93000a;
   --color-secondary-fixed-dim: #ffb4a2;
   --color-on-secondary-container: #6e1500;
@@ -45,12 +53,12 @@
   --color-primary-container: #008373;
   --color-surface-tint: #006b5d;
   --color-secondary: #a7391e;
-  --color-tertiary-fixed: #d5e5ea;
+  --color-muted-fixed: #d5e5ea;
   --color-outline-variant: #bcc9c5;
   --color-on-primary-fixed-variant: #005046;
   --color-on-background: #121d21;
   --color-on-surface: #121d21;
-  --color-on-tertiary-fixed: #0f1e21;
+  --color-on-muted-fixed: #0f1e21;
 
   --font-headline-lg-mobile: 'Plus Jakarta Sans', sans-serif;
   --font-headline-xl-mobile: 'Plus Jakarta Sans', sans-serif;
@@ -65,24 +73,25 @@
   --font-label-md: 'Inter', sans-serif;
   --font-label-sm: 'Inter', sans-serif;
 
-  --text-headline-lg-mobile: 24px;
-  --text-headline-lg-mobile--line-height: 32px;
+  --text-headline-lg-mobile: 22px;
+  --text-headline-lg-mobile--line-height: 30px;
   --text-headline-lg-mobile--letter-spacing: -0.01em;
   --text-headline-lg-mobile--font-weight: 600;
-  --text-headline-xl-mobile: 30px;
+  --text-headline-xl-mobile: 28px;
   --text-headline-xl-mobile--line-height: 36px;
-  --text-headline-xl-mobile--letter-spacing: -0.02em;
+  --text-headline-xl-mobile--letter-spacing: -0.01em;
   --text-headline-xl-mobile--font-weight: 700;
-  --text-headline-xl: 40px;
-  --text-headline-xl--line-height: 48px;
+  --text-headline-xl: 36px;
+  --text-headline-xl--line-height: 44px;
   --text-headline-xl--letter-spacing: -0.02em;
   --text-headline-xl--font-weight: 700;
-  --text-headline-lg: 32px;
-  --text-headline-lg--line-height: 40px;
-  --text-headline-lg--letter-spacing: -0.015em;
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: 36px;
+  --text-headline-lg--letter-spacing: -0.01em;
   --text-headline-lg--font-weight: 600;
   --text-headline-md: 20px;
   --text-headline-md--line-height: 28px;
+  --text-headline-md--letter-spacing: -0.005em;
   --text-headline-md--font-weight: 600;
   --text-headline-sm: 16px;
   --text-headline-sm--line-height: 24px;
@@ -109,9 +118,9 @@
   --text-label-sm--letter-spacing: 0.04em;
   --text-label-sm--font-weight: 600;
 
-  --shadow-level-1: 0px 2px 8px -1px rgba(31, 42, 46, 0.05), 0px 1px 3px 0px rgba(31, 42, 46, 0.03);
-  --shadow-level-2: 0px 8px 20px -4px rgba(15, 157, 138, 0.08), 0px 4px 8px -2px rgba(31, 42, 46, 0.04);
-  --shadow-level-3: 0px 16px 36px -6px rgba(31, 42, 46, 0.12), 0px 6px 12px -2px rgba(31, 42, 46, 0.04);
+  --shadow-level-1: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04);
+  --shadow-level-2: 0 12px 28px -4px rgba(15, 157, 138, 0.12), 0 4px 10px -2px rgba(31, 42, 46, 0.04);
+  --shadow-level-3: 0 24px 48px -8px rgba(31, 42, 46, 0.16), 0 8px 16px -4px rgba(15, 157, 138, 0.08);
 
   --animate-pulse-dot: subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-pulse-ring-1: pulse-ring 3.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
@@ -195,7 +204,7 @@ body {
 
 input.no-picker::-webkit-calendar-picker-indicator { display: none; }
 
-/* ---- Customer / Staff / Settings screens (second Stitch token set) ---- */
+/* ---- Spacing scale and numeric stat used by customer, stylist and settings screens ---- */
 @theme {
   --spacing-space-xs: 0.25rem;
   --spacing-space-sm: 0.5rem;
@@ -215,31 +224,6 @@ input.no-picker::-webkit-calendar-picker-indicator { display: none; }
   --text-numeric-stat--line-height: 38px;
   --text-numeric-stat--letter-spacing: -0.02em;
   --text-numeric-stat--font-weight: 700;
-}
-
-/* Scope: this palette turns "tertiary" green and resizes the headline scale. */
-.theme-v2 {
-  --color-tertiary: #006a43;
-  --color-tertiary-container: #008656;
-  --color-tertiary-fixed: #86f9bc;
-  --color-tertiary-fixed-dim: #69dca1;
-  --color-on-tertiary-fixed: #002112;
-  --color-on-tertiary-fixed-variant: #005233;
-  --color-on-tertiary-container: #f6fff6;
-  --text-headline-xl: 36px;
-  --text-headline-xl--line-height: 44px;
-  --text-headline-lg: 28px;
-  --text-headline-lg--line-height: 36px;
-  --text-headline-lg--letter-spacing: -0.01em;
-  --text-headline-xl-mobile: 28px;
-  --text-headline-xl-mobile--line-height: 36px;
-  --text-headline-xl-mobile--letter-spacing: -0.01em;
-  --text-headline-lg-mobile: 22px;
-  --text-headline-lg-mobile--line-height: 30px;
-  --text-headline-md--letter-spacing: -0.005em;
-  --shadow-level-1: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04);
-  --shadow-level-2: 0 12px 28px -4px rgba(15, 157, 138, 0.12), 0 4px 10px -2px rgba(31, 42, 46, 0.04);
-  --shadow-level-3: 0 24px 48px -8px rgba(31, 42, 46, 0.16), 0 8px 16px -4px rgba(15, 157, 138, 0.08);
 }
 
 @utility elevation-1 { box-shadow: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04); }

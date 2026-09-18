@@ -18,10 +18,10 @@ Roles come from **Auth custom claims**, set only by Cloud Functions: `role` (`cu
 | `salons/{id}/services/{id}` | catalogue | anyone | owner (validated) |
 | `salons/{id}/staff/{id}` | public stylist card, services, working days | anyone | owner (validated) |
 | `salons/{id}/staffPrivate/{id}` | phone, email, **commission %** | owner, that stylist | owner |
-| `salons/{id}/staffStats/{id}` | clients, revenue, commission, tips | owner, that stylist | functions |
+| `salons/{id}/staffStats/{id}` | clients, revenue, commission | owner, that stylist | functions |
 | `salons/{id}/stats/{key}` | day/week/month earnings aggregates | owner | functions |
 | `salons/{id}/bookings/{id}` | appointments | owner; assigned stylist; the booking's customer | **functions only** |
-| `salons/{id}/bills/{id}` | GST invoices | owner | **functions only** |
+| `salons/{id}/bills/{id}` | invoices (prices GST-inclusive; tax breakdown only if the salon is GST registered) | owner | **functions only** |
 | `salons/{id}/customers/{uid}` | per-salon visits and `noShowCount` | owner; the customer (own) | functions |
 | `salons/{id}/private/payout` | masked bank details | owner | owner |
 | `salons/{id}/private/billing` | plan, trial, status | owner, superadmin | functions, superadmin |

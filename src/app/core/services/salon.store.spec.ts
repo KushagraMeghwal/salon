@@ -14,25 +14,60 @@ describe('SalonStore', () => {
     store.bookings.set([]);
   });
 
-  it('computes GST-inclusive totals with a loyalty discount', () => {
-    const bill = store.createBill({
-      client: 'Ananya Roy', phone: '', method: 'UPI', loyaltyDiscount: 150,
-      lines: [
-        { serviceId: 's1', name: 'Cut', price: 850, qty: 1, staffId: 'st1' },
-        { serviceId: 's3', name: 'Spa', price: 1250, qty: 1, staffId: 'st1' },
-      ],
-    });
+  const LINES = [
+    { serviceId: 's1', name: 'Cut', price: 850, qty: 1, staffId: 'st1' },
+    { serviceId: 's3', name: 'Spa', price: 1250, qty: 1, staffId: 'st1' },
+  ];
+
+  it('does not add GST to the bill when the salon is not registered', () => {
+    store.settings.update((s) => ({ ...s, gstRegistered: false, gstin: '' }));
+    const bill = store.createBill({ client: 'Ananya Roy', phone: '', method: 'UPI', discount: 0, lines: LINES });
     expect(bill.subtotal).toBe(2100);
-    expect(bill.gst).toBe(378);
-    expect(bill.total).toBe(2328);
+    expect(bill.total).toBe(2100);
+    expect(bill.gst).toBe(0);
+    expect(bill.gstRegistered).toBe(false);
     expect(bill.no).toMatch(/^CH\/\d{2}-\d{2}\/\d{5}$/);
+  });
+
+  it('splits an inclusive total into taxable value + CGST/SGST when registered', () => {
+    store.settings.update((s) => ({ ...s, gstRegistered: true, gstin: '27ABCDE1234F1Z5' }));
+    const bill = store.createBill({ client: 'Ananya Roy', phone: '', method: 'UPI', discount: 0, lines: LINES });
+    expect(bill.total).toBe(2100); // price already includes GST
+    expect(bill.taxable).toBe(1780);
+    expect(bill.cgst + bill.sgst).toBe(320);
+    expect(bill.taxable + bill.cgst + bill.sgst).toBe(bill.total);
+    expect(bill.gstin).toBe('27ABCDE1234F1Z5');
+  });
+
+  it('applies coupons before the tax split', () => {
+    store.settings.update((s) => ({ ...s, gstRegistered: true, gstin: '27ABCDE1234F1Z5' }));
+    const r = store.applyCoupon('welcome10', 2100);
+    expect(r.ok && r.discount).toBe(210);
+    expect(store.applyCoupon('NOPE', 2100).ok).toBe(false);
+    const bill = store.createBill({ client: 'A', phone: '', method: 'Cash', discount: 210, couponCode: 'WELCOME10', lines: LINES });
+    expect(bill.total).toBe(1890);
+    expect(bill.taxable + bill.cgst + bill.sgst).toBe(1890);
   });
 
   it('issues sequential invoice numbers', () => {
     const line = [{ serviceId: 's1', name: 'Cut', price: 100, qty: 1, staffId: 'st1' }];
-    const a = store.createBill({ client: 'A', phone: '', method: 'Cash', loyaltyDiscount: 0, lines: line });
-    const b = store.createBill({ client: 'B', phone: '', method: 'Cash', loyaltyDiscount: 0, lines: line });
+    const a = store.createBill({ client: 'A', phone: '', method: 'Cash', discount: 0, lines: line });
+    const b = store.createBill({ client: 'B', phone: '', method: 'Cash', discount: 0, lines: line });
     expect(Number(b.no.split('/').pop())).toBe(Number(a.no.split('/').pop()) + 1);
+  });
+
+  it('updates the customer record on billing and counts no-shows', () => {
+    const before = store.customers().find((c) => c.phone.replace(/\D/g, '').endsWith('9876543210'))!;
+    store.createBill({ client: before.name, phone: '9876543210', method: 'Cash', discount: 0, lines: [{ serviceId: 's1', name: 'Cut', price: 500, qty: 1, staffId: 'st1' }] });
+    const after = store.customers().find((c) => c.id === before.id)!;
+    expect(after.visits).toBe(before.visits + 1);
+    expect(after.totalSpent).toBe(before.totalSpent + 500);
+
+    const noShowsBefore = store.noShowsOf('9876543210');
+    store.bookings.set([{ id: 'x1', date: WED, staffId: 'st1', client: before.name, phone: '9876543210', serviceName: 'Cut', start: 600, duration: 30, price: 500, status: 'confirmed' } as never]);
+    store.markNoShow('x1');
+    expect(store.noShowsOf('9876543210')).toBe(noShowsBefore + 1);
+    expect(store.bookings()[0].status).toBe('no-show');
   });
 
   it('rejects a booking that overlaps an existing one for the same stylist', () => {

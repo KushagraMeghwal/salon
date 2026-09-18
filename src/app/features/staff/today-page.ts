@@ -190,7 +190,7 @@ export class TodayPage {
   });
   protected readonly projected = computed(() => {
     const pct = this.me()?.commission ?? 0;
-    return Math.round(this.mine().reduce((a, b) => a + (b.price * pct) / 100 + (b.tip ?? 0), 0));
+    return Math.round(this.mine().reduce((a, b) => a + (b.price * pct) / 100, 0));
   });
 
   fmt(m: number) {
@@ -219,7 +219,7 @@ export class TodayPage {
     this.toast.success(`Started service for ${b.client}`);
   }
   done(b: Booking) {
-    this.store.updateBooking(b.id, { status: 'completed' });
+    this.store.completeBooking(b.id);
     this.toast.success(`${b.client} marked done. Send them to billing.`);
   }
   delay(b: Booking) {

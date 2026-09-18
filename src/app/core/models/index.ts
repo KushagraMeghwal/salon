@@ -60,7 +60,7 @@ export interface StaffMember {
   status: 'on-duty' | 'off';
 }
 
-export type BookingStatus = 'confirmed' | 'in-progress' | 'completed' | 'vip' | 'cancelled';
+export type BookingStatus = 'confirmed' | 'in-progress' | 'completed' | 'vip' | 'cancelled' | 'no-show';
 
 export interface Booking {
   id: string;
@@ -80,7 +80,6 @@ export interface Booking {
   paid?: boolean;
   bookingNo?: string;
   customerPhone?: string;
-  tip?: number;
   vip?: boolean;
   source?: 'online' | 'owner';
 }
@@ -122,8 +121,14 @@ export interface Bill {
   phone: string;
   lines: BillLine[];
   subtotal: number;
+  taxable: number;
+  cgst: number;
+  sgst: number;
   gst: number;
-  loyaltyDiscount: number;
+  gstRegistered: boolean;
+  gstin?: string;
+  couponCode?: string;
+  discount: number;
   total: number;
   method: PayMethod;
   createdAt: string;
@@ -135,9 +140,6 @@ export interface StaffStats {
   workDays: number;
   revenue: number;
   prevRevenue: number;
-  rating: number;
-  reviews: number;
-  tips: number;
   week: number[]; // 7 daily revenue values (Mon..Sun)
 }
 
@@ -188,7 +190,8 @@ export interface SalonSettings {
   latePenaltyPct: number;
   hindiSupport: boolean;
   holidays: Holiday[];
-  instantPayout: boolean;
+  gstRegistered: boolean;
+  gstin: string;
   bank: BankAccount | null;
   plan: string;
   trialEndsAt: string; // ISO date
@@ -197,5 +200,16 @@ export interface SalonSettings {
 export interface CustomerSession {
   phone: string;
   name: string;
+  noShowCount: number;
+}
+
+/** Per-salon customer record (mirrors salons/{id}/customers in Firestore). */
+export interface CustomerRecord {
+  id: string;
+  name: string;
+  phone: string;
+  visits: number;
+  totalSpent: number;
+  lastVisit: string; // YYYY-MM-DD, '' if never
   noShowCount: number;
 }

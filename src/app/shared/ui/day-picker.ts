@@ -17,7 +17,7 @@ const NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday
           [class]="
             d
               ? 'bg-primary text-on-primary font-semibold shadow-level-1'
-              : 'bg-surface-container text-tertiary border border-outline-variant/30 hover:border-primary'
+              : 'bg-surface-container text-muted border border-outline-variant/30 hover:border-primary'
           "
         >
           {{ letters[$index] }}

@@ -75,7 +75,8 @@ export interface FsSalon {
     cancelWindowHrs: number;
     latePenaltyPct: number;
     hindiSupport: boolean;
-    instantPayout: boolean;
+    gstRegistered: boolean; // prices are always GST-inclusive; when true, bills show the tax breakdown
+    gstin: string; // required (15-char GSTIN) when gstRegistered, else ''
   };
   createdAt: Timestamp;
   updatedAt?: Timestamp;
@@ -122,9 +123,6 @@ export interface FsStaffStats {
   clients: number;
   revenue: number;
   commission: number;
-  tips: number;
-  rating: number;
-  reviews: number;
   month: string; // YYYY-MM
   weekRevenue: number[]; // Monday..Sunday
 }
@@ -171,7 +169,6 @@ export interface FsBooking {
   status: FsBookingStatus;
   vip?: boolean;
   notes?: string;
-  tip?: number;
   source: 'online' | 'owner' | 'walk-in';
   payment: {
     mode: 'online' | 'salon';
@@ -193,11 +190,16 @@ export interface FsBill {
   customerName: string;
   customerPhone: string;
   lines: { serviceId: string; name: string; price: number; qty: number; staffId: string }[];
-  subtotal: number;
+  subtotal: number; // GST-inclusive, before coupon
+  discount: number;
+  couponCode?: string;
+  taxable: number; // 0 tax fields when the salon is not GST registered
   cgst: number;
   sgst: number;
-  discount: number;
-  total: number;
+  gst: number;
+  gstRegistered: boolean;
+  gstin?: string;
+  total: number; // GST-inclusive amount paid
   method: PayMethod;
   createdAt: Timestamp;
 }

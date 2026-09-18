@@ -27,6 +27,7 @@ export const routes: Routes = [
           { path: 'dashboard', loadComponent: () => import('./features/owner/dashboard/dashboard').then((m) => m.Dashboard) },
           { path: 'calendar', loadComponent: () => import('./features/owner/calendar/calendar').then((m) => m.CalendarPage) },
           { path: 'quick-bill', loadComponent: () => import('./features/owner/quick-bill/quick-bill').then((m) => m.QuickBill) },
+          { path: 'customers', loadComponent: () => import('./features/owner/customers/customers').then((m) => m.OwnerCustomers) },
           { path: 'staff', loadComponent: () => import('./features/owner/staff/staff-performance').then((m) => m.StaffPerformance) },
           { path: 'reports', loadComponent: () => import('./features/owner/reports/reports').then((m) => m.Reports) },
           { path: 'settings', loadComponent: () => import('./features/owner/settings/settings').then((m) => m.OwnerSettings) },
@@ -55,6 +56,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'today' },
       { path: 'today', loadComponent: () => import('./features/staff/today-page').then((m) => m.TodayPage) },
       { path: 'earnings', loadComponent: () => import('./features/staff/earnings-page').then((m) => m.EarningsPage) },
+      { path: 'profile', loadComponent: () => import('./features/staff/profile-page').then((m) => m.StaffProfile) },
     ],
   },
   {
@@ -73,6 +75,7 @@ export const routes: Routes = [
       },
       { path: 'login', loadComponent: () => import('./features/customer/login-page').then((m) => m.LoginPage) },
       { path: 'my/bookings', loadComponent: () => import('./features/customer/my-bookings').then((m) => m.MyBookings) },
+      { path: 'my/profile', loadComponent: () => import('./features/customer/profile-page').then((m) => m.CustomerProfile) },
     ],
   },
   { path: '**', redirectTo: 'splash' },

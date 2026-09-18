@@ -37,9 +37,9 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 | `.../done` | Public link, real QR code (download PNG), copy link, WhatsApp/SMS/Facebook share, print standee |
 | `/owner/dashboard` | Live earnings, bookings, walk-in vs app, payment split; live queue board (Waiting / In Chair / Done) with Assign/Seat, search, category filter, walk-in modal, rush-hours chart, top stylist |
 | `/owner/calendar` | Day matrix per stylist, date navigation, mini calendar, click an empty slot to book, booking details (start, complete, cancel), break blocks, now-line, occupancy, quick-slot finder, conflict checks |
-| `/owner/quick-bill` | Service grid, stylist assignment, cart with quantities, coupon and loyalty, 18% GST, Cash/UPI/Card/Split, UPI QR, GST-style invoice number, receipt modal, print, WhatsApp invoice, bill from a queue client |
+| `/owner/quick-bill` | Service grid, stylist assignment, cart with quantities, coupon, GST-inclusive totals with CGST/SGST breakdown when registered, Cash/UPI/Card/Split, UPI QR, GST-style invoice number, receipt modal, print, WhatsApp invoice, bill from a queue client |
 | `/owner/staff` | Staff table with revenue and commission, detail panel, weekly earnings chart, adjust commission, assign schedule, add staff, export CSV, pay-slip download |
-| `/owner/reports` | Day/Week/Month, KPIs, revenue trend with hover tooltip, payment donut, top services (sortable), category margins, insight banner, CSV export, PDF via print |
+| `/owner/reports` | Day/Week/Month, KPIs, revenue trend with hover tooltip, payment donut, top services (sortable), CSV export, PDF via print |
 | `/owner/settings` | Draft, Save, Discard. Tabs: General (Hindi support, holidays add/remove/auto-populate, break and buffer), Policies (pay-at-salon, no-show rule and threshold, cancellation window and fee), Payments (bank account, instant payouts), Subscription (trial countdown, plan) |
 
 ### Customer app (mobile-first)
@@ -55,7 +55,7 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 
 ### Stylist app (mobile)
 - `/staff/today`: greeting, stats, filters with counts, In-progress / Next up / Later / Completed cards. Start Service, Mark Done, Add-on, Client Delay +10m, all conflict-checked and reflected in the owner calendar.
-- `/staff/earnings`: Today/Week/Month net earnings, commission, tips, clients, daily goal, tier, commission log, payout statement CSV.
+- `/staff/earnings`: Today/Week/Month net earnings, commission, clients, commission log, payout statement CSV.
 
 ### Super Admin (built by me in the same design system)
 - `/admin/overview`: salons, trials, subscribers, monthly revenue, signup chart, plan mix, trials ending soon.

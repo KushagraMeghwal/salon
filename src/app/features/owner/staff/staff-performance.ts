@@ -49,23 +49,19 @@ interface Row {
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface tracking-tight">Staff Performance</h2>
-            <p class="font-body-md text-body-md text-tertiary">Team productivity, commissions and roster load for this month.</p>
+            <p class="font-body-md text-body-md text-muted">Team productivity, commissions and roster load for this month.</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
               <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">group</span></div>
-              <div><p class="font-label-sm text-label-sm text-tertiary">Active Stylists</p><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ store.staff().length }} Members</p></div>
+              <div><p class="font-label-sm text-label-sm text-muted">Active Stylists</p><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ store.staff().length }} Members</p></div>
             </div>
             @if (top(); as t) {
               <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
                 <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary"><span class="material-symbols-outlined text-[18px]">military_tech</span></div>
-                <div><p class="font-label-sm text-label-sm text-tertiary">Top Earner</p><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ t.staff.name }} <span class="text-primary text-[13px] font-normal">({{ inr(t.stats.revenue) }})</span></p></div>
+                <div><p class="font-label-sm text-label-sm text-muted">Top Earner</p><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ t.staff.name }} <span class="text-primary text-[13px] font-normal">({{ inr(t.stats.revenue) }})</span></p></div>
               </div>
             }
-            <div class="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
-              <div class="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-600"><span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">star</span></div>
-              <div><p class="font-label-sm text-label-sm text-tertiary">Avg Customer Rating</p><p class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ avgRating() }} <span class="text-tertiary text-body-sm font-normal">/ 5.0</span></p></div>
-            </div>
           </div>
         </div>
 
@@ -74,13 +70,13 @@ interface Row {
             <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm overflow-hidden">
               <div class="p-4 flex items-center justify-between gap-2 border-b border-outline-variant/20">
                 <div class="flex items-center gap-2"><span class="font-headline-sm text-headline-sm font-bold text-on-surface">Stylist Roster &amp; Revenue</span><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">{{ onDuty() }} Active Today</span></div>
-                <button type="button" (click)="exportCsv()" class="px-3 py-1 text-label-sm font-label-sm font-medium rounded-lg border border-outline-variant/40 hover:bg-surface-container transition-colors flex items-center gap-1 text-tertiary"><span class="material-symbols-outlined text-[16px]">download</span><span>Export</span></button>
+                <button type="button" (click)="exportCsv()" class="px-3 py-1 text-label-sm font-label-sm font-medium rounded-lg border border-outline-variant/40 hover:bg-surface-container transition-colors flex items-center gap-1 text-muted"><span class="material-symbols-outlined text-[16px]">download</span><span>Export</span></button>
               </div>
               <div class="overflow-x-auto custom-scrollbar">
                 <table class="w-full text-left border-collapse min-w-[640px]">
                   <thead>
-                    <tr class="bg-surface-container-low/70 border-b border-outline-variant/20 font-label-md text-label-md text-tertiary uppercase tracking-wider">
-                      <th class="py-3 px-4 font-semibold">Stylist</th><th class="py-3 px-3 font-semibold">Clients</th><th class="py-3 px-3 font-semibold">Total Revenue</th><th class="py-3 px-3 font-semibold">Commission</th><th class="py-3 px-3 font-semibold">Rating</th><th class="py-3 px-4 font-semibold">Status</th>
+                    <tr class="bg-surface-container-low/70 border-b border-outline-variant/20 font-label-md text-label-md text-muted uppercase tracking-wider">
+                      <th class="py-3 px-4 font-semibold">Stylist</th><th class="py-3 px-3 font-semibold">Clients</th><th class="py-3 px-3 font-semibold">Total Revenue</th><th class="py-3 px-3 font-semibold">Commission</th><th class="py-3 px-4 font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-outline-variant/15 text-body-sm">
@@ -90,34 +86,33 @@ interface Row {
                           <div class="flex items-center gap-3">
                             @if (r.staff.photo) { <img class="w-9 h-9 rounded-full object-cover" [src]="r.staff.photo" [alt]="r.staff.name" /> }
                             @else { <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-label-md" [class.ring-2]="selectedId() === r.staff.id" [class.ring-primary]="selectedId() === r.staff.id">{{ initials(r.staff.name) }}</div> }
-                            <div><p class="font-label-lg text-label-lg font-bold text-on-surface">{{ r.staff.name }}</p><p class="font-label-sm text-label-sm font-medium" [class]="selectedId() === r.staff.id ? 'text-primary' : 'text-tertiary'">{{ r.staff.title || r.staff.role }}</p></div>
+                            <div><p class="font-label-lg text-label-lg font-bold text-on-surface">{{ r.staff.name }}</p><p class="font-label-sm text-label-sm font-medium" [class]="selectedId() === r.staff.id ? 'text-primary' : 'text-muted'">{{ r.staff.title || r.staff.role }}</p></div>
                           </div>
                         </td>
-                        <td class="py-3.5 px-3"><p class="font-semibold text-on-surface">{{ r.stats.clients }} clients</p><p class="text-[11px] text-tertiary">{{ r.stats.workDays }} work days</p></td>
-                        <td class="py-3.5 px-3"><p class="font-bold text-on-surface">{{ inr(r.stats.revenue) }}</p><span class="text-[11px] font-semibold" [class]="r.delta > 0 ? 'text-primary' : 'text-tertiary'">{{ r.delta > 0 ? '↑ ' + r.delta + '% vs last month' : r.delta < 0 ? '↓ ' + -r.delta + '% vs last month' : '→ steady' }}</span></td>
-                        <td class="py-3.5 px-3"><p class="font-semibold text-on-surface">{{ inr(r.commission) }}</p><span class="text-[11px] text-tertiary">{{ r.staff.commission }}% Tier</span></td>
-                        <td class="py-3.5 px-3"><div class="flex items-center gap-1 font-semibold text-on-surface"><span class="material-symbols-outlined text-[15px] text-yellow-500" style="font-variation-settings: 'FILL' 1;">star</span><span>{{ r.stats.rating || '—' }}</span></div><span class="text-[11px] text-tertiary">{{ r.stats.reviews }} reviews</span></td>
-                        <td class="py-3.5 px-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-semibold border whitespace-nowrap" [class]="r.staff.status === 'on-duty' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-tertiary border-outline-variant/30'"><span class="w-1.5 h-1.5 rounded-full" [class]="r.staff.status === 'on-duty' ? 'bg-emerald-500' : 'bg-outline'"></span>{{ r.staff.status === 'on-duty' ? 'On Duty' : 'Off' }}</span></td>
+                        <td class="py-3.5 px-3"><p class="font-semibold text-on-surface">{{ r.stats.clients }} clients</p><p class="text-[11px] text-muted">{{ r.stats.workDays }} work days</p></td>
+                        <td class="py-3.5 px-3"><p class="font-bold text-on-surface">{{ inr(r.stats.revenue) }}</p><span class="text-[11px] font-semibold" [class]="r.delta > 0 ? 'text-primary' : 'text-muted'">{{ r.delta > 0 ? '↑ ' + r.delta + '% vs last month' : r.delta < 0 ? '↓ ' + -r.delta + '% vs last month' : '→ steady' }}</span></td>
+                        <td class="py-3.5 px-3"><p class="font-semibold text-on-surface">{{ inr(r.commission) }}</p><span class="text-[11px] text-muted">{{ r.staff.commission }}% Tier</span></td>
+                        <td class="py-3.5 px-4"><span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-semibold border whitespace-nowrap" [class]="r.staff.status === 'on-duty' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-100 text-muted border-outline-variant/30'"><span class="w-1.5 h-1.5 rounded-full" [class]="r.staff.status === 'on-duty' ? 'bg-emerald-500' : 'bg-outline'"></span>{{ r.staff.status === 'on-duty' ? 'On Duty' : 'Off' }}</span></td>
                       </tr>
                     } @empty {
-                      <tr><td colspan="6" class="py-10 text-center text-outline">No staff match your search.</td></tr>
+                      <tr><td colspan="5" class="py-10 text-center text-outline">No staff match your search.</td></tr>
                     }
                   </tbody>
                 </table>
               </div>
-              <div class="p-4 bg-surface-container-low/40 border-t border-outline-variant/20 text-body-sm text-tertiary">Showing {{ rows().length }} of {{ store.staff().length }} team members</div>
+              <div class="p-4 bg-surface-container-low/40 border-t border-outline-variant/20 text-body-sm text-muted">Showing {{ rows().length }} of {{ store.staff().length }} team members</div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="p-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm">
                 <div class="flex items-center justify-between mb-2"><p class="font-headline-sm text-headline-sm font-bold text-on-surface">Team Revenue</p><span class="material-symbols-outlined text-primary">payments</span></div>
                 <div class="flex items-baseline gap-2 mb-2"><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-extrabold text-primary leading-none">{{ inr(totalRevenue()) }}</span></div>
-                <p class="text-body-sm text-tertiary">Combined billing across {{ store.staff().length }} team members this month.</p>
+                <p class="text-body-sm text-muted">Combined billing across {{ store.staff().length }} team members this month.</p>
               </div>
               <div class="p-4 bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-sm">
                 <div class="flex items-center justify-between mb-2"><p class="font-headline-sm text-headline-sm font-bold text-on-surface">Commission Payable</p><span class="material-symbols-outlined text-secondary">percent</span></div>
                 <div class="flex items-baseline gap-2 mb-2"><span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-extrabold text-secondary leading-none">{{ inr(totalCommission()) }}</span></div>
-                <p class="text-body-sm text-tertiary">Payable on the next payout cycle, {{ payoutDate }}.</p>
+                <p class="text-body-sm text-muted">Payable on the next payout cycle, {{ payoutDate }}.</p>
               </div>
             </div>
           </div>
@@ -133,11 +128,11 @@ interface Row {
                   </div>
                   <div class="min-w-0">
                     <div class="flex items-center gap-2"><h3 class="font-headline-md text-headline-md font-bold text-on-surface truncate">{{ r.staff.name }}</h3>@if (r.staff.id === topId()) { <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">Lead</span> }</div>
-                    <p class="text-body-sm text-tertiary truncate">{{ r.staff.phone }}@if (r.staff.email) { • {{ r.staff.email }} }</p>
+                    <p class="text-body-sm text-muted truncate">{{ r.staff.phone }}@if (r.staff.email) { • {{ r.staff.email }} }</p>
                     <div class="flex items-center gap-2 mt-1"><span class="font-label-sm text-label-sm bg-surface-container-low px-2 py-0.5 rounded text-on-surface-variant font-medium">{{ r.staff.role }}</span><span class="font-label-sm text-label-sm bg-surface-container-low px-2 py-0.5 rounded text-on-surface-variant font-medium">{{ workingDays(r.staff) }} days/wk</span></div>
                   </div>
                 </div>
-                <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-tertiary transition-colors" title="Toggle duty status" (click)="toggleDuty(r.staff)"><span class="material-symbols-outlined text-[20px]">{{ r.staff.status === 'on-duty' ? 'toggle_on' : 'toggle_off' }}</span></button>
+                <button type="button" class="p-1.5 rounded-lg hover:bg-surface-container text-muted transition-colors" title="Toggle duty status" (click)="toggleDuty(r.staff)"><span class="material-symbols-outlined text-[20px]">{{ r.staff.status === 'on-duty' ? 'toggle_on' : 'toggle_off' }}</span></button>
               </div>
 
               <div class="grid grid-cols-2 gap-2.5">
@@ -147,15 +142,15 @@ interface Row {
 
               <div class="p-4 rounded-xl bg-surface-container-low/60 border border-outline-variant/30 flex flex-col gap-3">
                 <div class="flex items-center justify-between gap-2">
-                  <div><p class="font-label-md text-label-md text-tertiary">Weekly Earnings Breakdown</p><p class="font-headline-sm text-headline-sm font-bold text-on-surface">{{ inr(weekTotal()) }} generated</p></div>
-                  <div class="text-right"><span class="font-label-sm text-label-sm text-tertiary">Commission Due</span><p class="font-headline-sm text-headline-sm font-bold text-primary">{{ inr(weekTotal() * r.staff.commission / 100) }}</p></div>
+                  <div><p class="font-label-md text-label-md text-muted">Weekly Earnings Breakdown</p><p class="font-headline-sm text-headline-sm font-bold text-on-surface">{{ inr(weekTotal()) }} generated</p></div>
+                  <div class="text-right"><span class="font-label-sm text-label-sm text-muted">Commission Due</span><p class="font-headline-sm text-headline-sm font-bold text-primary">{{ inr(weekTotal() * r.staff.commission / 100) }}</p></div>
                 </div>
                 <div class="h-28 w-full pt-2"><app-line-chart [series]="chart()" /></div>
-                <div class="flex justify-between text-[11px] text-tertiary font-medium pt-1">@for (d of week; track d) { <span>{{ d }}</span> }</div>
+                <div class="flex justify-between text-[11px] text-muted font-medium pt-1">@for (d of week; track d) { <span>{{ d }}</span> }</div>
                 <div class="grid grid-cols-3 gap-2 pt-2 border-t border-outline-variant/20 text-center">
-                  <div><span class="text-[11px] text-tertiary block">Base Rate</span><span class="font-label-md text-label-md font-bold text-on-surface">{{ r.staff.commission }}% Flat</span></div>
-                  <div><span class="text-[11px] text-tertiary block">Total Tips</span><span class="font-label-md text-label-md font-bold text-emerald-600">{{ inr(r.stats.tips) }}</span></div>
-                  <div><span class="text-[11px] text-tertiary block">Rating</span><span class="font-label-md text-label-md font-bold text-secondary">{{ r.stats.rating || '—' }} ★</span></div>
+                  <div><span class="text-[11px] text-muted block">Base Rate</span><span class="font-label-md text-label-md font-bold text-on-surface">{{ r.staff.commission }}% Flat</span></div>
+                  <div><span class="text-[11px] text-muted block">Clients</span><span class="font-label-md text-label-md font-bold text-on-surface">{{ r.stats.clients }}</span></div>
+                  <div><span class="text-[11px] text-muted block">Billed</span><span class="font-label-md text-label-md font-bold text-primary">{{ inr(r.stats.revenue) }}</span></div>
                 </div>
               </div>
 
@@ -166,7 +161,7 @@ interface Row {
                     <div class="p-3 rounded-xl bg-surface-container-low/40 border border-outline-variant/20 flex items-center justify-between gap-2 hover:bg-surface-container-low transition-colors">
                       <div class="flex items-center gap-3 min-w-0">
                         <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-[12px] shrink-0">{{ initials(b.client) }}</div>
-                        <div class="min-w-0"><p class="font-label-md text-label-md font-bold text-on-surface truncate">{{ b.client }}</p><p class="text-[11px] text-tertiary truncate">{{ b.serviceName }} • {{ fmt(b.start) }}</p></div>
+                        <div class="min-w-0"><p class="font-label-md text-label-md font-bold text-on-surface truncate">{{ b.client }}</p><p class="text-[11px] text-muted truncate">{{ b.serviceName }} • {{ fmt(b.start) }}</p></div>
                       </div>
                       <div class="text-right shrink-0"><p class="font-label-md text-label-md font-bold text-on-surface">{{ inr(b.price) }}</p><p class="text-[11px] text-emerald-600 font-medium">Comm: {{ inr(b.price * r.staff.commission / 100) }}</p></div>
                     </div>
@@ -176,13 +171,13 @@ interface Row {
                 </div>
               </div>
 
-              <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-label-sm text-tertiary gap-2">
+              <div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-label-sm text-muted gap-2">
                 <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-primary">lock_clock</span> Next payout cycle: {{ payoutDate }}</span>
                 <button type="button" class="text-primary font-semibold hover:underline" (click)="paySlip(r)">Download Pay Slip</button>
               </div>
             </div>
           } @else {
-            <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center text-tertiary">
+            <div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center text-muted">
               <span class="material-symbols-outlined text-4xl text-primary/40">badge</span>
               <p class="mt-2 font-label-lg text-label-lg text-on-surface">Select a stylist</p><p class="text-body-sm">Pick a row to see earnings, schedule and commission.</p>
             </div>
@@ -194,7 +189,7 @@ interface Row {
     <app-modal [open]="commissionFor() !== null" title="Adjust Commission %" (closed)="commissionFor.set(null)">
       @if (commissionFor(); as s) {
         <div class="space-y-4">
-          <p class="text-body-md text-tertiary">Commission for <strong class="text-on-surface">{{ s.name }}</strong> on completed services.</p>
+          <p class="text-body-md text-muted">Commission for <strong class="text-on-surface">{{ s.name }}</strong> on completed services.</p>
           <div class="flex items-center gap-4">
             <input type="range" min="0" max="70" class="flex-1 accent-primary" aria-label="Commission percent" [ngModel]="draftPct()" (ngModelChange)="draftPct.set(+$event)" />
             <div class="flex items-center gap-1 bg-surface-container px-2.5 py-1 rounded-md"><input type="number" min="0" max="100" class="w-12 p-0 text-right bg-transparent border-0 font-bold text-primary focus:ring-0" aria-label="Commission number" [ngModel]="draftPct()" (ngModelChange)="draftPct.set(+$event)" /><span class="text-primary font-semibold">%</span></div>
@@ -207,7 +202,7 @@ interface Row {
     <app-modal [open]="scheduleFor() !== null" title="Assign Schedule" (closed)="scheduleFor.set(null)">
       @if (scheduleFor(); as s) {
         <div class="space-y-4">
-          <p class="text-body-md text-tertiary">Working days for <strong class="text-on-surface">{{ s.name }}</strong>. Bookings are only accepted on these days.</p>
+          <p class="text-body-md text-muted">Working days for <strong class="text-on-surface">{{ s.name }}</strong>. Bookings are only accepted on these days.</p>
           <app-day-picker [days]="draftDays()" (daysChange)="draftDays.set($event)" />
           <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20"><button type="button" [class]="ghost" (click)="scheduleFor.set(null)">Cancel</button><button type="button" [class]="primary" (click)="saveSchedule()">Save schedule</button></div>
         </div>
@@ -257,7 +252,7 @@ export class StaffPerformance {
 
   private readonly all = computed<Row[]>(() =>
     this.store.staff().map((staff) => {
-      const stats = this.store.stats().find((s) => s.staffId === staff.id) ?? { staffId: staff.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, rating: 0, reviews: 0, tips: 0, week: [0, 0, 0, 0, 0, 0, 0] };
+      const stats = this.store.stats().find((s) => s.staffId === staff.id) ?? { staffId: staff.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, week: [0, 0, 0, 0, 0, 0, 0] };
       const delta = stats.prevRevenue ? Math.round(((stats.revenue - stats.prevRevenue) / stats.prevRevenue) * 100) : 0;
       return { staff, stats, commission: Math.round((stats.revenue * staff.commission) / 100), delta };
     }),
@@ -272,10 +267,6 @@ export class StaffPerformance {
   protected readonly onDuty = computed(() => this.store.staff().filter((s) => s.status === 'on-duty').length);
   protected readonly totalRevenue = computed(() => this.all().reduce((a, r) => a + r.stats.revenue, 0));
   protected readonly totalCommission = computed(() => this.all().reduce((a, r) => a + r.commission, 0));
-  protected readonly avgRating = computed(() => {
-    const rated = this.all().filter((r) => r.stats.rating > 0);
-    return rated.length ? (rated.reduce((a, r) => a + r.stats.rating, 0) / rated.length).toFixed(1) : '—';
-  });
   protected readonly weekTotal = computed(() => this.selected()?.stats.week.reduce((a, b) => a + b, 0) ?? 0);
   protected readonly chart = computed(() => [{ values: this.selected()?.stats.week ?? [], color: '#00685b', area: true, width: 3, marker: true }]);
   protected readonly todayBookings = computed(() => this.store.bookingsFor(dateKey(new Date())).filter((b) => b.staffId === this.selectedId()).sort((a, b) => a.start - b.start));
@@ -334,8 +325,8 @@ export class StaffPerformance {
   }
 
   exportCsv() {
-    const head = ['Stylist', 'Role', 'Clients', 'Revenue', 'Commission %', 'Commission', 'Rating', 'Reviews'];
-    const body = this.rows().map((r) => [r.staff.name, r.staff.role, r.stats.clients, r.stats.revenue, r.staff.commission, r.commission, r.stats.rating, r.stats.reviews]);
+    const head = ['Stylist', 'Role', 'Clients', 'Revenue', 'Commission %', 'Commission'];
+    const body = this.rows().map((r) => [r.staff.name, r.staff.role, r.stats.clients, r.stats.revenue, r.staff.commission, r.commission]);
     downloadText(`staff-performance-${dateKey(new Date())}.csv`, toCsv([head, ...body]));
     this.toast.success('Staff report exported');
   }
@@ -343,7 +334,7 @@ export class StaffPerformance {
   paySlip(r: Row) {
     downloadText(`payslip-${r.staff.name.replace(/\s+/g, '-').toLowerCase()}-${dateKey(new Date())}.csv`, toCsv([
       ['Pay slip', this.month], ['Stylist', r.staff.name], ['Role', r.staff.role], ['Revenue', r.stats.revenue],
-      ['Commission %', r.staff.commission], ['Commission', r.commission], ['Tips', r.stats.tips], ['Total payable', r.commission + r.stats.tips],
+      ['Commission %', r.staff.commission], ['Commission', r.commission], ['Total payable', r.commission],
     ]));
     this.toast.success('Pay slip downloaded');
   }

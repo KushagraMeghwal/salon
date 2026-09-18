@@ -9,7 +9,7 @@ let env: RulesTestEnvironment;
 const salonDoc = (over: Record<string, unknown> = {}) => ({
   ownerId: 'owner1', status: 'active', bookable: true, slug: 'luxe',
   profile: { name: 'Luxe Studio' },
-  settings: { allowPayAtSalon: true, requireOnlineAfterNoShows: true, noShowThreshold: 2, cancelWindowHrs: 2, latePenaltyPct: 15 },
+  settings: { allowPayAtSalon: true, requireOnlineAfterNoShows: true, noShowThreshold: 2, cancelWindowHrs: 2, latePenaltyPct: 15, gstRegistered: false, gstin: '' },
   ...over,
 });
 const service = { name: 'Haircut', category: 'Hair', price: 450, duration: 45, active: true };
@@ -103,6 +103,13 @@ describe('salon ownership', () => {
   it('owner rejects invalid policy values', async () => {
     await assertFails(updateDoc(doc(owner(), `salons/${SALON}`), { 'settings.latePenaltyPct': 500 }));
     await assertFails(updateDoc(doc(owner(), `salons/${SALON}`), { 'settings.noShowThreshold': 0 }));
+  });
+  it('GST: registered salons need a valid GSTIN, unregistered can leave it empty', async () => {
+    const ref = doc(owner(), `salons/${SALON}`);
+    await assertFails(updateDoc(ref, { 'settings.gstRegistered': true }));
+    await assertFails(updateDoc(ref, { 'settings.gstRegistered': true, 'settings.gstin': '12ABC' }));
+    await assertSucceeds(updateDoc(ref, { 'settings.gstRegistered': true, 'settings.gstin': '27ABCDE1234F1Z5' }));
+    await assertSucceeds(updateDoc(ref, { 'settings.gstRegistered': false, 'settings.gstin': '' }));
   });
   it("another salon's owner and a customer cannot edit this salon", async () => {
     await assertFails(updateDoc(doc(otherOwner(), `salons/${SALON}`), { 'profile.name': 'Pwned' }));

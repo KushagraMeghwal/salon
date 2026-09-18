@@ -13,7 +13,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
   selector: 'app-customer-shell',
   imports: [RouterOutlet, CustomerNav, LangToggle, TranslatePipe],
   template: `
-    <div class="theme-v2 min-h-screen flex flex-col bg-background text-on-surface antialiased selection:bg-primary selection:text-on-primary">
+    <div class="min-h-screen flex flex-col bg-background text-on-surface antialiased selection:bg-primary selection:text-on-primary">
       <header class="bg-surface border-b border-outline-variant shadow-sm w-full sticky top-0 z-40 no-print">
         <div class="flex justify-between items-center w-full px-space-md py-space-sm max-w-screen-md mx-auto">
           <div class="flex items-center gap-space-sm min-w-0">
@@ -63,5 +63,5 @@ export class CustomerShell {
     { initialValue: '/' },
   );
   protected readonly showBack = computed(() => /^\/s\/[^/]+\/(services|slot|stylist|pay)$/.test(this.url()) || this.url() === '/login');
-  protected readonly showNav = computed(() => /^\/s\/[^/]+$/.test(this.url()) || this.url() === '/my/bookings');
+  protected readonly showNav = computed(() => /^\/s\/[^/]+$/.test(this.url()) || this.url() === '/my/bookings' || this.url() === '/my/profile');
 }

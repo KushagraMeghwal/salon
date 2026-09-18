@@ -14,7 +14,7 @@ import { Component, HostListener, input, output } from '@angular/core';
         >
           <div class="flex items-center justify-between pb-4 border-b border-outline-variant/20">
             <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ title() }}</h3>
-            <button type="button" class="text-tertiary hover:text-on-surface p-1 rounded-lg" (click)="closed.emit()" aria-label="Close">
+            <button type="button" class="text-muted hover:text-on-surface p-1 rounded-lg" (click)="closed.emit()" aria-label="Close">
               <span class="material-symbols-outlined">close</span>
             </button>
           </div>

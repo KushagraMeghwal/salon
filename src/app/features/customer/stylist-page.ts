@@ -54,7 +54,7 @@ import { StepBar } from '../../shared/customer/step-bar';
                   <div class="flex items-center gap-2 flex-wrap"><h4 class="font-headline-sm text-headline-sm text-on-surface">{{ m.name }}</h4><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">Free at your slot</span></div>
                   <p class="font-body-md text-body-md text-on-surface-variant">{{ m.title || m.role }}</p>
                   <div class="flex items-center gap-3 pt-0.5 flex-wrap">
-                    @if (rating(m.id); as r) { <div class="flex items-center gap-1 text-on-surface"><span class="material-symbols-outlined text-[16px] text-[#FFB400]" style="font-variation-settings: 'FILL' 1;">star</span><span class="font-label-md text-label-md font-bold">{{ r.rating }}</span><span class="font-body-sm text-body-sm text-outline">({{ r.reviews }} reviews)</span></div><span class="text-outline-variant">•</span> }
+                    
                     <span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant rounded-md font-label-sm text-label-sm">{{ specialty(m.id) }}</span>
                   </div>
                 </div>
@@ -147,11 +147,6 @@ export class StylistPage implements OnInit {
     }
     // Keep a previously chosen stylist only if they are still free.
     if (this.flow.staffId() !== 'any' && !this.free().some((m) => m.id === this.flow.staffId())) this.flow.staffId.set('any');
-  }
-
-  rating(id: string) {
-    const st = this.store.stats().find((s) => s.staffId === id);
-    return st && st.rating > 0 ? st : null;
   }
 
   specialty(id: string) {

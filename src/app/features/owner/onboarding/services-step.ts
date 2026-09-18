@@ -26,13 +26,13 @@ const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Mas
               <span class="material-symbols-outlined text-[14px]">checklist</span> Step 2 of 4
             </div>
             <h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface tracking-tight">Select and configure your services</h1>
-            <p class="text-body-md font-body-md text-tertiary mt-1">Choose standard services to quick-start or add your own custom packages. Pricing in Indian Rupee (₹).</p>
+            <p class="text-body-md font-body-md text-muted mt-1">Choose standard services to quick-start or add your own custom packages. Pricing in Indian Rupee (₹).</p>
           </div>
           <div class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm self-start">
             <span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
             <span class="text-label-md font-label-md text-on-surface font-semibold">{{ store.selectedServices().length }} services configured</span>
             <span class="text-outline-variant">•</span>
-            <span class="text-body-sm font-body-sm text-tertiary">Average service time: <strong class="text-on-surface font-medium">{{ avgTime() }}m</strong></span>
+            <span class="text-body-sm font-body-sm text-muted">Average service time: <strong class="text-on-surface font-medium">{{ avgTime() }}m</strong></span>
           </div>
         </div>
 
@@ -64,17 +64,17 @@ const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Mas
                     </div>
                     <span class="material-symbols-outlined text-primary text-headline-sm">check_circle</span>
                   </div>
-                  <p class="text-body-sm font-body-sm text-tertiary mt-2">{{ s.description }}</p>
+                  <p class="text-body-sm font-body-sm text-muted mt-2">{{ s.description }}</p>
                   <div class="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-outline-variant/20">
                     <div>
-                      <label class="block text-label-sm font-label-sm text-tertiary mb-1" [attr.for]="'price-' + s.id">Price (₹)</label>
+                      <label class="block text-label-sm font-label-sm text-muted mb-1" [attr.for]="'price-' + s.id">Price (₹)</label>
                       <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-tertiary font-medium text-body-sm">₹</span>
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-muted font-medium text-body-sm">₹</span>
                         <input [id]="'price-' + s.id" type="number" min="0" step="10" [class]="cardInput + ' pl-7'" [ngModel]="s.price" (ngModelChange)="setPrice(s, $event)" />
                       </div>
                     </div>
                     <div>
-                      <label class="block text-label-sm font-label-sm text-tertiary mb-1" [attr.for]="'dur-' + s.id">Duration</label>
+                      <label class="block text-label-sm font-label-sm text-muted mb-1" [attr.for]="'dur-' + s.id">Duration</label>
                       <select [id]="'dur-' + s.id" [class]="cardInput + ' pl-3'" [ngModel]="s.duration" (ngModelChange)="store.patchService(s.id, { duration: +$event })">
                         @for (d of durations(s); track d) {
                           <option [ngValue]="d">{{ d }} mins</option>
@@ -92,13 +92,13 @@ const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Mas
                       <input type="checkbox" class="w-5 h-5 rounded text-primary focus:ring-primary border-outline-variant cursor-pointer" [attr.aria-label]="'Select ' + s.name" (change)="store.toggleService(s.id)" />
                       <div>
                         <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ s.name }}</h3>
-                        <span class="inline-block mt-0.5 text-label-sm font-label-sm px-2 py-0.5 rounded bg-surface-container text-tertiary">{{ s.category }}</span>
+                        <span class="inline-block mt-0.5 text-label-sm font-label-sm px-2 py-0.5 rounded bg-surface-container text-muted">{{ s.category }}</span>
                       </div>
                     </div>
                   </div>
-                  <p class="text-body-sm font-body-sm text-tertiary mt-2">{{ s.description }}</p>
+                  <p class="text-body-sm font-body-sm text-muted mt-2">{{ s.description }}</p>
                 </div>
-                <div class="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant/20 text-body-sm font-body-sm text-tertiary">
+                <div class="flex items-center justify-between mt-4 pt-3 border-t border-outline-variant/20 text-body-sm font-body-sm text-muted">
                   <span>Suggested: <strong class="text-on-surface font-semibold">₹{{ s.suggestedPrice }}</strong></span>
                   <span class="text-label-sm font-label-sm">{{ s.suggestedDuration }} mins</span>
                 </div>
@@ -111,7 +111,7 @@ const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Mas
               <span class="material-symbols-outlined text-headline-md">add</span>
             </div>
             <h3 class="text-headline-sm font-headline-sm text-primary font-semibold">+ Add Custom Service</h3>
-            <p class="text-body-sm font-body-sm text-tertiary mt-1 max-w-xs">Can't find a service? Define unique services, bundles, or specific bridal styling.</p>
+            <p class="text-body-sm font-body-sm text-muted mt-1 max-w-xs">Can't find a service? Define unique services, bundles, or specific bridal styling.</p>
           </button>
         </div>
       </main>
@@ -147,7 +147,7 @@ const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Mas
             <div>
               <label [class]="label" for="cs-price">Price in ₹</label>
               <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-tertiary font-medium text-body-sm">₹</span>
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-muted font-medium text-body-sm">₹</span>
                 <input id="cs-price" name="price" type="number" min="0" [class]="input + ' pl-7'" placeholder="500" [(ngModel)]="draft.price" required />
               </div>
             </div>

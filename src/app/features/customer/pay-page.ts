@@ -51,7 +51,7 @@ import { StepBar } from '../../shared/customer/step-bar';
         </div>
 
         <div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant mt-space-xs">
-          <div><span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider block">Total payable</span><span class="text-body-sm font-body-sm text-outline">Inclusive of GST &amp; salon charges</span></div>
+          <div><span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider block">Total payable</span>@if (store.settings().gstRegistered) { <span class="text-body-sm font-body-sm text-outline">Inclusive of GST</span> }</div>
           <span class="font-numeric-stat text-numeric-stat text-primary font-bold">{{ inr(flow.totalPrice()) }}</span>
         </div>
       </section>
@@ -160,7 +160,7 @@ export class PayPage implements OnInit {
   protected readonly salonBlocked = computed(() => {
     const s = this.store.settings();
     if (!s.allowPayAtSalon) return 'This salon accepts online payment only.';
-    if (s.requireOnlineAfterNoShows && (this.auth.customer()?.noShowCount ?? 0) >= s.noShowThreshold) return `Online payment is required after ${s.noShowThreshold} missed appointments.`;
+    if (s.requireOnlineAfterNoShows && this.store.noShowsOf(this.auth.customer()?.phone ?? '') >= s.noShowThreshold) return `Online payment is required after ${s.noShowThreshold} missed appointments.`;
     return '';
   });
 

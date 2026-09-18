@@ -1,8 +1,9 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 import {
   Bill, BillLine, Booking, Holiday, BreakSettings, CatalogService, DayTiming, PayMethod,
-  QueueItem, SalonProfile, SalonSettings, StaffMember, StaffStats,
+  CustomerRecord, QueueItem, SalonProfile, SalonSettings, StaffMember, StaffStats,
 } from '../models';
+import { splitGst } from '../utils/gst';
 import { dateKey, slugify, toMin } from '../utils/time';
 
 const STORAGE_KEY = 'chairly.salon.v1';
@@ -51,10 +52,10 @@ const SEED_STAFF: StaffMember[] = [
 ];
 
 const SEED_STATS: StaffStats[] = [
-  { staffId: 'st1', clients: 142, workDays: 24, revenue: 142800, prevRevenue: 121000, rating: 4.9, reviews: 98, tips: 4850, week: [21000, 18500, 23000, 27500, 24800, 31200, 26400] },
-  { staffId: 'st2', clients: 118, workDays: 22, revenue: 118500, prevRevenue: 105800, rating: 4.8, reviews: 84, tips: 3900, week: [17200, 15800, 19400, 20100, 21600, 26800, 22300] },
-  { staffId: 'st3', clients: 96, workDays: 20, revenue: 98400, prevRevenue: 92800, rating: 4.9, reviews: 110, tips: 3100, week: [0, 0, 14800, 17900, 18400, 22200, 19700] },
-  { staffId: 'st4', clients: 88, workDays: 18, revenue: 84200, prevRevenue: 84200, rating: 4.7, reviews: 64, tips: 2400, week: [13400, 12100, 15200, 14800, 13900, 0, 0] },
+  { staffId: 'st1', clients: 142, workDays: 24, revenue: 142800, prevRevenue: 121000, week: [21000, 18500, 23000, 27500, 24800, 31200, 26400] },
+  { staffId: 'st2', clients: 118, workDays: 22, revenue: 118500, prevRevenue: 105800, week: [17200, 15800, 19400, 20100, 21600, 26800, 22300] },
+  { staffId: 'st3', clients: 96, workDays: 20, revenue: 98400, prevRevenue: 92800, week: [0, 0, 14800, 17900, 18400, 22200, 19700] },
+  { staffId: 'st4', clients: 88, workDays: 18, revenue: 84200, prevRevenue: 84200, week: [13400, 12100, 15200, 14800, 13900, 0, 0] },
 ];
 
 const SEED_TIMINGS: DayTiming[] = [
@@ -87,11 +88,30 @@ const SEED_SETTINGS: SalonSettings = {
     { id: 'h2', date: plusDays(35), name: 'Guru Nanak Jayanti', type: 'full' },
     { id: 'h3', date: plusDays(60), name: 'Christmas Day', type: 'half', closeAt: '13:00' },
   ],
-  instantPayout: true,
+  gstRegistered: false,
+  gstin: '',
   bank: { bankName: 'HDFC Commercial Bank', accountLast4: '4912', ifsc: 'HDFC0000240', beneficiary: 'Luxe Grooming LLP' },
   plan: 'Chairly Pro',
   trialEndsAt: plusDays(14),
 };
+
+const COUPONS: Record<string, { type: 'percent' | 'flat'; value: number; label: string }> = {
+  WELCOME10: { type: 'percent', value: 10, label: '10% off' },
+  FLAT100: { type: 'flat', value: 100, label: '₹100 off' },
+};
+
+const SEED_CUSTOMERS: CustomerRecord[] = [
+  { id: 'cu1', name: 'Ananya Roy', phone: '+91 98765 43210', visits: 6, totalSpent: 7250, lastVisit: plusDays(-6), noShowCount: 0 },
+  { id: 'cu2', name: 'Rohan Kapoor', phone: '+91 98201 44521', visits: 11, totalSpent: 14980, lastVisit: plusDays(-2), noShowCount: 0 },
+  { id: 'cu3', name: 'Kavita Deshmukh', phone: '+91 97652 11984', visits: 9, totalSpent: 32400, lastVisit: plusDays(-9), noShowCount: 1 },
+  { id: 'cu4', name: 'Tanya Varma', phone: '+91 99001 22334', visits: 4, totalSpent: 5900, lastVisit: plusDays(-14), noShowCount: 0 },
+  { id: 'cu5', name: 'Simran Kaur', phone: '+91 98710 33410', visits: 7, totalSpent: 21300, lastVisit: plusDays(-4), noShowCount: 0 },
+  { id: 'cu6', name: 'Gaurav Sethi', phone: '+91 98330 11223', visits: 3, totalSpent: 3300, lastVisit: plusDays(-31), noShowCount: 2 },
+  { id: 'cu7', name: 'Zayn Merchant', phone: '+91 99882 11094', visits: 5, totalSpent: 9400, lastVisit: plusDays(-11), noShowCount: 0 },
+  { id: 'cu8', name: 'Pooja Nambiar', phone: '+91 98450 77332', visits: 8, totalSpent: 18650, lastVisit: plusDays(-1), noShowCount: 0 },
+  { id: 'cu9', name: 'Meera Sen', phone: '+91 97120 54109', visits: 2, totalSpent: 7600, lastVisit: plusDays(-45), noShowCount: 3 },
+  { id: 'cu10', name: 'Devraj Roy', phone: '+91 98111 22334', visits: 12, totalSpent: 11400, lastVisit: plusDays(-3), noShowCount: 0 },
+];
 
 export interface FreeSlot { staffId: string; start: number; end: number }
 
@@ -111,6 +131,7 @@ export class SalonStore {
   readonly bookings = signal<Booking[]>([]);
   readonly queue = signal<QueueItem[]>([]);
   readonly bills = signal<Bill[]>([]);
+  readonly customers = signal<CustomerRecord[]>(structuredClone(SEED_CUSTOMERS));
   readonly onboarded = signal(false);
   readonly lastSaved = signal<Date | null>(null);
   readonly nowMin = signal(this.currentMinute());
@@ -204,7 +225,7 @@ export class SalonStore {
   upsertStaff(m: StaffMember) {
     this.staff.update((l) => (l.some((x) => x.id === m.id) ? l.map((x) => (x.id === m.id ? m : x)) : [...l, m]));
     if (!this.stats().some((s) => s.staffId === m.id)) {
-      this.stats.update((l) => [...l, { staffId: m.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, rating: 0, reviews: 0, tips: 0, week: [0, 0, 0, 0, 0, 0, 0] }]);
+      this.stats.update((l) => [...l, { staffId: m.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, week: [0, 0, 0, 0, 0, 0, 0] }]);
     }
     this.markSaved();
   }
@@ -443,19 +464,24 @@ export class SalonStore {
     return `CH/${fy}/${String(this.invoiceSeq + 1).padStart(5, '0')}`;
   }
 
+  /** Prices are GST-inclusive. The discount comes off the inclusive total; tax is shown only if the salon is GST registered. */
   createBill(input: {
-    client: string; phone: string; lines: BillLine[]; loyaltyDiscount: number; method: PayMethod; queueId?: string | null;
+    client: string; phone: string; lines: BillLine[]; discount: number; couponCode?: string; method: PayMethod; queueId?: string | null;
   }): Bill {
     const subtotal = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
-    const gst = Math.round(subtotal * 0.18);
-    const total = Math.max(0, subtotal + gst - input.loyaltyDiscount);
+    const discount = Math.min(subtotal, Math.max(0, input.discount));
+    const total = subtotal - discount;
+    const { gstRegistered, gstin } = this.settings();
+    const tax = splitGst(total, gstRegistered);
     const no = this.nextInvoiceNo();
     this.invoiceSeq++;
     const bill: Bill = {
-      no, client: input.client, phone: input.phone, lines: input.lines, subtotal, gst,
-      loyaltyDiscount: input.loyaltyDiscount, total, method: input.method, createdAt: new Date().toISOString(),
+      no, client: input.client, phone: input.phone, lines: input.lines, subtotal, discount, couponCode: input.couponCode,
+      taxable: tax.taxable, cgst: tax.cgst, sgst: tax.sgst, gst: tax.gst, gstRegistered, gstin: gstRegistered ? gstin : undefined,
+      total, method: input.method, createdAt: new Date().toISOString(),
     };
     this.bills.update((l) => [bill, ...l]);
+    this.touchCustomer(input.client, input.phone, { visit: true, spent: total });
     const primary = input.lines[0];
     const stamp = { stage: 'done' as const, billNo: no, payMethod: input.method, price: total, billedAt: bill.createdAt };
     if (input.queueId) {
@@ -474,6 +500,60 @@ export class SalonStore {
     return bill;
   }
 
+  // ---------- coupons (mock catalogue until coupon management is built) ----------
+  applyCoupon(code: string, subtotal: number): { ok: true; discount: number; label: string } | { ok: false } {
+    const c = COUPONS[code.trim().toUpperCase()];
+    if (!c) return { ok: false };
+    const discount = c.type === 'percent' ? Math.round((subtotal * c.value) / 100) : Math.min(c.value, subtotal);
+    return { ok: true, discount, label: c.label };
+  }
+
+  // ---------- customers ----------
+  private phoneKey(phone: string) {
+    return phone.replace(/\D/g, '').slice(-10);
+  }
+
+  noShowsOf(phone: string) {
+    const k = this.phoneKey(phone);
+    return k ? this.customers().find((c) => this.phoneKey(c.phone) === k)?.noShowCount ?? 0 : 0;
+  }
+
+  /** Creates or updates the per-salon customer record (a Cloud Function does this in Firestore later). */
+  touchCustomer(name: string, phone: string, change: { visit?: boolean; spent?: number; noShow?: boolean }) {
+    const key = this.phoneKey(phone);
+    const today = dateKey(new Date());
+    this.customers.update((list) => {
+      const i = list.findIndex((c) => (key ? this.phoneKey(c.phone) === key : c.name.toLowerCase() === name.toLowerCase()));
+      const base: CustomerRecord = i >= 0 ? list[i] : { id: 'cu' + Date.now().toString(36), name, phone: phone || '', visits: 0, totalSpent: 0, lastVisit: '', noShowCount: 0 };
+      const next: CustomerRecord = {
+        ...base,
+        name: base.name || name,
+        phone: base.phone || phone,
+        visits: base.visits + (change.visit ? 1 : 0),
+        totalSpent: base.totalSpent + (change.spent ?? 0),
+        lastVisit: change.visit ? today : base.lastVisit,
+        noShowCount: base.noShowCount + (change.noShow ? 1 : 0),
+      };
+      return i >= 0 ? list.map((c, idx) => (idx === i ? next : c)) : [...list, next];
+    });
+  }
+
+  /** Marks a booking as a no-show and counts it against the customer. */
+  markNoShow(id: string) {
+    const b = this.bookings().find((x) => x.id === id);
+    if (!b || b.status === 'no-show') return;
+    this.updateBooking(id, { status: 'no-show' });
+    this.touchCustomer(b.client, b.customerPhone ?? b.phone, { noShow: true });
+  }
+
+  /** Completing a booking counts a visit and the amount spent. */
+  completeBooking(id: string) {
+    const b = this.bookings().find((x) => x.id === id);
+    if (!b || b.status === 'completed') return;
+    this.updateBooking(id, { status: 'completed' });
+    this.touchCustomer(b.client, b.customerPhone ?? b.phone, { visit: true, spent: b.price });
+  }
+
   private seedToday() {
     const today = dateKey(new Date());
     const b = (id: string, staffId: string, client: string, phone: string, serviceName: string, start: string, duration: number, price: number, status: Booking['status'], notes?: string): Booking =>
@@ -484,8 +564,8 @@ export class SalonStore {
       b('b3', 'st2', 'Tanya Varma', '+91 99001 22334', 'Deep Conditioning Spa', '17:30', 60, 1800, 'confirmed'),
       b('b4', 'st3', 'Ananya Mehta', '+91 99200 88219', 'Balayage + Blowdry Master', '09:00', 180, 6800, 'in-progress', 'Olaplex Step 1 + Wella 8/38 Honey Gold'),
       b('b5', 'st3', 'Simran Kaur', '+91 98710 33410', 'Organic Root Touchup & Spa', '15:00', 120, 3400, 'confirmed'),
-      { ...b('b6', 'st1', 'Devraj Roy', '+91 98111 22334', 'Beard Sculpt & Fade', '09:00', 60, 950, 'completed'), tip: 100, paid: true, payment: 'online' as const },
-      { ...b('b7', 'st1', 'Harshvardhan Kapoor', '+91 98111 00293', 'Royal Shave + Charcoal Facial', '10:30', 90, 2800, 'in-progress'), vip: true, tip: 200 },
+      { ...b('b6', 'st1', 'Devraj Roy', '+91 98111 22334', 'Beard Sculpt & Fade', '09:00', 60, 950, 'completed'), paid: true, payment: 'online' as const },
+      { ...b('b7', 'st1', 'Harshvardhan Kapoor', '+91 98111 00293', 'Royal Shave + Charcoal Facial', '10:30', 90, 2800, 'in-progress'), vip: true },
       b('b8', 'st1', 'Gaurav Sethi', '+91 98330 11223', 'Scissor Taper Cut', '14:30', 60, 1100, 'confirmed'),
       b('b9', 'st1', 'Zayn Merchant', '+91 99882 11094', 'Signature Hair Tattoo + Fade', '16:00', 90, 2100, 'confirmed'),
       b('b10', 'st4', 'Pooja Nambiar', '+91 98450 77332', 'Gel Extension + Chrome Art', '10:00', 90, 2650, 'confirmed'),

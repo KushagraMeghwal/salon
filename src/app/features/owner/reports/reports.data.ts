@@ -7,13 +7,6 @@ export interface ServiceRow {
   revenue: number;
 }
 
-export interface MarginRow {
-  name: string;
-  revenue: number;
-  cost: number;
-  costLabel: string;
-}
-
 export interface PeriodData {
   key: PeriodKey;
   label: string;
@@ -35,18 +28,7 @@ export interface PeriodData {
   previous: number[];
   payment: { upi: number; card: number; cash: number; voucher: number };
   services: ServiceRow[];
-  margins: MarginRow[];
-  insight: string;
 }
-
-const MARGINS: MarginRow[] = [
-  { name: 'Hair Treatments', revenue: 210000, cost: 24000, costLabel: 'Product Cost' },
-  { name: 'Skin & Facial Spa', revenue: 142000, cost: 18500, costLabel: 'Product Cost' },
-  { name: 'Grooming & Haircuts', revenue: 134500, cost: 6200, costLabel: 'Product Cost' },
-  { name: 'Retail Haircare Products', revenue: 56400, cost: 32700, costLabel: 'Inventory COGS' },
-];
-
-const scale = (f: number): MarginRow[] => MARGINS.map((m) => ({ ...m, revenue: Math.round(m.revenue * f), cost: Math.round(m.cost * f) }));
 
 export const PERIODS: Record<PeriodKey, PeriodData> = {
   month: {
@@ -63,8 +45,6 @@ export const PERIODS: Record<PeriodKey, PeriodData> = {
       { name: 'Hydra Facial', meta: 'Skin Therapy & Glow • 60 mins', volume: 48, revenue: 94000 },
       { name: 'Beard Spa', meta: 'Grooming & Hot Towel • 45 mins', volume: 118, revenue: 69600 },
     ],
-    margins: MARGINS,
-    insight: 'Peak salon rush detected: Saturdays 3:00 PM – 7:00 PM. Chair utilization is 94%. Adding one senior stylist could capture an estimated ₹24,500 in unfulfilled walk-ins.',
   },
   week: {
     key: 'week', label: 'Week', range: 'Last 7 days vs previous 7 days', compare: 'Comparison vs. previous 7 days',
@@ -80,8 +60,6 @@ export const PERIODS: Record<PeriodKey, PeriodData> = {
       { name: 'Hydra Facial', meta: 'Skin Therapy & Glow • 60 mins', volume: 13, revenue: 25400 },
       { name: 'Beard Spa', meta: 'Grooming & Hot Towel • 45 mins', volume: 33, revenue: 19400 },
     ],
-    margins: scale(0.274),
-    insight: 'Friday and Saturday evenings account for 36% of weekly revenue. Consider keeping a second colorist on those shifts.',
   },
   day: {
     key: 'day', label: 'Day', range: 'Today vs yesterday', compare: 'Comparison vs. yesterday',
@@ -97,7 +75,5 @@ export const PERIODS: Record<PeriodKey, PeriodData> = {
       { name: 'Hydra Facial', meta: 'Skin Therapy & Glow • 60 mins', volume: 3, revenue: 4500 },
       { name: 'Beard Spa', meta: 'Grooming & Hot Towel • 45 mins', volume: 6, revenue: 3600 },
     ],
-    margins: scale(0.052),
-    insight: 'Evening demand starts at 5 PM. Two chairs are idle before 3 PM; a happy-hour offer could fill them.',
   },
 };

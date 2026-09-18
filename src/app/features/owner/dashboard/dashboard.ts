@@ -86,7 +86,7 @@ const RUSH = [
                 <span class="font-label-md text-label-md text-outline font-medium">Total Bookings</span>
                 <div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">{{ totalBookings() }}</span><span class="font-label-sm text-label-sm text-outline">Slots filled</span></div>
               </div>
-              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-tertiary"><span class="material-symbols-outlined text-[22px]">book_online</span></div>
+              <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-muted"><span class="material-symbols-outlined text-[22px]">book_online</span></div>
             </div>
             <div class="mt-4 pt-3 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 font-label-sm text-label-sm">
               <div class="flex items-center gap-1.5 text-on-surface"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-semibold">{{ doneCount() }}</span> Done</div>
@@ -99,7 +99,7 @@ const RUSH = [
             <div class="flex items-start justify-between">
               <div class="flex flex-col">
                 <span class="font-label-md text-label-md text-outline font-medium">Walk-ins vs App</span>
-                <div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">{{ walkins() }} <span class="text-tertiary font-body-md text-body-md font-normal">/</span> {{ online() }}</span></div>
+                <div class="flex items-baseline gap-2 mt-1"><span class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-surface tracking-tight">{{ walkins() }} <span class="text-muted font-body-md text-body-md font-normal">/</span> {{ online() }}</span></div>
               </div>
               <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[22px]">directions_walk</span></div>
             </div>
@@ -158,7 +158,7 @@ const RUSH = [
                   <div class="p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-xs hover:shadow-level-2 transition-all duration-150 flex flex-col gap-2">
                     <div class="flex items-start justify-between gap-2">
                       <div class="min-w-0"><h4 class="font-headline-sm text-headline-sm text-on-surface">{{ q.client }}</h4><span class="font-label-sm text-label-sm text-outline">{{ q.phone }}</span></div>
-                      <span class="px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0" [class]="waitMin(q) >= 10 ? 'bg-amber-100 text-amber-900' : 'bg-surface-container text-tertiary'"><span class="material-symbols-outlined text-[13px]">schedule</span> {{ waitMin(q) }} min</span>
+                      <span class="px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0" [class]="waitMin(q) >= 10 ? 'bg-amber-100 text-amber-900' : 'bg-surface-container text-muted'"><span class="material-symbols-outlined text-[13px]">schedule</span> {{ waitMin(q) }} min</span>
                     </div>
                     <div class="flex items-center justify-between text-body-sm gap-2">
                       <span class="font-label-sm text-label-sm text-primary px-2 py-0.5 bg-primary/10 rounded-md truncate">{{ q.service }}</span>
@@ -190,7 +190,7 @@ const RUSH = [
                       </div>
                       <span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0"><span class="material-symbols-outlined text-[12px]">timer</span> {{ left(q) }}</span>
                     </div>
-                    <div class="flex items-center justify-between gap-2"><span class="font-label-sm text-label-sm text-tertiary px-2 py-0.5 bg-surface-container rounded-md truncate">{{ q.service }}</span><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">{{ inr(q.price) }}</span></div>
+                    <div class="flex items-center justify-between gap-2"><span class="font-label-sm text-label-sm text-muted px-2 py-0.5 bg-surface-container rounded-md truncate">{{ q.service }}</span><span class="font-headline-sm text-headline-sm text-on-surface font-semibold">{{ inr(q.price) }}</span></div>
                     <div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden"><div class="bg-primary h-full transition-all" [style.width.%]="progress(q)"></div></div>
                     <div class="pt-1.5 flex items-center justify-between">
                       <span class="font-label-sm text-label-sm text-outline">Started: {{ fmt(q.startedAt ?? 0) }}</span>
@@ -213,7 +213,7 @@ const RUSH = [
                       <div class="min-w-0"><h4 class="font-headline-sm text-headline-sm text-on-surface">{{ q.client }}</h4><span class="font-label-sm text-label-sm text-outline">Bill #{{ shortNo(q.billNo) }}</span></div>
                       <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-label-sm text-label-sm font-semibold flex items-center gap-1 shrink-0"><span class="material-symbols-outlined text-[13px]">check_circle</span> Paid {{ q.payMethod }}</span>
                     </div>
-                    <div class="flex items-center justify-between text-body-sm"><span class="font-label-sm text-label-sm text-tertiary">Stylist: {{ first(q.staffId) }}</span><span class="font-headline-sm text-headline-sm font-semibold text-emerald-700">{{ inr(q.price) }}</span></div>
+                    <div class="flex items-center justify-between text-body-sm"><span class="font-label-sm text-label-sm text-muted">Stylist: {{ first(q.staffId) }}</span><span class="font-headline-sm text-headline-sm font-semibold text-emerald-700">{{ inr(q.price) }}</span></div>
                     <div class="pt-1.5 border-t border-outline-variant/20 flex items-center justify-between text-outline font-label-sm text-label-sm">
                       <span>{{ billTime(q) }}</span>
                       <button type="button" class="text-primary flex items-center gap-0.5 hover:underline" (click)="toast.info('Slip ' + q.billNo + ' · ' + inr(q.price))"><span class="material-symbols-outlined text-[14px]">receipt</span> View slip</button>
@@ -257,7 +257,6 @@ const RUSH = [
                   <div class="relative shrink-0">
                     @if (t.staff.photo) { <img class="w-12 h-12 rounded-full object-cover ring-2 ring-primary/20" [src]="t.staff.photo" [alt]="t.staff.name" /> }
                     @else { <div class="w-12 h-12 rounded-full ring-2 ring-primary/20 bg-primary-container text-on-primary-container flex items-center justify-center font-headline-sm text-headline-sm">{{ t.staff.name[0] }}</div> }
-                    <span class="absolute -bottom-1 -right-1 bg-amber-400 text-on-surface text-[10px] font-bold px-1 rounded-full flex items-center shadow-xs">★ {{ t.stats.rating }}</span>
                   </div>
                   <div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate">{{ t.staff.name }}</span><span class="font-label-sm text-label-sm text-outline">Top Stylist • {{ t.stats.clients }} Clients</span></div>
                 </div>

@@ -39,9 +39,9 @@ const INPUT =
                     Step 1: Establishment Setup
                   </div>
                   <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface font-bold">Tell us about your salon</h1>
-                  <p class="font-body-md text-body-md text-tertiary mt-1">Set up your salon profile and storefront details visible to clients.</p>
+                  <p class="font-body-md text-body-md text-muted mt-1">Set up your salon profile and storefront details visible to clients.</p>
                 </div>
-                <span class="hidden sm:inline-flex items-center gap-1 text-label-sm font-label-sm text-tertiary bg-surface-container-low px-2.5 py-1 rounded-md shrink-0">
+                <span class="hidden sm:inline-flex items-center gap-1 text-label-sm font-label-sm text-muted bg-surface-container-low px-2.5 py-1 rounded-md shrink-0">
                   <span class="material-symbols-outlined text-sm text-primary">shield</span>
                   {{ savedLabel() }}
                 </span>
@@ -52,12 +52,12 @@ const INPUT =
                 <div>
                   <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="salon-name">Salon Name <span class="text-secondary">*</span></label>
                   <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-tertiary"><span class="material-symbols-outlined text-lg">store</span></span>
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted"><span class="material-symbols-outlined text-lg">store</span></span>
                     <input id="salon-name" type="text" name="name" placeholder="e.g., Luxe Grooming Studio & Spa" [ngModel]="p().name" (ngModelChange)="patch({ name: $event })" (blur)="touched.set(true)"
                       class="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:ring-2 focus:outline-none transition-all placeholder:text-outline/60"
                       [class]="nameOk() || !touched() ? 'border-outline-variant/40 focus:border-primary focus:ring-primary/20' : 'border-error focus:border-error focus:ring-error/20'" />
                   </div>
-                  <p class="text-body-sm font-body-sm mt-1" [class]="nameOk() || !touched() ? 'text-tertiary' : 'text-error'">
+                  <p class="text-body-sm font-body-sm mt-1" [class]="nameOk() || !touched() ? 'text-muted' : 'text-error'">
                     {{ nameOk() || !touched() ? 'This is the customer-facing name displayed in search and booking receipts.' : 'Enter your salon name (at least 2 characters).' }}
                   </p>
                 </div>
@@ -75,7 +75,7 @@ const INPUT =
                         <span class="material-symbols-outlined text-2xl">cloud_upload</span>
                       </div>
                       <p class="text-label-md font-label-md text-on-surface">Upload salon logo (PNG, JPG up to 5MB)</p>
-                      <p class="text-body-sm font-body-sm text-tertiary mt-0.5">Drag and drop here, or <span class="text-primary font-semibold underline">browse file</span></p>
+                      <p class="text-body-sm font-body-sm text-muted mt-0.5">Drag and drop here, or <span class="text-primary font-semibold underline">browse file</span></p>
                     </label>
                     <div class="md:col-span-4 flex items-center gap-3 p-3 bg-surface-container rounded-xl border border-outline-variant/30">
                       <div class="relative w-14 h-14 rounded-lg bg-surface-container-lowest flex items-center justify-center overflow-hidden border border-outline-variant/30 p-1 shrink-0">
@@ -88,20 +88,20 @@ const INPUT =
                       <div class="flex-1 min-w-0">
                         @if (p().logo) {
                           <p class="text-label-md font-label-md text-on-surface truncate">{{ logoName() }}</p>
-                          <p class="text-body-sm font-body-sm text-tertiary">{{ logoSize() }} • Done</p>
+                          <p class="text-body-sm font-body-sm text-muted">{{ logoSize() }} • Done</p>
                           <div class="flex items-center gap-2 mt-1">
                             <label class="text-label-sm font-label-sm text-primary hover:underline flex items-center gap-0.5 cursor-pointer">
                               <input type="file" class="sr-only" accept="image/png,image/jpeg" (change)="onFile($any($event.target).files?.[0])" />
                               <span class="material-symbols-outlined text-xs">edit</span> Edit
                             </label>
-                            <span class="text-tertiary text-xs">•</span>
+                            <span class="text-muted text-xs">•</span>
                             <button type="button" class="text-label-sm font-label-sm text-secondary hover:underline flex items-center gap-0.5" (click)="removeLogo()">
                               <span class="material-symbols-outlined text-xs">delete</span> Remove
                             </button>
                           </div>
                         } @else {
                           <p class="text-label-md font-label-md text-on-surface">No logo yet</p>
-                          <p class="text-body-sm font-body-sm text-tertiary">Initials will be used</p>
+                          <p class="text-body-sm font-body-sm text-muted">Initials will be used</p>
                         }
                       </div>
                     </div>
@@ -118,7 +118,7 @@ const INPUT =
                           class="px-4 py-2 rounded-lg border text-label-md font-label-md flex items-center gap-1.5 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-primary"
                           [class]="p().category === c.value ? 'border-primary bg-primary text-on-primary shadow-sm' : 'border-outline-variant/40 bg-surface-container-lowest text-on-surface hover:border-primary hover:bg-surface-container-low'"
                         >
-                          <span class="material-symbols-outlined text-base" [class.text-tertiary]="p().category !== c.value">{{ c.icon }}</span>
+                          <span class="material-symbols-outlined text-base" [class.text-muted]="p().category !== c.value">{{ c.icon }}</span>
                           {{ c.value }}
                         </div>
                       </label>
@@ -144,19 +144,19 @@ const INPUT =
                         </div>
                       }
                     </div>
-                    <p class="text-body-sm font-body-sm mt-1" [class]="phoneOk() || !touched() ? 'text-tertiary' : 'text-error'">
+                    <p class="text-body-sm font-body-sm mt-1" [class]="phoneOk() || !touched() ? 'text-muted' : 'text-error'">
                       {{ phoneOk() || !touched() ? 'Clients will receive SMS & WhatsApp confirmations from this line.' : 'Enter a valid 10-digit mobile number.' }}
                     </p>
                   </div>
                   <div>
                     <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="email-address">Official Email Address <span class="text-secondary">*</span></label>
                     <div class="relative">
-                      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-tertiary"><span class="material-symbols-outlined text-lg">mail</span></span>
+                      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted"><span class="material-symbols-outlined text-lg">mail</span></span>
                       <input id="email-address" type="email" name="email" [ngModel]="p().email" (ngModelChange)="patch({ email: $event })" (blur)="touched.set(true)"
                         class="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:ring-2 focus:outline-none"
                         [class]="emailOk() || !touched() ? 'border-outline-variant/40 focus:border-primary focus:ring-primary/20' : 'border-error focus:border-error focus:ring-error/20'" />
                     </div>
-                    <p class="text-body-sm font-body-sm mt-1" [class]="emailOk() || !touched() ? 'text-tertiary' : 'text-error'">
+                    <p class="text-body-sm font-body-sm mt-1" [class]="emailOk() || !touched() ? 'text-muted' : 'text-error'">
                       {{ emailOk() || !touched() ? 'Used for billing receipts and administrative alerts.' : 'Enter a valid email address.' }}
                     </p>
                   </div>
@@ -198,7 +198,7 @@ const INPUT =
                             <option [value]="s[0]">{{ s[1] }}</option>
                           }
                         </select>
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-tertiary"><span class="material-symbols-outlined text-sm">expand_more</span></span>
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-muted"><span class="material-symbols-outlined text-sm">expand_more</span></span>
                       </div>
                     </div>
                   </div>
@@ -209,7 +209,7 @@ const INPUT =
                         <span class="material-symbols-outlined text-sm text-secondary" style="font-variation-settings: 'FILL' 1;">pin_drop</span>
                         <span>Pin dropped on map</span>
                       </div>
-                      <span class="text-tertiary font-mono text-[11px]">{{ coords() }}</span>
+                      <span class="text-muted font-mono text-[11px]">{{ coords() }}</span>
                     </div>
                     <div class="relative h-44 w-full bg-[#E5ECE9] overflow-hidden flex items-center justify-center">
                       <div class="absolute inset-0 opacity-40 transition-transform duration-300" [style.transform]="'scale(' + zoom() + ')'">
@@ -250,9 +250,9 @@ const INPUT =
                   <span class="material-symbols-outlined text-primary text-lg">smartphone</span>
                   <h2 class="text-label-lg font-label-lg text-on-surface">Client Discovery Preview</h2>
                 </div>
-                <span class="text-label-sm font-label-sm px-2 py-0.5 bg-surface-container text-tertiary rounded-full">Mobile Feed</span>
+                <span class="text-label-sm font-label-sm px-2 py-0.5 bg-surface-container text-muted rounded-full">Mobile Feed</span>
               </div>
-              <p class="text-body-sm font-body-sm text-tertiary mb-4">Here is how your storefront appears to clients searching for salons.</p>
+              <p class="text-body-sm font-body-sm text-muted mb-4">Here is how your storefront appears to clients searching for salons.</p>
               <div class="bg-surface-container-low p-3 rounded-2xl border border-outline-variant/30 max-w-xs mx-auto">
                 <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-level-1 border border-outline-variant/20">
                   <div class="h-32 bg-surface-container relative">
@@ -274,7 +274,7 @@ const INPUT =
                       </div>
                     </div>
                     <h4 class="font-headline-sm text-sm font-bold text-on-surface truncate mt-0.5">{{ p().name || 'Your salon name' }}</h4>
-                    <p class="text-[11px] text-tertiary truncate">{{ areaLine() }}</p>
+                    <p class="text-[11px] text-muted truncate">{{ areaLine() }}</p>
                     <div class="flex items-center gap-1.5 mt-2 flex-wrap">
                       @for (t of previewTags(); track t) {
                         <span class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-on-surface-variant font-medium">{{ t }}</span>
@@ -302,21 +302,21 @@ const INPUT =
                   <div class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">40%</div>
                   <div>
                     <h4 class="text-label-md font-label-md text-on-surface font-semibold">Boost Visual Discovery</h4>
-                    <p class="text-body-sm font-body-sm text-tertiary mt-0.5">Clear salon logos and storefront photos increase client booking conversion by 40%.</p>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">Clear salon logos and storefront photos increase client booking conversion by 40%.</p>
                   </div>
                 </div>
                 <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
                   <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">pin_drop</span>
                   <div>
                     <h4 class="text-label-md font-label-md text-on-surface font-semibold">Precise Pinning</h4>
-                    <p class="text-body-sm font-body-sm text-tertiary mt-0.5">Accurate map pins reduce missed appointments and direct first-time walk-ins smoothly.</p>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">Accurate map pins reduce missed appointments and direct first-time walk-ins smoothly.</p>
                   </div>
                 </div>
                 <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
                   <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">schedule</span>
                   <div>
                     <h4 class="text-label-md font-label-md text-on-surface font-semibold">Next: Menu &amp; Pricing</h4>
-                    <p class="text-body-sm font-body-sm text-tertiary mt-0.5">In Step 2, you'll configure your service catalogue and durations.</p>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">In Step 2, you'll configure your service catalogue and durations.</p>
                   </div>
                 </div>
               </div>
@@ -328,7 +328,7 @@ const INPUT =
       <footer class="sticky bottom-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20 shadow-level-2 py-3 px-4 md:px-8 mt-auto">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="text-label-md font-label-md text-tertiary hidden sm:inline">Step 1 of 4: Salon Details</span>
+            <span class="text-label-md font-label-md text-muted hidden sm:inline">Step 1 of 4: Salon Details</span>
             <span class="text-outline-variant hidden sm:inline">•</span>
             <span class="text-xs font-medium flex items-center gap-1" [class]="valid() ? 'text-primary' : 'text-secondary'">
               <span class="material-symbols-outlined text-sm">{{ valid() ? 'check_circle' : 'error' }}</span>

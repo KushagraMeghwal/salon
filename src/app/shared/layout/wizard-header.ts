@@ -21,7 +21,7 @@ export const WIZARD_STEPS = [
       <div class="flex items-center gap-3 min-w-0">
         <app-salon-mark size="sm" />
         <span class="text-headline-md font-headline-md font-bold text-primary tracking-tight truncate max-w-40 md:max-w-56">{{ store.profile().name || 'Your Salon' }}</span>
-        <span class="hidden lg:inline-flex ml-2 px-2 py-0.5 rounded-full bg-surface-container text-tertiary text-label-sm font-label-sm border border-outline-variant/30">Partner Setup</span>
+        <span class="hidden lg:inline-flex ml-2 px-2 py-0.5 rounded-full bg-surface-container text-muted text-label-sm font-label-sm border border-outline-variant/30">Partner Setup</span>
       </div>
 
       <nav class="hidden md:flex items-center gap-6 lg:gap-8">
@@ -39,8 +39,8 @@ export const WIZARD_STEPS = [
               <span>{{ s.n }}. {{ s.label }}</span>
             </a>
           } @else {
-            <span class="text-tertiary flex items-center gap-2 text-label-md font-label-md">
-              <span class="w-5 h-5 rounded-full bg-surface-container-high text-tertiary text-label-sm font-label-sm flex items-center justify-center">{{ s.n }}</span>
+            <span class="text-muted flex items-center gap-2 text-label-md font-label-md">
+              <span class="w-5 h-5 rounded-full bg-surface-container-high text-muted text-label-sm font-label-sm flex items-center justify-center">{{ s.n }}</span>
               <span>{{ s.n }}. {{ s.label }}</span>
             </span>
           }
@@ -48,7 +48,7 @@ export const WIZARD_STEPS = [
       </nav>
 
       <div class="flex items-center gap-2 md:gap-3">
-        <button type="button" class="hidden sm:block p-2 text-tertiary hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors duration-150" title="Help & Guides" (click)="toast.info('Partner support: support@chairly.app')">
+        <button type="button" class="hidden sm:block p-2 text-muted hover:text-on-surface rounded-lg hover:bg-surface-container-low transition-colors duration-150" title="Help & Guides" (click)="toast.info('Partner support: support@chairly.app')">
           <span class="material-symbols-outlined text-xl">help_outline</span>
         </button>
         @if (!complete()) {

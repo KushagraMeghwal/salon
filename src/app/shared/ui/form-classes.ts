@@ -4,4 +4,4 @@ export const INPUT =
 export const LABEL = 'block text-label-md font-label-md text-on-surface mb-1';
 export const BTN_PRIMARY =
   'px-5 py-2 rounded-lg text-label-md font-label-md bg-primary text-on-primary hover:bg-primary-container font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
-export const BTN_GHOST = 'px-4 py-2 rounded-lg text-label-md font-label-md text-tertiary hover:text-on-surface';
+export const BTN_GHOST = 'px-4 py-2 rounded-lg text-label-md font-label-md text-muted hover:text-on-surface';

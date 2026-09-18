@@ -1,9 +1,8 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { SalonStore } from '../../core/services/salon.store';
-import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-customer-nav',
@@ -19,26 +18,15 @@ import { ToastService } from '../../core/services/toast.service';
         <span class="text-label-sm font-label-sm mt-0.5">{{ 'nav.appointments' | translate }}</span>
         @if (bk.isActive) { <span class="w-1.5 h-1.5 rounded-full bg-primary mt-0.5"></span> }
       </a>
-      <button type="button" (click)="profile()" class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors duration-150 active:scale-95 py-1 px-3">
-        <span class="material-symbols-outlined text-2xl">person</span>
+      <a [routerLink]="auth.customer() ? '/my/profile' : '/login'" routerLinkActive #pf="routerLinkActive" class="flex flex-col items-center justify-center active:scale-95 transition-transform duration-150 py-1 px-3" [class]="pf.isActive ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'">
+        <span class="material-symbols-outlined text-2xl" [style.font-variation-settings]="pf.isActive ? '\\'FILL\\' 1' : null">person</span>
         <span class="text-label-sm font-label-sm mt-0.5">{{ (auth.customer() ? 'nav.profile' : 'nav.signIn') | translate }}</span>
-      </button>
+      </a>
     </nav>
   `,
 })
 export class CustomerNav {
   protected readonly store = inject(SalonStore);
   protected readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
 
-  profile() {
-    if (this.auth.customer()) {
-      this.auth.logoutCustomer();
-      this.toast.info('Signed out');
-      this.router.navigate(['/s', this.store.profile().slug]);
-    } else {
-      this.router.navigate(['/login']);
-    }
-  }
 }

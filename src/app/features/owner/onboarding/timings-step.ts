@@ -30,10 +30,10 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
         <div class="mb-8">
           <div class="flex items-center gap-2 mb-1.5">
             <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm uppercase tracking-wide">Step 3 of 4</span>
-            <span class="text-tertiary text-xs">• Approx. 3 mins remaining</span>
+            <span class="text-muted text-xs">• Approx. 3 mins remaining</span>
           </div>
           <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Working Hours &amp; Booking Slot Rules</h1>
-          <p class="font-body-lg text-body-lg text-tertiary mt-1">Configure weekly schedule, staff lunch breaks, and appointment slot generation.</p>
+          <p class="font-body-lg text-body-lg text-muted mt-1">Configure weekly schedule, staff lunch breaks, and appointment slot generation.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -42,7 +42,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
               <div class="flex items-center justify-between gap-3 pb-4 border-b border-outline-variant/20 mb-4">
                 <div>
                   <h2 class="font-headline-md text-headline-md text-on-surface">Operating Hours (Weekly)</h2>
-                  <p class="font-body-sm text-body-sm text-tertiary">Set when your salon chairs are accessible for client appointments.</p>
+                  <p class="font-body-sm text-body-sm text-muted">Set when your salon chairs are accessible for client appointments.</p>
                 </div>
                 <button type="button" (click)="applyMonday()" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 shrink-0">
                   <span class="material-symbols-outlined text-sm">content_copy</span> Apply Mon to All
@@ -58,17 +58,17 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                     @if (t.open) {
                       <div class="flex items-center gap-2">
                         <div [class]="timeBox">
-                          <span class="material-symbols-outlined text-tertiary text-sm mr-1.5">schedule</span>
+                          <span class="material-symbols-outlined text-muted text-sm mr-1.5">schedule</span>
                           <input type="time" [class]="timeInput" [ngModel]="t.start" (ngModelChange)="store.patchTiming($index, { start: $event })" [attr.aria-label]="days[$index] + ' opens'" />
                         </div>
-                        <span class="text-tertiary text-xs font-semibold">to</span>
+                        <span class="text-muted text-xs font-semibold">to</span>
                         <div [class]="timeBox">
-                          <span class="material-symbols-outlined text-tertiary text-sm mr-1.5">schedule</span>
+                          <span class="material-symbols-outlined text-muted text-sm mr-1.5">schedule</span>
                           <input type="time" [class]="timeInput" [ngModel]="t.end" (ngModelChange)="store.patchTiming($index, { end: $event })" [attr.aria-label]="days[$index] + ' closes'" />
                         </div>
                       </div>
                     } @else {
-                      <span class="text-xs font-semibold text-tertiary bg-surface-container px-3 py-1.5 rounded-lg">Closed</span>
+                      <span class="text-xs font-semibold text-muted bg-surface-container px-3 py-1.5 rounded-lg">Closed</span>
                     }
                   </div>
                 }
@@ -83,7 +83,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                   </div>
                   <div>
                     <h3 class="font-headline-sm text-headline-sm text-on-surface">Daily Lunch / Sanitization Break</h3>
-                    <p class="font-body-sm text-body-sm text-tertiary">All stylist chairs pause simultaneously</p>
+                    <p class="font-body-sm text-body-sm text-muted">All stylist chairs pause simultaneously</p>
                   </div>
                 </div>
                 <app-toggle [checked]="store.brk().enabled" (checkedChange)="store.brk.update(b => ({ ...b, enabled: $event }))" label="Daily break" />
@@ -91,14 +91,14 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
               @if (store.brk().enabled) {
                 <div class="mt-4 pt-4 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-semibold text-tertiary">Break Interval:</span>
+                    <span class="text-xs font-semibold text-muted">Break Interval:</span>
                     <div class="flex items-center bg-surface-bright px-3 py-1.5 border border-outline-variant/40 rounded-lg text-xs font-medium gap-1">
-                      <span class="material-symbols-outlined text-tertiary text-sm mr-1">timelapse</span>
+                      <span class="material-symbols-outlined text-muted text-sm mr-1">timelapse</span>
                       <input type="time" [class]="timeInput" [ngModel]="store.brk().start" (ngModelChange)="store.brk.update(b => ({ ...b, start: $event }))" aria-label="Break starts" />
                       <span>-</span>
                       <input type="time" [class]="timeInput" [ngModel]="store.brk().end" (ngModelChange)="store.brk.update(b => ({ ...b, end: $event }))" aria-label="Break ends" />
                     </div>
-                    <span class="text-xs" [class]="breakMins() > 0 ? 'text-tertiary' : 'text-error'">({{ breakMins() > 0 ? breakMins() + ' mins' : 'end must be after start' }})</span>
+                    <span class="text-xs" [class]="breakMins() > 0 ? 'text-muted' : 'text-error'">({{ breakMins() > 0 ? breakMins() + ' mins' : 'end must be after start' }})</span>
                   </div>
                   <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" class="w-4 h-4 rounded text-primary focus:ring-primary border-outline-variant/60" [checked]="store.brk().blockSlots" (change)="store.brk.update(b => ({ ...b, blockSlots: $any($event.target).checked }))" />
@@ -113,7 +113,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1">
               <div class="pb-4 border-b border-outline-variant/20 mb-5">
                 <h2 class="font-headline-md text-headline-md text-on-surface">Slot Generation Engine</h2>
-                <p class="font-body-sm text-body-sm text-tertiary">Choose how the salon schedule is partitioned into bookable time windows.</p>
+                <p class="font-body-sm text-body-sm text-muted">Choose how the salon schedule is partitioned into bookable time windows.</p>
               </div>
 
               <div class="space-y-4" role="radiogroup">
@@ -128,7 +128,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                         </div>
                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
                       </div>
-                      <p class="font-body-sm text-body-sm text-tertiary mt-1">Smart Engine: dynamically builds slots based on selected service length and client turnover buffer.</p>
+                      <p class="font-body-sm text-body-sm text-muted mt-1">Smart Engine: dynamically builds slots based on selected service length and client turnover buffer.</p>
                       <div class="mt-3 flex flex-wrap items-center gap-4 pt-3 border-t border-primary/20 text-xs text-on-surface">
                         <div class="flex items-center gap-1.5">
                           <span class="material-symbols-outlined text-sm text-primary">hourglass_empty</span>
@@ -150,11 +150,11 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                     <div class="flex-1">
                       <div class="flex items-center justify-between">
                         <span class="font-headline-sm text-headline-sm text-on-surface">Custom slots (fixed intervals)</span>
-                        <span class="material-symbols-outlined text-tertiary">tune</span>
+                        <span class="material-symbols-outlined text-muted">tune</span>
                       </div>
-                      <p class="font-body-sm text-body-sm text-tertiary mt-1">Set fixed slot intervals e.g., 30 min / 45 min / 60 min, starting from opening time.</p>
+                      <p class="font-body-sm text-body-sm text-muted mt-1">Set fixed slot intervals e.g., 30 min / 45 min / 60 min, starting from opening time.</p>
                       <div class="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-outline-variant/20 text-xs">
-                        <span class="text-tertiary font-medium">Standard Interval:</span>
+                        <span class="text-muted font-medium">Standard Interval:</span>
                         @for (i of store.customIntervals(); track i) {
                           <button type="button" (click)="pickInterval(i)" class="px-2.5 py-1 rounded border text-xs font-medium transition-colors" [class]="store.slotMode() === 'custom' && store.customInterval() === i ? 'bg-primary text-on-primary border-primary' : 'bg-white border-outline-variant/40 hover:border-primary text-on-surface'">{{ i }} min</button>
                         }
@@ -177,15 +177,15 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-lg">visibility</span>
                     <h3 class="font-headline-sm text-headline-sm text-on-surface">Visual Slot Preview</h3>
-                    <span class="text-xs text-tertiary">(Sample generation for Today)</span>
+                    <span class="text-xs text-muted">(Sample generation for Today)</span>
                   </div>
                   <div class="flex items-center gap-3 text-[11px] font-label-sm">
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border border-primary bg-white inline-block"></span><span class="text-tertiary">Available</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span><span class="text-tertiary">Selected</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-surface-variant inline-block"></span><span class="text-tertiary">Busy</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border border-primary bg-white inline-block"></span><span class="text-muted">Available</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span><span class="text-muted">Selected</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-surface-variant inline-block"></span><span class="text-muted">Busy</span></span>
                   </div>
                 </div>
-                <div class="bg-surface-bright border border-outline-variant/30 rounded-lg p-3 text-xs text-tertiary mb-4 flex items-center justify-between gap-3">
+                <div class="bg-surface-bright border border-outline-variant/30 rounded-lg p-3 text-xs text-muted mb-4 flex items-center justify-between gap-3">
                   @if (previewService(); as ps) {
                     <span>Showing generated slots for <strong class="text-on-surface">{{ ps.name }} ({{ ps.duration }} min)</strong>{{ store.slotMode() === 'auto' ? ' with ' + store.buffer() + ' min turnover buffer.' : ' every ' + store.customInterval() + ' min.' }}</span>
                     <button type="button" class="text-primary font-semibold hover:underline shrink-0" (click)="cycleService()">Change Service</button>
@@ -195,19 +195,19 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                 </div>
 
                 @if (todayClosed()) {
-                  <p class="text-center text-sm text-tertiary py-6">The salon is closed today. Slots are generated for open days.</p>
+                  <p class="text-center text-sm text-muted py-6">The salon is closed today. Slots are generated for open days.</p>
                 } @else {
                   <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                     @for (s of slots(); track s.start + '-' + s.kind) {
                       @if (s.kind === 'break') {
-                        <div class="col-span-2 cursor-not-allowed bg-surface-container border border-dashed border-outline-variant text-tertiary py-2 px-3 rounded-lg text-center font-label-md text-label-md flex items-center justify-center gap-2 opacity-80">
+                        <div class="col-span-2 cursor-not-allowed bg-surface-container border border-dashed border-outline-variant text-muted py-2 px-3 rounded-lg text-center font-label-md text-label-md flex items-center justify-center gap-2 opacity-80">
                           <span class="material-symbols-outlined text-sm">restaurant</span>
                           <span>{{ fmt(s.start) }} - {{ fmt(s.end) }} (Break)</span>
                         </div>
                       } @else if (s.booked) {
-                        <div class="cursor-not-allowed bg-surface-container-low border border-outline-variant/20 text-tertiary py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center line-through opacity-70">
+                        <div class="cursor-not-allowed bg-surface-container-low border border-outline-variant/20 text-muted py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center line-through opacity-70">
                           <span>{{ fmt(s.start) }}</span>
-                          <span class="text-[10px] text-tertiary no-underline">Booked</span>
+                          <span class="text-[10px] text-muted no-underline">Booked</span>
                         </div>
                       } @else if (selectedStart() === s.start) {
                         <button type="button" (click)="selectedStart.set(null)" class="bg-primary text-on-primary py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center shadow-level-2 transform -translate-y-0.5 transition-all">
@@ -222,7 +222,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                       }
                     }
                   </div>
-                  <p class="text-xs text-tertiary mt-3 text-right">Total {{ slotCount() }} appointment slots generated for a {{ workHours() }}-hour workday.</p>
+                  <p class="text-xs text-muted mt-3 text-right">Total {{ slotCount() }} appointment slots generated for a {{ workHours() }}-hour workday.</p>
                 }
               </div>
             </div>
@@ -238,7 +238,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
           </button>
           <div class="flex items-center gap-6">
             <div class="hidden md:flex flex-col text-right">
-              <span class="font-label-sm text-label-sm text-tertiary">Next Step:</span>
+              <span class="font-label-sm text-label-sm text-muted">Next Step:</span>
               <span class="font-headline-sm text-headline-sm text-on-surface">Step 4: Staff &amp; Team</span>
             </div>
             <button type="button" (click)="next()" class="inline-flex items-center gap-2 px-6 md:px-7 py-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg shadow-level-2 transition-all hover:scale-[1.01] active:scale-[0.99]">

@@ -59,7 +59,7 @@ import { StepBar } from '../../shared/customer/step-bar';
           </div>
           <div class="flex items-baseline gap-1.5 mt-0.5">
             <span class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">{{ inr(flow.totalPrice()) }}</span>
-            <span class="text-[11px] text-outline">incl. GST</span>
+            @if (store.settings().gstRegistered) { <span class="text-[11px] text-outline">incl. GST</span> }
           </div>
         </div>
         <button type="button" (click)="next()" class="flex-1 max-w-[240px] bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary py-3 px-space-md rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95" [class.opacity-60]="!flow.serviceIds().length">

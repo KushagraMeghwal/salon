@@ -5,6 +5,7 @@ import { AdminStore } from '../../../core/services/admin.store';
 import { LangService } from '../../../core/services/lang.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
+import { GSTIN_PATTERN } from '../../../core/utils/gst';
 import { dateKey, inr, toMin } from '../../../core/utils/time';
 import { Topbar } from '../../../shared/layout/topbar';
 import { BTN_GHOST, BTN_PRIMARY, INPUT, LABEL } from '../../../shared/ui/form-classes';
@@ -35,7 +36,7 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
       </ng-container>
     </app-topbar>
 
-    <main class="theme-v2 lg:pl-64 pt-16 min-h-screen bg-background">
+    <main class="lg:pl-64 pt-16 min-h-screen bg-background">
       <div class="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-outline-variant/20">
           <div>
@@ -87,10 +88,30 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div><label [class]="label" for="st-lang">Default Salon Language</label><select id="st-lang" [class]="select" disabled><option>English (India)</option></select></div>
               <div class="p-3.5 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-center justify-between gap-3 self-end"><div><div class="font-label-md text-label-md text-on-surface">Hindi Dual-Support</div><div class="font-body-sm text-body-sm text-on-surface-variant">हिन्दी toggle for customers &amp; staff</div></div><app-toggle [checked]="draft().settings.hindiSupport" (checkedChange)="patch({ hindiSupport: $event })" label="Hindi support" /></div>
-              <div><span [class]="label">Counter &amp; Online Currency</span><div class="flex items-center gap-3 p-3 bg-surface-container-lowest border border-outline-variant/50 rounded-xl"><div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center font-bold text-primary font-headline-sm">₹</div><div><span class="font-label-md text-label-md text-on-surface">INR (₹) - Indian Rupee</span><p class="font-body-sm text-body-sm text-outline">GST breakdown on invoices</p></div></div></div>
+              <div><span [class]="label">Counter &amp; Online Currency</span><div class="flex items-center gap-3 p-3 bg-surface-container-lowest border border-outline-variant/50 rounded-xl"><div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center font-bold text-primary font-headline-sm">₹</div><div><span class="font-label-md text-label-md text-on-surface">INR (₹) - Indian Rupee</span><p class="font-body-sm text-body-sm text-outline">All prices include GST</p></div></div></div>
             </div>
             <div class="pt-4 mt-4 border-t border-outline-variant/20 flex items-center justify-between text-on-surface-variant text-label-sm font-label-sm"><span>Timezone: Asia/Kolkata (IST)</span>
               <button type="button" (click)="previewHindi()" class="text-primary hover:underline">Preview in Hindi</button></div>
+          </div>
+
+          <div [class]="card">
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined">receipt_long</span></div>
+                <div>
+                  <h2 class="text-headline-sm font-headline-sm text-on-surface">GST &amp; Invoicing</h2>
+                  <p class="font-body-sm text-body-sm text-on-surface-variant">Prices are always GST-inclusive. {{ draft().settings.gstRegistered ? 'Bills show the tax breakdown inside the price.' : 'No GST is added or shown on bills.' }}</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 shrink-0"><span class="font-label-md text-label-md text-on-surface">GST registered</span><app-toggle [checked]="draft().settings.gstRegistered" (checkedChange)="patch({ gstRegistered: $event })" label="GST registered" /></div>
+            </div>
+            @if (draft().settings.gstRegistered) {
+              <div class="mt-4 pt-4 border-t border-outline-variant/20 max-w-md">
+                <label [class]="label" for="gstin">GSTIN</label>
+                <input id="gstin" type="text" maxlength="15" autocomplete="off" [class]="input + ' uppercase font-mono tracking-wider'" [class.border-error]="!gstinOk()" placeholder="29ABCDE1234F1Z5" [ngModel]="draft().settings.gstin" (ngModelChange)="patch({ gstin: ($event || '').toUpperCase() })" />
+                <p class="text-body-sm mt-1" [class]="gstinOk() ? 'text-outline' : 'text-error'">{{ gstinOk() ? 'Printed on every bill. GST rate: 18% (CGST 9% + SGST 9%).' : 'Enter a valid 15-character GSTIN, e.g. 29ABCDE1234F1Z5.' }}</p>
+              </div>
+            }
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -178,8 +199,8 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
               <div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[24px] text-primary">account_balance_wallet</span><h2 class="text-headline-md font-headline-md text-on-surface">Payout Accounts &amp; Banking Settlement</h2></div><p class="font-body-md text-body-md text-on-surface-variant mt-0.5">Customer payments go straight to your own bank account. Chairly never holds your money.</p></div>
               <button type="button" (click)="openBank()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-colors self-start sm:self-auto"><span class="material-symbols-outlined text-[18px]">add_card</span><span>{{ draft().settings.bank ? 'Change Bank Account' : 'Add Bank Account' }}</span></button>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div class="lg:col-span-2 p-5 rounded-2xl bg-surface-bright border border-outline-variant/50 flex flex-col justify-between space-y-4">
+            <div class="grid grid-cols-1 gap-6">
+              <div class="p-5 rounded-2xl bg-surface-bright border border-outline-variant/50 flex flex-col justify-between space-y-4">
                 @if (draft().settings.bank; as bank) {
                   <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="flex items-center gap-3.5"><div class="w-12 h-12 rounded-xl bg-tertiary-fixed/30 border border-tertiary/20 flex items-center justify-center text-tertiary"><span class="material-symbols-outlined text-[28px]">verified_user</span></div><div><div class="flex items-center gap-2 flex-wrap"><span class="font-label-lg text-label-lg text-on-surface font-bold">{{ bank.bankName }}</span><span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary/10 text-tertiary font-semibold">Connected</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Razorpay direct routing — activates when payments go live</p></div></div>
@@ -194,13 +215,6 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
                 } @else {
                   <div class="text-center py-8 text-on-surface-variant"><span class="material-symbols-outlined text-4xl text-primary/40">account_balance</span><p class="mt-2 font-label-lg text-label-lg text-on-surface">No bank account connected</p><p class="text-body-sm">Add one to receive online payments from customers.</p></div>
                 }
-              </div>
-              <div class="p-5 rounded-2xl bg-surface-bright border border-outline-variant/50 flex flex-col justify-between space-y-4">
-                <div>
-                  <div class="flex items-center justify-between mb-3"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[20px] text-secondary">bolt</span><span class="font-label-md text-label-md text-on-surface font-bold">Instant Payouts (On-Demand)</span></div><app-toggle [checked]="draft().settings.instantPayout" (checkedChange)="patch({ instantPayout: $event })" label="Instant payouts" /></div>
-                  <p class="font-body-sm text-body-sm text-on-surface-variant">Withdraw counter receipts instantly via IMPS 24x7 within 30 minutes.</p>
-                  <div class="mt-4 p-3 rounded-xl bg-surface-container-low border border-outline-variant/30"><span class="font-label-sm text-label-sm text-outline block">Convenience Fee</span><span class="font-label-md text-label-md text-on-surface font-semibold">0.15% per expedited transfer</span></div>
-                </div>
               </div>
             </div>
           </div>
@@ -266,6 +280,7 @@ export class OwnerSettings {
   protected bIfsc = '';
 
   protected readonly dirty = computed(() => JSON.stringify(this.draft()) !== JSON.stringify(this.snapshot()));
+  protected readonly gstinOk = computed(() => !this.draft().settings.gstRegistered || GSTIN_PATTERN.test(this.draft().settings.gstin));
   protected readonly breakMins = computed(() => toMin(this.draft().brk.end) - toMin(this.draft().brk.start));
   protected readonly trialDays = computed(() => this.admin.daysLeft(this.draft().settings.trialEndsAt));
   protected readonly planPrice = computed(() => this.admin.plans().find((p) => p.id === 'pro')?.price ?? 1999);
@@ -351,6 +366,7 @@ export class OwnerSettings {
   }
 
   save() {
+    if (!this.gstinOk()) return this.toast.error('Enter a valid GSTIN or turn off GST registered.');
     if (this.draft().brk.enabled && this.breakMins() <= 0) return this.toast.error('Break end must be after the break start.');
     const d = this.draft();
     this.store.settings.set(structuredClone(d.settings));

@@ -16,7 +16,8 @@ Roles come from **Auth custom claims**, set only by Cloud Functions: `role` (`cu
 | `platform/stats` | admin overview | superadmin | functions |
 | `salons/{id}` | profile, slug, timings, breaks, holidays, slotMode, customSlots, policy settings | anyone (get); owner/superadmin can list their own | owner (not `status/slug/ownerId/bookable`), superadmin |
 | `salons/{id}/services/{id}` | catalogue | anyone | owner (validated) |
-| `salons/{id}/staff/{id}` | public stylist card, services, working days | anyone | owner (validated) |
+| `salons/{id}/staff/{id}` | public stylist card, services, working days, `status` (`on-duty` / `off`, drives who can be seated from the queue) | anyone | owner (validated) |
+| `salons/{id}/queue/{id}` | today's walk-in queue (`waiting` / `in-chair`). Bill fields (`billNo`, `payMethod`, `billedAt`) and `done` are set by the billing function only | owner; stylists of the salon | owner (validated) |
 | `salons/{id}/staffPrivate/{id}` | phone, email, **commission %** | owner, that stylist | owner |
 | `salons/{id}/staffStats/{id}` | clients, revenue, commission | owner, that stylist | functions |
 | `salons/{id}/stats/{key}` | day/week/month earnings aggregates | owner | functions |

@@ -2,7 +2,7 @@ import { logger } from 'firebase-functions';
 import { Timestamp } from 'firebase-admin/firestore';
 import { CHECKOUT_HOLD_TTL_MS, RECEIPT_PREFIX } from '../config';
 import { fail, MESSAGES, RazorpayApiError } from '../lib/errors';
-import { priceServices, type PricedService } from '../lib/pricing';
+import { priceServices, type PricedService } from '../../../shared/src';
 import { staffDayId } from '../bookings/hold';
 import { getValidAccessToken } from './tokens';
 import { salonRef, type Deps } from './types';

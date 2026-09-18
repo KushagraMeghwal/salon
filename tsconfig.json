@@ -13,7 +13,8 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "target": "ES2022",
-    "module": "preserve"
+    "module": "preserve",
+    "paths": { "@chairly/shared": ["./shared/src/index.ts"] }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

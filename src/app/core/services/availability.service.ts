@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { slotStarts } from '@chairly/shared';
 import { SalonStore } from './salon.store';
 import { dateKey, toMin, LOCALE } from '../utils/time';
 
@@ -65,8 +66,7 @@ export class AvailabilityService {
     const earliest = isToday ? this.store.nowMin() + 30 : 0;
 
     const out: SlotOption[] = [];
-    for (let start = open; start + duration <= close; start += step) {
-      if (start < earliest) continue;
+    for (const start of slotStarts({ open, close, duration, step, earliest })) {
       const staffIds = pool.filter((s) => !this.store.checkBooking(date, s.id, start, duration, opts.ignoreBookingId)).map((s) => s.id);
       if (staffIds.length || opts.includeBusy) {
         out.push({ start, staffIds, period: start < 12 * 60 ? 'morning' : start < 17 * 60 ? 'afternoon' : 'evening' });

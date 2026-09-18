@@ -3,16 +3,9 @@ import { signal } from '@angular/core';
 /** Active display locale; read inside computed()/templates so date text follows the language switch. */
 export const LOCALE = signal('en-IN');
 
-export function toMin(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
-}
-
-export function toHHmm(min: number): string {
-  const h = Math.floor(min / 60) % 24;
-  const m = min % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
+// toMin / toHHmm live in shared/src/schedule.ts so the server uses the identical implementation.
+import { toMin, toHHmm } from '@chairly/shared';
+export { toMin, toHHmm };
 
 /** 545 -> "09:05 AM" */
 export function fmt12(min: number): string {

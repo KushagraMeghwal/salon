@@ -2,6 +2,7 @@ import { logger } from 'firebase-functions';
 import { Timestamp, type Transaction } from 'firebase-admin/firestore';
 import { verifyWebhookSignature, sha256 } from '../lib/signature';
 import { staffDayId } from '../bookings/hold';
+import { overlaps } from '../../../shared/src';
 import { COL, type BaseDeps } from './types';
 
 export interface WebhookRequest {
@@ -151,7 +152,7 @@ async function apply(d: BaseDeps, ev: RazorpayEvent): Promise<WebhookOutcome> {
     }
     if (b['status'] === 'expired') {
       // Paid after the hold was released. Confirm only if nobody took the slot meanwhile.
-      const clash = busy.some((x) => x.bookingId !== snap.id && b['start'] < x.end && b['end'] > x.start && (!x.holdUntil || x.holdUntil.toMillis() > now.getTime()));
+      const clash = busy.some((x) => x.bookingId !== snap.id && overlaps(b['start'], b['end'], x.start, x.end) && (!x.holdUntil || x.holdUntil.toMillis() > now.getTime()));
       if (!clash) {
         tx.set(dayRef, { busy: [...busy.filter((x) => x.bookingId !== snap.id), { bookingId: snap.id, start: b['start'], end: b['end'] }] });
         tx.update(ref, { ...paid, status: 'confirmed', confirmedAt: stamp, holdExpiresAt: null });

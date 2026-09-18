@@ -3,7 +3,7 @@ import {
   Bill, BillLine, Booking, Holiday, BreakSettings, CatalogService, DayTiming, PayMethod,
   CustomerRecord, QueueItem, SalonProfile, SalonSettings, StaffMember, StaffStats,
 } from '../models';
-import { splitGst } from '../utils/gst';
+import { cancellationFee, checkSalonRules, clampDiscount, effectiveTiming, overlaps, phoneKey, splitGst, weekdayIndex } from '@chairly/shared';
 import { dateKey, slugify, toMin } from '../utils/time';
 
 const STORAGE_KEY = 'chairly.salon.v1';
@@ -269,16 +269,8 @@ export class SalonStore {
     this.settings.update((s) => ({ ...s, holidays: s.holidays.filter((h) => h.id !== id) }));
   }
 
-  private weekdayIndex(date: string) {
-    const [y, m, d] = date.split('-').map(Number);
-    return (new Date(y, m - 1, d).getDay() + 6) % 7; // Mon=0
-  }
-
   dayTiming(date: string): DayTiming {
-    const t = this.timings()[this.weekdayIndex(date)];
-    const h = this.holidayOn(date);
-    if (!h) return t;
-    return h.type === 'full' ? { ...t, open: false } : { ...t, end: h.closeAt ?? t.end };
+    return effectiveTiming(this.timings(), this.settings().holidays, date);
   }
 
   /** Stylists who work on `date` and perform every one of `serviceIds`. */
@@ -304,7 +296,7 @@ export class SalonStore {
   /** Late-cancellation / reschedule fee under the salon policy. */
   cancellationFee(b: Booking) {
     const s = this.settings();
-    return this.hoursUntil(b) < s.cancelWindowHrs ? Math.round((b.price * s.latePenaltyPct) / 100) : 0;
+    return cancellationFee({ price: b.price, hoursUntil: this.hoursUntil(b), cancelWindowHrs: s.cancelWindowHrs, latePenaltyPct: s.latePenaltyPct });
   }
 
   cancelBooking(id: string) {
@@ -348,18 +340,18 @@ export class SalonStore {
 
   staffWorks(staffId: string, date: string) {
     const s = this.staffById(staffId);
-    return !!s && s.days[this.weekdayIndex(date)] && this.dayTiming(date).open;
+    return !!s && s.days[weekdayIndex(date)] && this.dayTiming(date).open;
   }
 
   checkBooking(date: string, staffId: string, start: number, duration: number, ignoreId?: string): string | null {
-    const t = this.dayTiming(date);
-    if (!t.open) return 'The salon is closed on this day.';
+    // Salon rules come from the shared module (identical on the server); staff and clash checks need local data.
+    const rule = checkSalonRules(this.dayTiming(date), this.brk(), start, duration);
+    if (rule === 'closed') return 'The salon is closed on this day.';
     if (!this.staffWorks(staffId, date)) return 'This stylist is not working on the selected day.';
-    if (start < toMin(t.start) || start + duration > toMin(t.end)) return 'Outside salon working hours.';
-    const b = this.brk();
-    if (b.enabled && b.blockSlots && start < toMin(b.end) && start + duration > toMin(b.start)) return 'Overlaps the daily break.';
+    if (rule === 'hours') return 'Outside salon working hours.';
+    if (rule === 'break') return 'Overlaps the daily break.';
     const clash = this.bookingsFor(date).some(
-      (x) => x.staffId === staffId && x.id !== ignoreId && start < x.start + x.duration && start + duration > x.start,
+      (x) => x.staffId === staffId && x.id !== ignoreId && overlaps(start, start + duration, x.start, x.start + x.duration),
     );
     return clash ? 'This stylist already has a booking in that time.' : null;
   }
@@ -469,7 +461,7 @@ export class SalonStore {
     client: string; phone: string; lines: BillLine[]; discount: number; couponCode?: string; method: PayMethod; queueId?: string | null;
   }): Bill {
     const subtotal = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
-    const discount = Math.min(subtotal, Math.max(0, input.discount));
+    const discount = clampDiscount(subtotal, input.discount);
     const total = subtotal - discount;
     const { gstRegistered, gstin } = this.settings();
     const tax = splitGst(total, gstRegistered);
@@ -510,7 +502,7 @@ export class SalonStore {
 
   // ---------- customers ----------
   private phoneKey(phone: string) {
-    return phone.replace(/\D/g, '').slice(-10);
+    return phoneKey(phone);
   }
 
   noShowsOf(phone: string) {

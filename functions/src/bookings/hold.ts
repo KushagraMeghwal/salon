@@ -1,8 +1,8 @@
 import { logger } from 'firebase-functions';
 import { Timestamp, type Transaction } from 'firebase-admin/firestore';
-import { HOLD_TTL_MS, SALON_UTC_OFFSET_MIN } from '../config';
+import { HOLD_TTL_MS } from '../config';
 import { fail, MESSAGES } from '../lib/errors';
-import { priceServices, type PricedService } from '../lib/pricing';
+import { checkSalonRules, effectiveTiming, istNow, overlaps, priceServices, weekdayIndex, type PricedService } from '../../../shared/src';
 import { sha256 } from '../lib/signature';
 import type { BaseDeps } from '../razorpay/types';
 
@@ -27,38 +27,8 @@ export interface HoldInput {
   customerPhone: string;
 }
 
-const toMin = (hhmm: string) => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
-};
-const weekdayIndex = (date: string) => {
-  const [y, m, dd] = date.split('-').map(Number);
-  return (new Date(Date.UTC(y, m - 1, dd)).getUTCDay() + 6) % 7; // Mon = 0
-};
 export const staffDayId = (staffId: string, date: string) => `${staffId}_${date}`;
 export const bookingIdFor = (uid: string, requestId: string) => sha256(`${uid}:${requestId}`).slice(0, 20);
-
-/** IST "now" as { date, minutes }. */
-export function istNow(now: Date) {
-  const shifted = new Date(now.getTime() + SALON_UTC_OFFSET_MIN * 60_000);
-  return { date: shifted.toISOString().slice(0, 10), minutes: shifted.getUTCHours() * 60 + shifted.getUTCMinutes() };
-}
-
-/** Salon-level rules (open day, hours, holiday, daily break). Mirrors SalonStore.dayTiming/checkBooking on the client. */
-function salonAllows(salon: FirebaseFirestore.DocumentData, date: string, start: number, duration: number): string | null {
-  const t = salon['timings']?.[weekdayIndex(date)];
-  if (!t?.open) return MESSAGES.badInput;
-  let end: string = t.end;
-  const h = (salon['holidays'] ?? []).find((x: { date: string }) => x.date === date);
-  if (h) {
-    if (h.type === 'full') return MESSAGES.badInput;
-    end = h.closeAt ?? end;
-  }
-  if (start < toMin(t.start) || start + duration > toMin(end)) return MESSAGES.badInput;
-  const b = salon['breaks'];
-  if (b?.enabled && b.blockSlots && start < toMin(b.end) && start + duration > toMin(b.start)) return MESSAGES.badInput;
-  return null;
-}
 
 /**
  * Holds a slot for online payment inside one Firestore transaction. The staffDays document is the lock: two
@@ -92,8 +62,8 @@ export async function createHeldBooking(d: BaseDeps, input: HoldInput): Promise<
     });
     const { price, duration } = priceServices(services);
     const end = input.start + duration;
-    const err = salonAllows(salon, input.date, input.start, duration);
-    if (err) fail('failed-precondition', err, { reason: 'salon-rules' });
+    const violation = checkSalonRules(effectiveTiming(salon['timings'], salon['holidays'] ?? [], input.date), salon['breaks'], input.start, duration);
+    if (violation) fail('failed-precondition', MESSAGES.badInput, { reason: 'salon-rules', violation });
 
     // Candidate stylists: the requested one, or every eligible one for 'any'.
     const staffSnaps =
@@ -114,7 +84,7 @@ export async function createHeldBooking(d: BaseDeps, input: HoldInput): Promise<
     for (let i = 0; i < candidates.length; i++) {
       // Expired holds no longer block the slot.
       const live = ((daySnaps[i].data()?.['busy'] ?? []) as Busy[]).filter((x) => !x.holdUntil || x.holdUntil.toMillis() > now.getTime());
-      if (!live.some((x) => input.start < x.end && end > x.start)) {
+      if (!live.some((x) => overlaps(input.start, end, x.start, x.end))) {
         chosen = i;
         busyList = live;
         break;

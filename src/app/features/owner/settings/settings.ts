@@ -1,9 +1,11 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { BankAccount, BreakSettings, Holiday, SalonSettings } from '../../../core/models';
 import { AdminStore } from '../../../core/services/admin.store';
 import { LangService } from '../../../core/services/lang.service';
+import { PaymentConnectService } from '../../../core/services/payment-connect.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { GSTIN_PATTERN } from '../../../core/utils/gst';
@@ -195,6 +197,52 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
         }
 
         @if (tab() === 'payments') {
+          <div [class]="card + ' lg:p-7 space-y-5'" data-testid="razorpay-card">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
+              <div>
+                <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[24px] text-primary">credit_score</span><h2 class="text-headline-md font-headline-md text-on-surface">{{ "Online Payments with Razorpay" | translate }}</h2></div>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-0.5">{{ "Connect your own Razorpay account. Customer payments settle directly into it; Chairly never holds your money." | translate }}</p>
+              </div>
+              @switch (rzp.status()) {
+                @case ('CONNECTED') { <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-label-md text-label-md font-semibold self-start whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-tertiary"></span>{{ "Payment Connected" | translate }}</span> }
+                @case ('PENDING') { <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 font-label-md text-label-md font-semibold self-start whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>{{ "Pending" | translate }}</span> }
+                @case ('FAILED') { <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error/10 text-error font-label-md text-label-md font-semibold self-start whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-error"></span>{{ "Failed" | translate }}</span> }
+                @default { <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold self-start whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-outline"></span>{{ "Not connected" | translate }}</span> }
+              }
+            </div>
+
+            @switch (rzp.status()) {
+              @case ('CONNECTED') {
+                <div class="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-surface-bright border border-outline-variant/50">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-xl bg-tertiary-fixed/30 border border-tertiary/20 flex items-center justify-center text-tertiary"><span class="material-symbols-outlined text-[28px]">verified_user</span></div>
+                    <div>
+                      <p class="font-label-lg text-label-lg text-on-surface font-bold">{{ "Razorpay Connected ✓" | translate }}</p>
+                      <p class="font-body-sm text-body-sm text-on-surface-variant"><span class="font-mono">{{ rzp.maskedAccount() }}</span>@if (rzp.connectedAt()) { <span> · {{ "Connected on {{p1}}" | translate: { p1: connectedDate() } }}</span> }</p>
+                    </div>
+                  </div>
+                  <button type="button" (click)="rzp.disconnect()" [disabled]="rzp.busy()" class="px-4 py-2 rounded-xl border border-error/40 text-error hover:bg-error-container/40 font-label-md text-label-md font-semibold transition-colors disabled:opacity-60">{{ "Disconnect" | translate }}</button>
+                </div>
+              }
+              @case ('PENDING') {
+                <div class="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/30 text-on-surface-variant"><span class="material-symbols-outlined text-amber-600 animate-spin">progress_activity</span><p class="font-body-md text-body-md">{{ "Razorpay connection is being completed." | translate }}</p></div>
+              }
+              @default {
+                @if (rzp.status() === 'FAILED') {
+                  <div class="flex items-center gap-3 p-4 rounded-2xl bg-error/5 border border-error/30 text-error"><span class="material-symbols-outlined">error</span><p class="font-body-md text-body-md">{{ "Razorpay connection failed. Please try again." | translate }}</p></div>
+                }
+                @if (rzp.status() === 'REVOKED') {
+                  <div class="flex items-center gap-3 p-4 rounded-2xl bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined">link_off</span><p class="font-body-md text-body-md">{{ "Razorpay was disconnected. Customers cannot pay online until you reconnect." | translate }}</p></div>
+                }
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <p class="font-body-sm text-body-sm text-on-surface-variant max-w-xl">{{ "You will finish KYC and bank details on Razorpay's own pages. Chairly never sees your keys or documents." | translate }}</p>
+                  <button type="button" (click)="rzp.connect()" [disabled]="rzp.busy()" class="px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">link</span>{{ "Connect Razorpay" | translate }}</button>
+                </div>
+              }
+            }
+            @if (rzp.error()) { <p class="text-error font-body-sm text-body-sm">{{ rzp.error() | translate }}</p> }
+          </div>
+
           <div [class]="card + ' lg:p-7 space-y-6'">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
               <div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[24px] text-primary">account_balance_wallet</span><h2 class="text-headline-md font-headline-md text-on-surface">{{ "Payout Accounts & Banking Settlement" | translate }}</h2></div><p class="font-body-md text-body-md text-on-surface-variant mt-0.5">{{ "Customer payments go straight to your own bank account. Chairly never holds your money." | translate }}</p></div>
@@ -255,6 +303,12 @@ export class OwnerSettings {
   protected readonly toast = inject(ToastService);
   private readonly lang = inject(LangService);
   private readonly admin = inject(AdminStore);
+  protected readonly rzp = inject(PaymentConnectService);
+  private readonly route = inject(ActivatedRoute);
+  protected readonly connectedDate = computed(() => {
+    const c = this.rzp.connectedAt();
+    return c ? new Date(c).toLocaleDateString(LOCALE(), { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  });
   protected readonly inr = inr;
   protected readonly tabs = TABS;
   protected readonly buffers = [5, 10, 15, 20];
@@ -268,6 +322,12 @@ export class OwnerSettings {
   protected readonly todayKey = dateKey(new Date());
 
   protected readonly tab = signal<Tab>('general');
+
+  constructor() {
+    const flag = this.route.snapshot.queryParamMap.get('razorpay');
+    if (flag) this.tab.set('payments');
+    void this.rzp.load().then(() => this.rzp.handleReturn(flag));
+  }
   protected readonly draft = signal<Draft>(this.snapshot());
   protected readonly holidayOpen = signal(false);
   protected readonly bankOpen = signal(false);

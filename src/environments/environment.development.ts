@@ -3,6 +3,8 @@
 // from environment.ts.
 export const environment = {
   production: false,
+  // 'mock' keeps Razorpay simulated in the browser (until the app is wired to Firebase Auth + Firestore); 'live' calls the Cloud Functions.
+  paymentsMode: 'mock' as 'mock' | 'live',
   useEmulators: true,
   firebase: {
     apiKey: 'demo-key',

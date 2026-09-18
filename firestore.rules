@@ -40,7 +40,8 @@ service cloud.firestore {
     function validSalonFields() {
       return onlyKeys([
         'ownerId', 'status', 'bookable', 'slug', 'profile', 'logoUrl', 'timings', 'breaks', 'holidays',
-        'slotMode', 'customSlots', 'buffer', 'settings', 'createdAt', 'updatedAt'
+        'slotMode', 'customSlots', 'buffer', 'settings', 'createdAt', 'updatedAt',
+        'paymentProvider', 'paymentConnection' // function-managed (Razorpay); see the immutability checks on create/update
       ])
       && request.resource.data.profile is map
       && request.resource.data.profile.name is string
@@ -124,6 +125,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------- Razorpay server-only data (Admin SDK bypasses rules; no client may ever read or write) ----------
+    // OAuth tokens, single-use OAuth states, and the webhook idempotency ledger.
+    match /razorpayConnections/{docId} { allow read, write: if false; }
+    match /oauthStates/{docId} { allow read, write: if false; }
+    match /webhookEvents/{docId} { allow read, write: if false; }
+
     // ---------- salons ----------
     match /salons/{salonId} {
       // Anyone can open a salon page by id (no listing, so salons cannot be scraped).
@@ -135,10 +142,14 @@ service cloud.firestore {
         && request.resource.data.ownerId == uid()
         && request.resource.data.status == 'draft'
         && request.resource.data.get('bookable', false) == false
+        && !('paymentConnection' in request.resource.data)
+        && !('paymentProvider' in request.resource.data)
         && validSalonFields();
 
+      // paymentProvider / paymentConnection are written only by Cloud Functions (Razorpay connect flow), so an owner
+      // cannot mark their own salon "CONNECTED".
       allow update: if isSuper()
-        || (isOwner(salonId) && noneOf(['ownerId', 'status', 'bookable', 'slug', 'createdAt']) && validSalonFields());
+        || (isOwner(salonId) && noneOf(['ownerId', 'status', 'bookable', 'slug', 'createdAt', 'paymentProvider', 'paymentConnection']) && validSalonFields());
 
       allow delete: if isSuper();
 

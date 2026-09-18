@@ -3,6 +3,8 @@
 // Real secrets (payment keys, webhook secrets) belong in Cloud Functions config, never here.
 export const environment = {
   production: true,
+  // 'mock' keeps Razorpay simulated in the browser (until the app is wired to Firebase Auth + Firestore); 'live' calls the Cloud Functions.
+  paymentsMode: 'mock' as 'mock' | 'live',
   useEmulators: false,
   firebase: {
     apiKey: 'AIzaSyC4qSQuejbkm_A4v3DDAX7wpFQw3AL-s-0',

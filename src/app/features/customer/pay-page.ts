@@ -6,6 +6,8 @@ import { toDataURL } from 'qrcode';
 import { Booking } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingFlowStore } from '../../core/services/booking-flow.store';
+import { PaymentCheckoutService, PaymentCancelled } from '../../core/services/payment-checkout.service';
+import { PaymentConnectService } from '../../core/services/payment-connect.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
 import { fmt12, inr, LOCALE } from '../../core/utils/time';
@@ -68,10 +70,10 @@ import { StepBar } from '../../shared/customer/step-bar';
 
         <label class="relative flex flex-col p-space-md bg-surface-container-lowest rounded-xl cursor-pointer transition-all duration-150 elevation-1 hover:elevation-2" [class]="flow.payment() === 'online' ? 'border-2 border-primary' : 'border border-outline-variant hover:border-primary/50'">
           <div class="flex items-start gap-space-md">
-            <input type="radio" name="payment_method" class="mt-1 h-5 w-5 text-primary border-outline focus:ring-primary" [checked]="flow.payment() === 'online'" (change)="flow.payment.set('online')" />
+            <input type="radio" name="payment_method" class="mt-1 h-5 w-5 text-primary border-outline focus:ring-primary" [disabled]="!rzp.onlineAvailable()" [checked]="flow.payment() === 'online'" (change)="flow.payment.set('online')" />
             <div class="flex flex-col">
               <div class="flex items-center gap-space-xs flex-wrap"><span class="text-label-lg font-label-lg text-on-surface font-bold">{{ 'pay.online' | translate }}</span><span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-container/10 text-tertiary font-semibold">{{ "Instant Confirmation" | translate }}</span></div>
-              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">{{ "100% cashless checkout with zero convenience fees. Supported by all major banks." | translate }}</p>
+              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">{{ rzp.onlineAvailable() ? ("100% cashless checkout with zero convenience fees. Supported by all major banks." | translate) : ("Online payment is not available for this salon right now." | translate) }}</p>
               <div class="flex items-center gap-2 mt-space-sm flex-wrap">
                 @for (b of badges; track b.label) { <div class="px-2.5 py-1 rounded bg-surface-container border border-outline-variant text-label-sm font-label-sm font-semibold text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" [style.color]="b.color">{{ b.icon }}</span> {{ (b.label) | translate }}</div> }
               </div>
@@ -91,7 +93,7 @@ import { StepBar } from '../../shared/customer/step-bar';
 
         <div class="pt-space-xs">
           <button type="button" (click)="confirm()" [disabled]="processing()" class="w-full py-3.5 px-space-lg rounded-xl bg-[#FF7A59] hover:bg-[#F06543] active:scale-[0.98] transition-all duration-150 text-white font-label-lg text-label-lg font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-space-sm disabled:opacity-70">
-            @if (processing()) { <span class="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span><span>{{ "Processing payment..." | translate }}</span> }
+            @if (processing()) { <span class="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span><span>{{ (stage() === 'received' ? 'Payment received. Confirming your booking...' : 'Processing payment...') | translate }}</span> }
             @else { <span class="material-symbols-outlined text-[20px]">verified_user</span><span>{{ (flow.payment() === 'online' ? 'pay.confirm' : 'pay.confirmSalon') | translate }}{{ flow.payment() === 'online' ? ' ' + inr(flow.totalPrice()) : '' }}</span> }
           </button>
           <p class="text-center text-body-sm font-body-sm text-on-surface-variant mt-2">{{ "By continuing, you agree to {{p1}} cancellation & rescheduling policies (free until {{p2}}h before, then {{p3}}% fee)." | translate: { p1: (store.profile().name), p2: (store.settings().cancelWindowHrs), p3: (store.settings().latePenaltyPct) } }}</p>
@@ -135,6 +137,9 @@ export class PayPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly checkout = inject(PaymentCheckoutService);
+  protected readonly rzp = inject(PaymentConnectService);
+  private requestId = crypto.randomUUID();
   protected readonly inr = inr;
   protected readonly fmt = fmt12;
   protected readonly badges = [
@@ -146,6 +151,8 @@ export class PayPage implements OnInit {
 
   protected readonly name = signal('');
   protected readonly processing = signal(false);
+  /** 'received' = Razorpay reported success in the browser; the booking is only Confirmed once the webhook lands. */
+  protected readonly stage = signal<'idle' | 'received'>('idle');
   protected readonly booking = signal<Booking | null>(null);
   protected readonly qr = signal('');
 
@@ -173,7 +180,8 @@ export class PayPage implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: `/s/${this.store.profile().slug}/pay` }, replaceUrl: true });
       return;
     }
-    if (this.salonBlocked()) this.flow.payment.set('online');
+    if (this.checkout.live) void this.rzp.load();
+    if (this.salonBlocked() || !this.rzp.onlineAvailable()) this.flow.payment.set(this.rzp.onlineAvailable() ? 'online' : 'salon');
   }
 
   async confirm() {
@@ -182,8 +190,10 @@ export class PayPage implements OnInit {
     const nm = (customer.name || this.name()).trim();
     if (!nm) return this.toast.error('Please enter your name.');
     if (!customer.name) this.auth.setCustomerName(nm);
+    if (this.flow.payment() === 'online' && !this.rzp.onlineAvailable()) return this.toast.error('Online payment is not available for this salon right now.');
+    if (this.flow.payment() === 'online' && this.checkout.live) return this.confirmLive(nm, customer.phone);
     this.processing.set(true);
-    // Stand-in for the PaymentProvider (Razorpay) order + verification round trip.
+    // Mock mode: stand-in for the Razorpay order + webhook round trip.
     if (this.flow.payment() === 'online') await new Promise((r) => setTimeout(r, 900));
     const res = this.store.createOnlineBooking({
       date: this.flow.date()!, staffId: this.flow.staffId(), serviceIds: this.flow.serviceIds(), start: this.flow.start()!,
@@ -198,6 +208,44 @@ export class PayPage implements OnInit {
     this.booking.set(res.booking);
     this.qr.set(await toDataURL(res.booking.bookingNo ?? res.booking.id, { margin: 1, width: 240, color: { dark: '#121d21', light: '#ffffff' } }));
     this.flow.reset();
+  }
+
+  /** Live online payment: hold + server-priced order + Checkout, then wait for the webhook-driven confirmation. */
+  private async confirmLive(name: string, phone: string) {
+    const salonId = this.store.profile().slug; // TODO(Phase 4b): the real Firestore salon id
+    this.processing.set(true);
+    this.stage.set('idle');
+    try {
+      const bookingId = await this.checkout.payOnline({
+        salonId, salonName: this.store.profile().name, requestId: this.requestId, serviceIds: this.flow.serviceIds(),
+        staffId: this.flow.staffId(), date: this.flow.date()!, start: this.flow.start()!, customerName: name, customerPhone: phone,
+      });
+      this.stage.set('received'); // "Payment received. Confirming your booking..." (NOT "Confirmed")
+      const confirmed = await this.checkout.waitForConfirmed(salonId, bookingId);
+      if (!confirmed) {
+        this.toast.info('Payment received. Your booking will be confirmed shortly. Check My Bookings.');
+        this.router.navigate(['/my/bookings']);
+        return;
+      }
+      const b = this.checkout.toBooking(confirmed);
+      this.booking.set(b);
+      this.qr.set(await toDataURL(b.bookingNo ?? b.id, { margin: 1, width: 240, color: { dark: '#121d21', light: '#ffffff' } }));
+      this.flow.reset();
+      this.requestId = crypto.randomUUID();
+    } catch (e) {
+      if (e instanceof PaymentCancelled) this.toast.info('Payment cancelled. Your slot is held for a few minutes.');
+      else this.toast.error(this.safeMessage(e));
+    } finally {
+      this.processing.set(false);
+      this.stage.set('idle');
+    }
+  }
+
+  /** Server messages are already user-safe; anything else becomes a generic line. */
+  private safeMessage(e: unknown) {
+    const code = (e as { code?: string })?.code ?? '';
+    const msg = (e as { message?: string })?.message ?? '';
+    return code.startsWith('functions/') && msg && !/internal/i.test(msg) ? msg : 'Something went wrong. Please try again.';
   }
 
   dateLabel(b: Booking) {

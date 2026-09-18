@@ -69,6 +69,49 @@ describe('public browsing', () => {
   });
 });
 
+describe('razorpay connection', () => {
+  const pc = { status: 'CONNECTED', razorpayAccountId: 'acc_1', oauthConnectedAt: null, lastVerifiedAt: null };
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, `razorpayConnections/${SALON}`), { accessToken: 'secret-token', refreshToken: 'secret-refresh' });
+      await setDoc(doc(db, 'oauthStates/abc'), { salonId: SALON, uid: 'owner1', used: false });
+      await setDoc(doc(db, 'webhookEvents/evt1'), { status: 'done' });
+    });
+  });
+  it('tokens, oauth states and the webhook ledger are unreadable and unwritable by every client, even the owner and superadmin', async () => {
+    for (const db of [anon(), customer('c1'), owner(), stylist(), admin()]) {
+      for (const path of [`razorpayConnections/${SALON}`, 'oauthStates/abc', 'webhookEvents/evt1']) {
+        await assertFails(getDoc(doc(db, path)));
+        await assertFails(setDoc(doc(db, path), { x: 1 }));
+        await assertFails(deleteDoc(doc(db, path)));
+      }
+    }
+  });
+  it('an owner cannot mark their own salon as CONNECTED (function-managed field)', async () => {
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}`), { paymentConnection: pc }));
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}`), { 'paymentConnection.status': 'CONNECTED' }));
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}`), { paymentProvider: 'razorpay' }));
+  });
+  it('a new draft salon cannot be created already CONNECTED', async () => {
+    await assertFails(setDoc(doc(customer('u9'), 'salons/n1'), salonDoc({ ownerId: 'u9', status: 'draft', bookable: false, paymentConnection: pc })));
+  });
+  it('owners can still edit their salon once the function has added the payment fields', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), `salons/${SALON}`), { paymentProvider: 'razorpay', paymentConnection: pc });
+    });
+    await assertSucceeds(updateDoc(doc(owner(), `salons/${SALON}`), { 'profile.name': 'Luxe Studio 3' }));
+  });
+  it('a customer can read the connection status (no secrets on the salon doc) but never write it', async () => {
+    await assertSucceeds(getDoc(doc(customer('c1'), `salons/${SALON}`)));
+    await assertFails(updateDoc(doc(customer('c1'), `salons/${SALON}`), { paymentConnection: pc }));
+  });
+  it('clients cannot write bookings, so payment state can only be set by the verified webhook', async () => {
+    await assertFails(updateDoc(doc(customer('c1'), `salons/${SALON}/bookings/b1`), { status: 'confirmed', 'payment.status': 'paid' }));
+    await assertFails(updateDoc(doc(owner(), `salons/${SALON}/bookings/b1`), { status: 'confirmed', 'payment.status': 'paid' }));
+  });
+});
+
 describe('users', () => {
   it('a user can register only as a customer with zero no-shows', async () => {
     await assertSucceeds(setDoc(doc(customer('new'), 'users/new'), { role: 'customer', salonIds: [], noShowCount: 0, name: 'N' }));

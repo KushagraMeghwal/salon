@@ -78,6 +78,8 @@ export interface FsSalon {
     gstRegistered: boolean; // prices are always GST-inclusive; when true, bills show the tax breakdown
     gstin: string; // required (15-char GSTIN) when gstRegistered, else ''
   };
+  paymentProvider?: 'razorpay'; // function-managed
+  paymentConnection?: FsPaymentConnection; // function-managed; holds no secrets
   createdAt: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -152,7 +154,18 @@ export interface FsBilling {
 }
 
 // ---------- bookings & billing (written only by functions) ----------
-export type FsBookingStatus = 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'no-show';
+// `held` = slot locked while the customer pays (Razorpay); `expired` = hold ran out unpaid. Only the verified
+// Razorpay webhook moves held -> confirmed.
+export type FsBookingStatus = 'held' | 'expired' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled' | 'no-show';
+
+// ---------- Razorpay (salons/{id}.paymentConnection is public; tokens live in server-only razorpayConnections/{id}) ----------
+export type FsPaymentConnectionStatus = 'NOT_CONNECTED' | 'PENDING' | 'CONNECTED' | 'REVOKED' | 'FAILED';
+export interface FsPaymentConnection {
+  status: FsPaymentConnectionStatus;
+  razorpayAccountId: string | null;
+  oauthConnectedAt: Timestamp | null;
+  lastVerifiedAt: Timestamp | null;
+}
 
 export interface FsBooking {
   bookingNo: string;
@@ -170,12 +183,23 @@ export interface FsBooking {
   vip?: boolean;
   notes?: string;
   source: 'online' | 'owner' | 'walk-in';
+  holdExpiresAt?: Timestamp | null; // while status == 'held'
+  confirmedAt?: Timestamp;
   payment: {
     mode: 'online' | 'salon';
-    status: 'pending' | 'paid' | 'refunded' | 'failed';
+    // none = no order yet, pending = order created / awaiting webhook, paid = captured (webhook), failed, refunded
+    status: 'none' | 'pending' | 'paid' | 'refunded' | 'failed';
     provider?: 'razorpay';
     orderId?: string;
     paymentId?: string;
+    amount?: number; // paise, server-computed
+    currency?: 'INR';
+    createdAt?: Timestamp;
+    capturedAt?: Timestamp;
+    refundedAt?: Timestamp;
+    method?: string | null;
+    failureReason?: string | null;
+    refundRequired?: boolean; // paid after the slot was lost: owner/refund flow must act
   };
   cancelledAt?: Timestamp;
   cancelFee?: number;

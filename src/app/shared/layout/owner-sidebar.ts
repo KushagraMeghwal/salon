@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -8,7 +9,7 @@ import { SalonMark } from './salon-mark';
 
 @Component({
   selector: 'app-owner-sidebar',
-  imports: [RouterLink, RouterLinkActive, SalonMark],
+  imports: [RouterLink, RouterLinkActive, SalonMark, TranslatePipe],
   template: `
     @if (ui.navOpen()) {
       <div class="fixed inset-0 z-30 bg-inverse-surface/40 lg:hidden no-print" (click)="ui.navOpen.set(false)"></div>
@@ -32,10 +33,10 @@ import { SalonMark } from './salon-mark';
           class="w-full bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all duration-150 active:scale-[0.98]"
         >
           <span class="material-symbols-outlined text-[18px]">add_circle</span>
-          <span>New Appointment</span>
+          <span>{{ "New Appointment" | translate }}</span>
         </button>
 
-        <nav aria-label="Main Navigation" class="flex flex-col gap-1.5">
+        <nav [attr.aria-label]="'Main Navigation' | translate" class="flex flex-col gap-1.5">
           @for (n of nav; track n.path) {
             <a
               [routerLink]="n.path"
@@ -50,7 +51,7 @@ import { SalonMark } from './salon-mark';
               "
             >
               <span class="material-symbols-outlined" [style.font-variation-settings]="rla.isActive ? '\\'FILL\\' 1' : null">{{ n.icon }}</span>
-              <span>{{ n.label }}</span>
+              <span>{{ (n.label) | translate }}</span>
             </a>
           }
         </nav>
@@ -61,10 +62,10 @@ import { SalonMark } from './salon-mark';
           <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-headline-sm text-label-lg shrink-0">{{ initials(auth.user().name) }}</div>
           <div class="flex flex-col text-left overflow-hidden">
             <span class="font-label-lg text-label-lg truncate text-on-surface">{{ auth.user().name }}</span>
-            <span class="font-label-sm text-label-sm text-outline truncate">{{ auth.user().title }}</span>
+            <span class="font-label-sm text-label-sm text-outline truncate">{{ (auth.user().title) | translate }}</span>
           </div>
         </div>
-        <p class="px-3 text-[11px] text-outline">Powered by <span class="font-semibold text-primary">Chairly</span></p>
+        <p class="px-3 text-[11px] text-outline">{{ "Powered by" | translate }} <span class="font-semibold text-primary">{{ "Chairly" | translate }}</span></p>
       </div>
     </aside>
   `,

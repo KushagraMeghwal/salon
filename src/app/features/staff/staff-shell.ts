@@ -17,7 +17,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
             <div class="w-9 h-9 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-xl">content_cut</span></div>
             <div class="min-w-0">
               <h1 class="font-headline-sm text-headline-sm text-on-surface tracking-tight font-extrabold truncate">{{ store.profile().name }}</h1>
-              <div class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Chair {{ chair() }} · Live Queue Ready</span></div>
+              <div class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">{{ "Chair {{p1}} · Live Queue Ready" | translate: { p1: (chair()) } }}</span></div>
             </div>
           </div>
           <app-lang-toggle />
@@ -26,11 +26,11 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
         <div class="flex-1 flex flex-col pb-20"><router-outlet /></div>
 
         <footer class="bg-surface-container-low border-t border-outline-variant flex flex-col items-center justify-center gap-space-xs py-space-lg px-space-md text-center w-full mb-16 no-print">
-          <div class="text-label-md font-label-md text-on-surface-variant font-semibold">Powered by <span class="text-primary">Chairly</span></div>
+          <div class="text-label-md font-label-md text-on-surface-variant font-semibold">{{ "Powered by" | translate }} <span class="text-primary">{{ "Chairly" | translate }}</span></div>
           <div class="flex items-center gap-4 text-label-sm font-label-sm text-on-surface-variant mt-1"><a class="hover:text-primary" href="#">{{ 'common.privacy' | translate }}</a><span class="text-outline-variant">•</span><a class="hover:text-primary" href="#">{{ 'common.terms' | translate }}</a><span class="text-outline-variant">•</span><a class="hover:text-primary" href="#">{{ 'common.support' | translate }}</a></div>
         </footer>
 
-        <nav aria-label="Bottom Navigation" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 flex justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest/95 backdrop-blur-md shadow-md border-t border-outline-variant no-print">
+        <nav [attr.aria-label]="'Bottom Navigation' | translate" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md z-50 flex justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest/95 backdrop-blur-md shadow-md border-t border-outline-variant no-print">
           @for (n of nav; track n.path) {
             <a [routerLink]="n.path" routerLinkActive #rla="routerLinkActive" class="flex flex-col items-center justify-center py-1 px-5 rounded-xl transition-transform active:scale-95 duration-150" [class]="rla.isActive ? 'text-primary font-bold' : 'text-on-surface-variant hover:text-primary'">
               <span class="material-symbols-outlined text-2xl" [style.font-variation-settings]="rla.isActive ? '\\'FILL\\' 1' : null">{{ n.icon }}</span>

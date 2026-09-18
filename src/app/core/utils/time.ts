@@ -1,3 +1,8 @@
+import { signal } from '@angular/core';
+
+/** Active display locale; read inside computed()/templates so date text follows the language switch. */
+export const LOCALE = signal('en-IN');
+
 export function toMin(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);
   return (h || 0) * 60 + (m || 0);

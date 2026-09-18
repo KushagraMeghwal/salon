@@ -16,14 +16,14 @@ const DEMO_OTP = '123456';
         <div class="absolute -bottom-16 -left-16 w-36 h-36 bg-secondary-fixed/30 rounded-full blur-2xl pointer-events-none"></div>
 
         <div class="mb-6 relative z-10">
-          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-label-sm font-label-sm mb-3"><span class="material-symbols-outlined text-[14px]">verified_user</span><span>Fast &amp; Secure Portal</span></div>
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-label-sm font-label-sm mb-3"><span class="material-symbols-outlined text-[14px]">verified_user</span><span>{{ "Fast & Secure Portal" | translate }}</span></div>
           <h1 class="text-headline-xl-mobile font-headline-xl-mobile text-on-surface mb-2 font-bold tracking-tight">{{ 'login.title' | translate }}</h1>
           <p class="text-body-md font-body-md text-on-surface-variant">{{ 'login.sub' | translate }}</p>
         </div>
 
         <div class="space-y-4 relative z-10">
           <div>
-            <label class="block text-label-md font-label-md text-on-surface font-medium mb-1.5" for="login-phone">Mobile Number</label>
+            <label class="block text-label-md font-label-md text-on-surface font-medium mb-1.5" for="login-phone">{{ "Mobile Number" | translate }}</label>
             <div class="flex items-center rounded-xl border bg-surface-container-lowest focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-150 overflow-hidden shadow-sm h-12" [class]="phone().length && !phoneOk() ? 'border-error' : 'border-outline-variant'">
               <div class="flex items-center gap-1.5 px-3 py-2 bg-surface-container-low/70 border-r border-outline-variant text-on-surface font-semibold text-body-md select-none shrink-0"><span class="text-base leading-none">🇮🇳</span><span class="font-headline-sm text-on-surface">+91</span></div>
               <input id="login-phone" type="tel" inputmode="numeric" maxlength="11" placeholder="98765 43210" class="w-full px-3 py-2 text-headline-sm font-headline-sm text-on-surface placeholder:text-outline border-none focus:ring-0 bg-transparent tracking-wide" [value]="phone()" [disabled]="sent()" (input)="phone.set($any($event.target).value)" (keydown.enter)="sendOtp()" />
@@ -33,10 +33,10 @@ const DEMO_OTP = '123456';
 
           <div class="flex items-center justify-between pt-1 min-h-5">
             @if (sent()) {
-              <span class="text-label-sm font-label-sm text-tertiary font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">lock</span> 6-digit OTP sent via SMS</span>
-              <button type="button" (click)="reset()" class="text-label-sm font-label-sm text-primary font-bold hover:underline">Change Number</button>
+              <span class="text-label-sm font-label-sm text-tertiary font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">lock</span> {{ "6-digit OTP sent via SMS" | translate }}</span>
+              <button type="button" (click)="reset()" class="text-label-sm font-label-sm text-primary font-bold hover:underline">{{ "Change Number" | translate }}</button>
             } @else {
-              <span class="text-label-sm font-label-sm text-outline">We'll text you a 6-digit code.</span>
+              <span class="text-label-sm font-label-sm text-outline">{{ "We'll text you a 6-digit code." | translate }}</span>
             }
           </div>
 
@@ -46,7 +46,7 @@ const DEMO_OTP = '123456';
             </button>
           } @else {
             <div class="pt-1">
-              <div class="flex items-center justify-between mb-2"><label class="text-label-md font-label-md text-on-surface font-medium" for="otp-0">Verification Code</label><span class="text-label-sm font-label-sm text-outline">Demo code: {{ demoOtp }}</span></div>
+              <div class="flex items-center justify-between mb-2"><label class="text-label-md font-label-md text-on-surface font-medium" for="otp-0">{{ "Verification Code" | translate }}</label><span class="text-label-sm font-label-sm text-outline">{{ "Demo code: {{p1}}" | translate: { p1: (demoOtp) } }}</span></div>
               <div class="grid grid-cols-6 gap-2 sm:gap-2.5">
                 @for (i of boxes; track i) {
                   <input [id]="'otp-' + i" type="text" inputmode="numeric" maxlength="1" autocomplete="one-time-code" [attr.aria-label]="'Digit ' + (i + 1)" [value]="digits()[i]" (input)="onDigit(i, $event)" (keydown)="onKey(i, $event)" (paste)="onPaste($event)"
@@ -54,18 +54,18 @@ const DEMO_OTP = '123456';
                     [class]="error() ? 'border-2 border-error' : digits()[i] ? 'border-[1.5px] border-primary' : 'border border-outline-variant'" />
                 }
               </div>
-              @if (error()) { <p class="text-body-sm text-error mt-2">That code isn't right. Please try again.</p> }
+              @if (error()) { <p class="text-body-sm text-error mt-2">{{ "That code isn't right. Please try again." | translate }}</p> }
             </div>
             <div class="flex items-center justify-between text-body-sm font-body-sm pt-1">
-              <div class="flex items-center gap-1.5 text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-outline">schedule</span>@if (seconds() > 0) { <span>Resend OTP in <span class="font-semibold text-on-surface">0:{{ seconds() < 10 ? '0' : '' }}{{ seconds() }}s</span></span> } @else { <span>Didn't get it?</span> }</div>
-              <button type="button" [disabled]="seconds() > 0" (click)="resend()" class="text-label-md font-label-md font-semibold" [class]="seconds() > 0 ? 'text-outline cursor-not-allowed opacity-75' : 'text-primary hover:underline'">Resend Code</button>
+              <div class="flex items-center gap-1.5 text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-outline">schedule</span>@if (seconds() > 0) { <span>{{ "Resend OTP in" | translate }} <span class="font-semibold text-on-surface">0:{{ seconds() < 10 ? '0' : '' }}{{ seconds() }}s</span></span> } @else { <span>{{ "Didn't get it?" | translate }}</span> }</div>
+              <button type="button" [disabled]="seconds() > 0" (click)="resend()" class="text-label-md font-label-md font-semibold" [class]="seconds() > 0 ? 'text-outline cursor-not-allowed opacity-75' : 'text-primary hover:underline'">{{ "Resend Code" | translate }}</button>
             </div>
             <button type="button" (click)="verify()" class="w-full mt-2 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary py-3.5 px-5 rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 coral-btn-glow hover:shadow-lg active:scale-[0.98] transition-all duration-200" [class.opacity-60]="code().length < 6">
               <span>{{ 'login.verify' | translate }}</span><span class="material-symbols-outlined text-[20px]">arrow_forward</span>
             </button>
           }
 
-          <div class="relative flex py-2 items-center"><div class="grow border-t border-outline-variant/60"></div><span class="shrink mx-3 text-label-sm font-label-sm text-outline">or authenticate with</span><div class="grow border-t border-outline-variant/60"></div></div>
+          <div class="relative flex py-2 items-center"><div class="grow border-t border-outline-variant/60"></div><span class="shrink mx-3 text-label-sm font-label-sm text-outline">{{ "or authenticate with" | translate }}</span><div class="grow border-t border-outline-variant/60"></div></div>
           <button type="button" (click)="google()" class="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low/50 text-on-surface text-label-md font-label-md font-semibold transition-all duration-150 active:scale-95 shadow-sm">
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.5l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
             <span>{{ 'login.google' | translate }}</span>
@@ -73,7 +73,7 @@ const DEMO_OTP = '123456';
         </div>
 
         <div class="mt-6 pt-4 border-t border-outline-variant/40 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant relative z-10">
-          <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-tertiary">shield</span><span>256-bit encrypted</span></div>
+          <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-tertiary">shield</span><span>{{ "256-bit encrypted" | translate }}</span></div>
         </div>
       </div>
     </main>

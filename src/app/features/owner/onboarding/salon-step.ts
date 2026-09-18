@@ -1,3 +1,5 @@
+import { tr } from '../../../core/utils/i18n';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -22,7 +24,7 @@ const INPUT =
 
 @Component({
   selector: 'app-salon-step',
-  imports: [FormsModule, WizardHeader, SalonMark],
+  imports: [FormsModule, WizardHeader, SalonMark, TranslatePipe],
   template: `
     <div class="min-h-screen flex flex-col bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
       <app-wizard-header [active]="1" />
@@ -36,10 +38,10 @@ const INPUT =
                 <div>
                   <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm mb-3">
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    Step 1: Establishment Setup
+                    {{ "Step 1: Establishment Setup" | translate }}
                   </div>
-                  <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface font-bold">Tell us about your salon</h1>
-                  <p class="font-body-md text-body-md text-muted mt-1">Set up your salon profile and storefront details visible to clients.</p>
+                  <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface font-bold">{{ "Tell us about your salon" | translate }}</h1>
+                  <p class="font-body-md text-body-md text-muted mt-1">{{ "Set up your salon profile and storefront details visible to clients." | translate }}</p>
                 </div>
                 <span class="hidden sm:inline-flex items-center gap-1 text-label-sm font-label-sm text-muted bg-surface-container-low px-2.5 py-1 rounded-md shrink-0">
                   <span class="material-symbols-outlined text-sm text-primary">shield</span>
@@ -50,20 +52,20 @@ const INPUT =
 
               <form class="space-y-6" (submit)="$event.preventDefault()" novalidate>
                 <div>
-                  <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="salon-name">Salon Name <span class="text-secondary">*</span></label>
+                  <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="salon-name">{{ "Salon Name" | translate }} <span class="text-secondary">*</span></label>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted"><span class="material-symbols-outlined text-lg">store</span></span>
-                    <input id="salon-name" type="text" name="name" placeholder="e.g., Luxe Grooming Studio & Spa" [ngModel]="p().name" (ngModelChange)="patch({ name: $event })" (blur)="touched.set(true)"
+                    <input id="salon-name" type="text" name="name" [placeholder]="'e.g., Luxe Grooming Studio & Spa' | translate" [ngModel]="p().name" (ngModelChange)="patch({ name: $event })" (blur)="touched.set(true)"
                       class="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-surface-container-lowest text-on-surface text-body-md font-body-md focus:ring-2 focus:outline-none transition-all placeholder:text-outline/60"
                       [class]="nameOk() || !touched() ? 'border-outline-variant/40 focus:border-primary focus:ring-primary/20' : 'border-error focus:border-error focus:ring-error/20'" />
                   </div>
                   <p class="text-body-sm font-body-sm mt-1" [class]="nameOk() || !touched() ? 'text-muted' : 'text-error'">
-                    {{ nameOk() || !touched() ? 'This is the customer-facing name displayed in search and booking receipts.' : 'Enter your salon name (at least 2 characters).' }}
+                    {{ nameOk() || !touched() ? ('This is the customer-facing name displayed in search and booking receipts.' | translate) : ('Enter your salon name (at least 2 characters).' | translate) }}
                   </p>
                 </div>
 
                 <div>
-                  <label class="block text-label-lg font-label-lg text-on-surface mb-1.5">Salon Brand Logo <span class="text-outline font-normal">(optional)</span></label>
+                  <label class="block text-label-lg font-label-lg text-on-surface mb-1.5">{{ "Salon Brand Logo" | translate }} <span class="text-outline font-normal">{{ "(optional)" | translate }}</span></label>
                   <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                     <label
                       class="md:col-span-8 border-2 border-dashed rounded-xl p-5 hover:bg-surface-container-low/80 hover:border-primary transition-colors flex flex-col items-center justify-center text-center cursor-pointer group"
@@ -74,13 +76,13 @@ const INPUT =
                       <div class="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-sm mb-2">
                         <span class="material-symbols-outlined text-2xl">cloud_upload</span>
                       </div>
-                      <p class="text-label-md font-label-md text-on-surface">Upload salon logo (PNG, JPG up to 5MB)</p>
-                      <p class="text-body-sm font-body-sm text-muted mt-0.5">Drag and drop here, or <span class="text-primary font-semibold underline">browse file</span></p>
+                      <p class="text-label-md font-label-md text-on-surface">{{ "Upload salon logo (PNG, JPG up to 5MB)" | translate }}</p>
+                      <p class="text-body-sm font-body-sm text-muted mt-0.5">{{ "Drag and drop here, or" | translate }} <span class="text-primary font-semibold underline">{{ "browse file" | translate }}</span></p>
                     </label>
                     <div class="md:col-span-4 flex items-center gap-3 p-3 bg-surface-container rounded-xl border border-outline-variant/30">
                       <div class="relative w-14 h-14 rounded-lg bg-surface-container-lowest flex items-center justify-center overflow-hidden border border-outline-variant/30 p-1 shrink-0">
                         @if (p().logo) {
-                          <img alt="Logo Preview" class="w-full h-full object-contain" [src]="p().logo" />
+                          <img [alt]="'Logo Preview' | translate" class="w-full h-full object-contain" [src]="p().logo" />
                         } @else {
                           <app-salon-mark size="md" />
                         }
@@ -88,20 +90,20 @@ const INPUT =
                       <div class="flex-1 min-w-0">
                         @if (p().logo) {
                           <p class="text-label-md font-label-md text-on-surface truncate">{{ logoName() }}</p>
-                          <p class="text-body-sm font-body-sm text-muted">{{ logoSize() }} • Done</p>
+                          <p class="text-body-sm font-body-sm text-muted">{{ "{{p1}} • Done" | translate: { p1: (logoSize()) } }}</p>
                           <div class="flex items-center gap-2 mt-1">
                             <label class="text-label-sm font-label-sm text-primary hover:underline flex items-center gap-0.5 cursor-pointer">
                               <input type="file" class="sr-only" accept="image/png,image/jpeg" (change)="onFile($any($event.target).files?.[0])" />
-                              <span class="material-symbols-outlined text-xs">edit</span> Edit
+                              <span class="material-symbols-outlined text-xs">edit</span> {{ "Edit" | translate }}
                             </label>
                             <span class="text-muted text-xs">•</span>
                             <button type="button" class="text-label-sm font-label-sm text-secondary hover:underline flex items-center gap-0.5" (click)="removeLogo()">
-                              <span class="material-symbols-outlined text-xs">delete</span> Remove
+                              <span class="material-symbols-outlined text-xs">delete</span> {{ "Remove" | translate }}
                             </button>
                           </div>
                         } @else {
-                          <p class="text-label-md font-label-md text-on-surface">No logo yet</p>
-                          <p class="text-body-sm font-body-sm text-muted">Initials will be used</p>
+                          <p class="text-label-md font-label-md text-on-surface">{{ "No logo yet" | translate }}</p>
+                          <p class="text-body-sm font-body-sm text-muted">{{ "Initials will be used" | translate }}</p>
                         }
                       </div>
                     </div>
@@ -109,7 +111,7 @@ const INPUT =
                 </div>
 
                 <div>
-                  <label class="block text-label-lg font-label-lg text-on-surface mb-2">Salon Type / Classification <span class="text-secondary">*</span></label>
+                  <label class="block text-label-lg font-label-lg text-on-surface mb-2">{{ "Salon Type / Classification" | translate }} <span class="text-secondary">*</span></label>
                   <div class="flex flex-wrap gap-2.5" role="radiogroup">
                     @for (c of categories; track c.value) {
                       <label class="cursor-pointer">
@@ -119,7 +121,7 @@ const INPUT =
                           [class]="p().category === c.value ? 'border-primary bg-primary text-on-primary shadow-sm' : 'border-outline-variant/40 bg-surface-container-lowest text-on-surface hover:border-primary hover:bg-surface-container-low'"
                         >
                           <span class="material-symbols-outlined text-base" [class.text-muted]="p().category !== c.value">{{ c.icon }}</span>
-                          {{ c.value }}
+                          {{ c.value | translate }}
                         </div>
                       </label>
                     }
@@ -128,7 +130,7 @@ const INPUT =
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="phone-number">Business Phone Number <span class="text-secondary">*</span></label>
+                    <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="phone-number">{{ "Business Phone Number" | translate }} <span class="text-secondary">*</span></label>
                     <div class="relative flex rounded-lg shadow-sm">
                       <div class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-outline-variant/40 bg-surface-container text-body-md font-body-md text-on-surface">
                         <span class="text-sm mr-1">🇮🇳</span> +91
@@ -139,17 +141,17 @@ const INPUT =
                       @if (phoneOk()) {
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">
-                            <span class="material-symbols-outlined text-xs text-emerald-700" style="font-variation-settings: 'FILL' 1;">verified</span> Verified
+                            <span class="material-symbols-outlined text-xs text-emerald-700" style="font-variation-settings: 'FILL' 1;">verified</span> {{ "Verified" | translate }}
                           </span>
                         </div>
                       }
                     </div>
                     <p class="text-body-sm font-body-sm mt-1" [class]="phoneOk() || !touched() ? 'text-muted' : 'text-error'">
-                      {{ phoneOk() || !touched() ? 'Clients will receive SMS & WhatsApp confirmations from this line.' : 'Enter a valid 10-digit mobile number.' }}
+                      {{ phoneOk() || !touched() ? ('Clients will receive SMS & WhatsApp confirmations from this line.' | translate) : ('Enter a valid 10-digit mobile number.' | translate) }}
                     </p>
                   </div>
                   <div>
-                    <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="email-address">Official Email Address <span class="text-secondary">*</span></label>
+                    <label class="block text-label-lg font-label-lg text-on-surface mb-1.5" for="email-address">{{ "Official Email Address" | translate }} <span class="text-secondary">*</span></label>
                     <div class="relative">
                       <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted"><span class="material-symbols-outlined text-lg">mail</span></span>
                       <input id="email-address" type="email" name="email" [ngModel]="p().email" (ngModelChange)="patch({ email: $event })" (blur)="touched.set(true)"
@@ -157,7 +159,7 @@ const INPUT =
                         [class]="emailOk() || !touched() ? 'border-outline-variant/40 focus:border-primary focus:ring-primary/20' : 'border-error focus:border-error focus:ring-error/20'" />
                     </div>
                     <p class="text-body-sm font-body-sm mt-1" [class]="emailOk() || !touched() ? 'text-muted' : 'text-error'">
-                      {{ emailOk() || !touched() ? 'Used for billing receipts and administrative alerts.' : 'Enter a valid email address.' }}
+                      {{ emailOk() || !touched() ? ('Used for billing receipts and administrative alerts.' | translate) : ('Enter a valid email address.' | translate) }}
                     </p>
                   </div>
                 </div>
@@ -165,33 +167,33 @@ const INPUT =
                 <div class="space-y-4 pt-2">
                   <div class="flex items-center justify-between gap-3">
                     <h3 class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-2">
-                      <span class="material-symbols-outlined text-primary text-xl">location_on</span> Physical Address &amp; Map Location
+                      <span class="material-symbols-outlined text-primary text-xl">location_on</span> {{ "Physical Address & Map Location" | translate }}
                     </h3>
                     <button type="button" class="text-primary text-label-sm font-label-sm hover:underline flex items-center gap-1 shrink-0" (click)="detect()">
-                      <span class="material-symbols-outlined text-sm">my_location</span> Detect My Location
+                      <span class="material-symbols-outlined text-sm">my_location</span> {{ "Detect My Location" | translate }}
                     </button>
                   </div>
                   <div>
-                    <label class="block text-label-md font-label-md text-on-surface mb-1" for="street-address">Street Address / Shop No.</label>
+                    <label class="block text-label-md font-label-md text-on-surface mb-1" for="street-address">{{ "Street Address / Shop No." | translate }}</label>
                     <input id="street-address" type="text" name="street" [class]="input" [ngModel]="p().street" (ngModelChange)="patch({ street: $event })" />
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="landmark">Landmark / Area</label>
+                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="landmark">{{ "Landmark / Area" | translate }}</label>
                       <input id="landmark" type="text" name="landmark" [class]="input" [ngModel]="p().landmark" (ngModelChange)="patch({ landmark: $event })" />
                     </div>
                     <div>
-                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="city">City</label>
+                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="city">{{ "City" | translate }}</label>
                       <input id="city" type="text" name="city" [class]="input" [ngModel]="p().city" (ngModelChange)="patch({ city: $event })" />
                     </div>
                   </div>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="pincode">Postal PIN Code</label>
+                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="pincode">{{ "Postal PIN Code" | translate }}</label>
                       <input id="pincode" type="text" inputmode="numeric" maxlength="6" name="pin" [class]="input" [ngModel]="p().pin" (ngModelChange)="patch({ pin: $event })" />
                     </div>
                     <div>
-                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="state-select">State / Union Territory</label>
+                      <label class="block text-label-md font-label-md text-on-surface mb-1" for="state-select">{{ "State / Union Territory" | translate }}</label>
                       <div class="relative">
                         <select id="state-select" name="state" [class]="input + ' appearance-none pr-8'" [ngModel]="p().state" (ngModelChange)="patch({ state: $event })">
                           @for (s of states; track s[0]) {
@@ -207,7 +209,7 @@ const INPUT =
                     <div class="px-4 py-2.5 bg-surface-container-lowest border-b border-outline-variant/20 flex items-center justify-between text-xs">
                       <div class="flex items-center gap-1.5 text-primary font-semibold">
                         <span class="material-symbols-outlined text-sm text-secondary" style="font-variation-settings: 'FILL' 1;">pin_drop</span>
-                        <span>Pin dropped on map</span>
+                        <span>{{ "Pin dropped on map" | translate }}</span>
                       </div>
                       <span class="text-muted font-mono text-[11px]">{{ coords() }}</span>
                     </div>
@@ -221,19 +223,19 @@ const INPUT =
                         <div class="w-32 h-16 bg-blue-100/60 rounded absolute bottom-2 left-6 border border-blue-200"></div>
                       </div>
                       <div class="relative z-10 flex flex-col items-center animate-bounce">
-                        <div class="px-2.5 py-1 bg-inverse-surface text-inverse-on-surface text-label-sm font-label-sm rounded-md shadow-md mb-1 whitespace-nowrap max-w-56 truncate">{{ p().name || 'Your salon' }}</div>
+                        <div class="px-2.5 py-1 bg-inverse-surface text-inverse-on-surface text-label-sm font-label-sm rounded-md shadow-md mb-1 whitespace-nowrap max-w-56 truncate">{{ p().name || ('Your salon' | translate) }}</div>
                         <div class="w-8 h-8 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-lg ring-4 ring-secondary/20">
                           <span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">location_on</span>
                         </div>
                         <div class="w-3 h-1 bg-black/30 rounded-full mt-0.5 blur-[1px]"></div>
                       </div>
                       <div class="absolute bottom-3 right-3 flex flex-col gap-1 z-10">
-                        <button type="button" aria-label="Zoom in" class="w-7 h-7 bg-surface-container-lowest rounded-md shadow flex items-center justify-center text-on-surface hover:bg-surface-container-low font-bold text-sm" (click)="zoomBy(0.25)">+</button>
-                        <button type="button" aria-label="Zoom out" class="w-7 h-7 bg-surface-container-lowest rounded-md shadow flex items-center justify-center text-on-surface hover:bg-surface-container-low font-bold text-sm" (click)="zoomBy(-0.25)">-</button>
+                        <button type="button" [attr.aria-label]="'Zoom in' | translate" class="w-7 h-7 bg-surface-container-lowest rounded-md shadow flex items-center justify-center text-on-surface hover:bg-surface-container-low font-bold text-sm" (click)="zoomBy(0.25)">+</button>
+                        <button type="button" [attr.aria-label]="'Zoom out' | translate" class="w-7 h-7 bg-surface-container-lowest rounded-md shadow flex items-center justify-center text-on-surface hover:bg-surface-container-low font-bold text-sm" (click)="zoomBy(-0.25)">-</button>
                       </div>
                       <div class="absolute bottom-3 left-3 z-10">
                         <button type="button" class="px-2.5 py-1 bg-surface-container-lowest/95 backdrop-blur text-label-sm font-label-sm rounded-md border border-outline-variant/40 text-on-surface shadow-sm hover:bg-surface-container flex items-center gap-1" (click)="detect()">
-                          <span class="material-symbols-outlined text-xs text-primary">drag_pan</span> Refine with my location
+                          <span class="material-symbols-outlined text-xs text-primary">drag_pan</span> {{ "Refine with my location" | translate }}
                         </button>
                       </div>
                     </div>
@@ -248,11 +250,11 @@ const INPUT =
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-primary text-lg">smartphone</span>
-                  <h2 class="text-label-lg font-label-lg text-on-surface">Client Discovery Preview</h2>
+                  <h2 class="text-label-lg font-label-lg text-on-surface">{{ "Client Discovery Preview" | translate }}</h2>
                 </div>
-                <span class="text-label-sm font-label-sm px-2 py-0.5 bg-surface-container text-muted rounded-full">Mobile Feed</span>
+                <span class="text-label-sm font-label-sm px-2 py-0.5 bg-surface-container text-muted rounded-full">{{ "Mobile Feed" | translate }}</span>
               </div>
-              <p class="text-body-sm font-body-sm text-muted mb-4">Here is how your storefront appears to clients searching for salons.</p>
+              <p class="text-body-sm font-body-sm text-muted mb-4">{{ "Here is how your storefront appears to clients searching for salons." | translate }}</p>
               <div class="bg-surface-container-low p-3 rounded-2xl border border-outline-variant/30 max-w-xs mx-auto">
                 <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-level-1 border border-outline-variant/20">
                   <div class="h-32 bg-surface-container relative">
@@ -263,29 +265,29 @@ const INPUT =
                       <app-salon-mark size="sm" />
                     </div>
                     <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-inverse-surface/80 backdrop-blur text-inverse-on-surface text-[10px] font-medium flex items-center gap-0.5">
-                      <span class="material-symbols-outlined text-[10px]">near_me</span> 1.2 km
+                      <span class="material-symbols-outlined text-[10px]">near_me</span> {{ "1.2 km" | translate }}
                     </div>
                   </div>
                   <div class="p-3 pt-4">
                     <div class="flex items-center justify-between">
                       <span class="text-[11px] font-semibold text-primary uppercase tracking-wider">{{ previewCategory() }}</span>
                       <div class="flex items-center text-amber-600 gap-0.5 text-xs font-bold">
-                        <span class="material-symbols-outlined text-sm text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span> New
+                        <span class="material-symbols-outlined text-sm text-amber-500" style="font-variation-settings: 'FILL' 1;">star</span> {{ "New" | translate }}
                       </div>
                     </div>
-                    <h4 class="font-headline-sm text-sm font-bold text-on-surface truncate mt-0.5">{{ p().name || 'Your salon name' }}</h4>
+                    <h4 class="font-headline-sm text-sm font-bold text-on-surface truncate mt-0.5">{{ p().name || ('Your salon name' | translate) }}</h4>
                     <p class="text-[11px] text-muted truncate">{{ areaLine() }}</p>
                     <div class="flex items-center gap-1.5 mt-2 flex-wrap">
                       @for (t of previewTags(); track t) {
                         <span class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-on-surface-variant font-medium">{{ t }}</span>
                       }
                       @if (store.selectedServices().length > 2) {
-                        <span class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-on-surface-variant font-medium">+{{ store.selectedServices().length - 2 }} more</span>
+                        <span class="px-1.5 py-0.5 rounded bg-surface-container text-[10px] text-on-surface-variant font-medium">{{ "+{{p1}} more" | translate: { p1: (store.selectedServices().length - 2) } }}</span>
                       }
                     </div>
                     <div class="mt-3 pt-2.5 border-t border-outline-variant/20 flex items-center justify-between">
-                      <span class="text-xs font-bold text-on-surface">From ₹{{ minPrice() }}</span>
-                      <span class="px-2.5 py-1 rounded-md bg-secondary text-on-secondary text-xs font-semibold">Book</span>
+                      <span class="text-xs font-bold text-on-surface">{{ "From ₹{{p1}}" | translate: { p1: (minPrice()) } }}</span>
+                      <span class="px-2.5 py-1 rounded-md bg-secondary text-on-secondary text-xs font-semibold">{{ "Book" | translate }}</span>
                     </div>
                   </div>
                 </div>
@@ -295,28 +297,28 @@ const INPUT =
             <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-level-1 border border-outline-variant/20 space-y-4">
               <div class="flex items-center gap-2 text-primary font-headline-sm text-headline-sm">
                 <span class="material-symbols-outlined text-amber-500" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
-                <h3>Quick Tips for Setup</h3>
+                <h3>{{ "Quick Tips for Setup" | translate }}</h3>
               </div>
               <div class="space-y-3">
                 <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
                   <div class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xs font-bold mt-0.5">40%</div>
                   <div>
-                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">Boost Visual Discovery</h4>
-                    <p class="text-body-sm font-body-sm text-muted mt-0.5">Clear salon logos and storefront photos increase client booking conversion by 40%.</p>
+                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">{{ "Boost Visual Discovery" | translate }}</h4>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">{{ "Clear salon logos and storefront photos increase client booking conversion by 40%." | translate }}</p>
                   </div>
                 </div>
                 <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
                   <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">pin_drop</span>
                   <div>
-                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">Precise Pinning</h4>
-                    <p class="text-body-sm font-body-sm text-muted mt-0.5">Accurate map pins reduce missed appointments and direct first-time walk-ins smoothly.</p>
+                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">{{ "Precise Pinning" | translate }}</h4>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">{{ "Accurate map pins reduce missed appointments and direct first-time walk-ins smoothly." | translate }}</p>
                   </div>
                 </div>
                 <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
                   <span class="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">schedule</span>
                   <div>
-                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">Next: Menu &amp; Pricing</h4>
-                    <p class="text-body-sm font-body-sm text-muted mt-0.5">In Step 2, you'll configure your service catalogue and durations.</p>
+                    <h4 class="text-label-md font-label-md text-on-surface font-semibold">{{ "Next: Menu & Pricing" | translate }}</h4>
+                    <p class="text-body-sm font-body-sm text-muted mt-0.5">{{ "In Step 2, you'll configure your service catalogue and durations." | translate }}</p>
                   </div>
                 </div>
               </div>
@@ -328,19 +330,19 @@ const INPUT =
       <footer class="sticky bottom-0 z-40 bg-surface-container-lowest border-t border-outline-variant/20 shadow-level-2 py-3 px-4 md:px-8 mt-auto">
         <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="text-label-md font-label-md text-muted hidden sm:inline">Step 1 of 4: Salon Details</span>
+            <span class="text-label-md font-label-md text-muted hidden sm:inline">{{ "Step 1 of 4: Salon Details" | translate }}</span>
             <span class="text-outline-variant hidden sm:inline">•</span>
             <span class="text-xs font-medium flex items-center gap-1" [class]="valid() ? 'text-primary' : 'text-secondary'">
               <span class="material-symbols-outlined text-sm">{{ valid() ? 'check_circle' : 'error' }}</span>
-              {{ valid() ? 'All required inputs valid' : 'Complete the required fields' }}
+              {{ valid() ? ('All required inputs valid' | translate) : ('Complete the required fields' | translate) }}
             </span>
           </div>
           <div class="flex items-center gap-3">
             <button type="button" (click)="saveDraft()" class="px-5 py-2.5 rounded-lg border border-primary text-primary text-label-lg font-label-lg hover:bg-primary/5 active:scale-[0.99] transition-all flex items-center gap-1.5">
-              <span class="material-symbols-outlined text-base">save</span> Save Draft
+              <span class="material-symbols-outlined text-base">save</span> {{ "Save Draft" | translate }}
             </button>
             <button type="button" (click)="next()" class="px-6 py-2.5 rounded-lg bg-primary text-on-primary text-label-lg font-label-lg hover:bg-primary-container active:scale-[0.99] transition-all shadow-md flex items-center gap-2">
-              <span>Continue to Services</span>
+              <span>{{ "Continue to Services" | translate }}</span>
               <span class="material-symbols-outlined text-base">arrow_forward</span>
             </button>
           </div>
@@ -376,7 +378,7 @@ export class SalonStep {
   });
   protected readonly savedLabel = computed(() => {
     const t = this.store.lastSaved();
-    return t ? `Auto-saved ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Changes save automatically';
+    return t ? tr('Auto-saved {{p1}}', { p1: t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }) : tr('Changes save automatically');
   });
   protected readonly previewCategory = computed(() => this.categories.find((c) => c.value === this.p().category)?.preview ?? '');
   protected readonly areaLine = computed(() => [this.p().landmark.split(',').pop()?.trim(), this.p().city].filter(Boolean).join(', '));

@@ -4,7 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { BookingFlowStore } from '../../core/services/booking-flow.store';
 import { SalonStore } from '../../core/services/salon.store';
-import { fmt12, initials, toMin } from '../../core/utils/time';
+import { fmt12, initials, toMin, LOCALE } from '../../core/utils/time';
 import { StepBar } from '../../shared/customer/step-bar';
 
 @Component({
@@ -37,8 +37,8 @@ import { StepBar } from '../../shared/customer/step-bar';
 
       <section class="space-y-space-sm pt-space-xs">
         <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tertiary"></span><h3 class="font-headline-sm text-headline-sm text-on-surface">Available for {{ slotLabel() }}</h3></div>
-          <span class="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed/30 px-2 py-0.5 rounded-full whitespace-nowrap">{{ free().length }} {{ free().length === 1 ? 'Stylist' : 'Stylists' }} Ready</span>
+          <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tertiary"></span><h3 class="font-headline-sm text-headline-sm text-on-surface">{{ "Available for {{p1}}" | translate: { p1: (slotLabel()) } }}</h3></div>
+          <span class="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed/30 px-2 py-0.5 rounded-full whitespace-nowrap">{{ (free().length === 1 ? "{{p1}} Stylist Ready" : "{{p1}} Stylists Ready") | translate: { p1: free().length } }}</span>
         </div>
 
         @for (m of free(); track m.id) {
@@ -51,8 +51,8 @@ import { StepBar } from '../../shared/customer/step-bar';
                   <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-tertiary border-2 border-surface-container-lowest rounded-full"></span>
                 </div>
                 <div class="space-y-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap"><h4 class="font-headline-sm text-headline-sm text-on-surface">{{ m.name }}</h4><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">Free at your slot</span></div>
-                  <p class="font-body-md text-body-md text-on-surface-variant">{{ m.title || m.role }}</p>
+                  <div class="flex items-center gap-2 flex-wrap"><h4 class="font-headline-sm text-headline-sm text-on-surface">{{ m.name }}</h4><span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold">{{ "Free at your slot" | translate }}</span></div>
+                  <p class="font-body-md text-body-md text-on-surface-variant">{{ (m.title || m.role) | translate }}</p>
                   <div class="flex items-center gap-3 pt-0.5 flex-wrap">
                     
                     <span class="px-2 py-0.5 bg-surface-container-low text-on-surface-variant rounded-md font-label-sm text-label-sm">{{ specialty(m.id) }}</span>
@@ -65,15 +65,15 @@ import { StepBar } from '../../shared/customer/step-bar';
 
             @if (flow.staffId() === m.id) {
               <div class="mt-space-md pt-space-sm border-t border-outline-variant/40">
-                <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[15px] text-primary">calendar_clock</span><span>{{ m.name.split(' ')[0] }}'s Day Schedule Timeline</span></div></div>
+                <div class="flex items-center justify-between mb-2"><div class="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant"><span class="material-symbols-outlined text-[15px] text-primary">calendar_clock</span><span>{{ "{{p1}}'s Day Schedule Timeline" | translate: { p1: (m.name.split(' ')[0]) } }}</span></div></div>
                 <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-2 bg-surface-container-low/60 rounded-xl border border-outline-variant/30">
                   @for (t of timeline(m.id); track t.key) {
                     @if (t.kind === 'mine') {
-                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-primary text-on-primary ring-2 ring-primary/40 shadow-sm"><span class="font-label-sm text-label-sm font-bold">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] font-bold tracking-wide uppercase">Your Slot</span></div>
+                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-primary text-on-primary ring-2 ring-primary/40 shadow-sm"><span class="font-label-sm text-label-sm font-bold">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] font-bold tracking-wide uppercase">{{ "Your Slot" | translate }}</span></div>
                     } @else if (t.kind === 'break') {
-                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-surface-container-high/40 border border-outline-variant/30"><span class="font-label-sm text-label-sm text-outline">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] text-outline font-medium">Break</span></div>
+                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-surface-container-high/40 border border-outline-variant/30"><span class="font-label-sm text-label-sm text-outline">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] text-outline font-medium">{{ "Break" | translate }}</span></div>
                     } @else {
-                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-surface-container-high/60 border border-outline-variant/40"><span class="font-label-sm text-label-sm text-outline">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] text-error font-medium flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span> Busy</span></div>
+                      <div class="flex flex-col items-center justify-center py-2 px-1 rounded-lg bg-surface-container-high/60 border border-outline-variant/40"><span class="font-label-sm text-label-sm text-outline">{{ fmt(t.start) }}</span><span class="font-label-sm text-[10px] text-error font-medium flex items-center gap-0.5"><span class="w-1.5 h-1.5 rounded-full bg-error"></span> {{ "Busy" | translate }}</span></div>
                     }
                   }
                 </div>
@@ -92,8 +92,8 @@ import { StepBar } from '../../shared/customer/step-bar';
                 <div class="flex items-center gap-space-md">
                   <div class="relative shrink-0"><div class="w-12 h-12 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-headline-sm border border-outline-variant">{{ initials(b.member.name) }}</div><span class="absolute bottom-0 right-0 w-3 h-3 bg-outline border-2 border-surface-container-lowest rounded-full"></span></div>
                   <div>
-                    <div class="flex items-center gap-2 flex-wrap"><h5 class="font-label-lg text-label-lg text-on-surface font-semibold">{{ b.member.name }}</h5><span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">Busy · {{ b.freeAt !== null ? 'Free at ' + fmt(b.freeAt) : 'Not free today' }}</span></div>
-                    <span class="font-body-sm text-body-sm text-outline">{{ b.member.title || b.member.role }}</span>
+                    <div class="flex items-center gap-2 flex-wrap"><h5 class="font-label-lg text-label-lg text-on-surface font-semibold">{{ b.member.name }}</h5><span class="px-2 py-0.5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm">{{ (b.freeAt !== null ? "Busy · Free at {{p1}}" : "Busy · Not free today") | translate: { p1: b.freeAt !== null ? fmt(b.freeAt) : '' } }}</span></div>
+                    <span class="font-body-sm text-body-sm text-outline">{{ (b.member.title || b.member.role) | translate }}</span>
                   </div>
                 </div>
                 <div class="w-5 h-5 rounded-full border-2 border-outline-variant/60 bg-surface-container-high/40 cursor-not-allowed shrink-0"></div>
@@ -136,7 +136,7 @@ export class StylistPage implements OnInit {
   protected readonly slotLabel = computed(() => {
     if (!this.date()) return '';
     const d = new Date(this.date() + 'T00:00');
-    return `${d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}, ${fmt12(this.start())}`;
+    return `${d.toLocaleDateString(LOCALE(), { weekday: 'short', day: 'numeric', month: 'short' })}, ${fmt12(this.start())}`;
   });
   protected readonly selectedName = computed(() => (this.flow.staffId() === 'any' ? 'Any available specialist' : `${this.store.staffById(this.flow.staffId())?.name ?? ''} selected`));
 

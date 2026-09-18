@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -21,7 +22,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
 
 @Component({
   selector: 'app-timings-step',
-  imports: [FormsModule, WizardHeader, Toggle],
+  imports: [FormsModule, WizardHeader, Toggle, TranslatePipe],
   template: `
     <div class="min-h-screen flex flex-col bg-background text-on-surface antialiased selection:bg-primary selection:text-on-primary pb-24">
       <app-wizard-header [active]="3" />
@@ -29,11 +30,11 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
       <main class="max-w-7xl w-full mx-auto px-4 md:px-6 py-8 flex-1">
         <div class="mb-8">
           <div class="flex items-center gap-2 mb-1.5">
-            <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm uppercase tracking-wide">Step 3 of 4</span>
-            <span class="text-muted text-xs">• Approx. 3 mins remaining</span>
+            <span class="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm uppercase tracking-wide">{{ "Step 3 of 4" | translate }}</span>
+            <span class="text-muted text-xs">{{ "• Approx. 3 mins remaining" | translate }}</span>
           </div>
-          <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Working Hours &amp; Booking Slot Rules</h1>
-          <p class="font-body-lg text-body-lg text-muted mt-1">Configure weekly schedule, staff lunch breaks, and appointment slot generation.</p>
+          <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">{{ "Working Hours & Booking Slot Rules" | translate }}</h1>
+          <p class="font-body-lg text-body-lg text-muted mt-1">{{ "Configure weekly schedule, staff lunch breaks, and appointment slot generation." | translate }}</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -41,11 +42,11 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1">
               <div class="flex items-center justify-between gap-3 pb-4 border-b border-outline-variant/20 mb-4">
                 <div>
-                  <h2 class="font-headline-md text-headline-md text-on-surface">Operating Hours (Weekly)</h2>
-                  <p class="font-body-sm text-body-sm text-muted">Set when your salon chairs are accessible for client appointments.</p>
+                  <h2 class="font-headline-md text-headline-md text-on-surface">{{ "Operating Hours (Weekly)" | translate }}</h2>
+                  <p class="font-body-sm text-body-sm text-muted">{{ "Set when your salon chairs are accessible for client appointments." | translate }}</p>
                 </div>
                 <button type="button" (click)="applyMonday()" class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 shrink-0">
-                  <span class="material-symbols-outlined text-sm">content_copy</span> Apply Mon to All
+                  <span class="material-symbols-outlined text-sm">content_copy</span> {{ "Apply Mon to All" | translate }}
                 </button>
               </div>
               <div class="space-y-3.5">
@@ -53,7 +54,7 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                   <div class="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg bg-surface-bright border border-outline-variant/20 hover:border-primary/40 transition-colors">
                     <div class="flex items-center gap-3 w-36">
                       <app-toggle [checked]="t.open" (checkedChange)="store.patchTiming($index, { open: $event })" [label]="days[$index] + ' open'" />
-                      <span class="font-label-lg text-label-lg text-on-surface font-semibold">{{ days[$index] }}</span>
+                      <span class="font-label-lg text-label-lg text-on-surface font-semibold">{{ days[$index] | translate }}</span>
                     </div>
                     @if (t.open) {
                       <div class="flex items-center gap-2">
@@ -61,14 +62,14 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                           <span class="material-symbols-outlined text-muted text-sm mr-1.5">schedule</span>
                           <input type="time" [class]="timeInput" [ngModel]="t.start" (ngModelChange)="store.patchTiming($index, { start: $event })" [attr.aria-label]="days[$index] + ' opens'" />
                         </div>
-                        <span class="text-muted text-xs font-semibold">to</span>
+                        <span class="text-muted text-xs font-semibold">{{ "to" | translate }}</span>
                         <div [class]="timeBox">
                           <span class="material-symbols-outlined text-muted text-sm mr-1.5">schedule</span>
                           <input type="time" [class]="timeInput" [ngModel]="t.end" (ngModelChange)="store.patchTiming($index, { end: $event })" [attr.aria-label]="days[$index] + ' closes'" />
                         </div>
                       </div>
                     } @else {
-                      <span class="text-xs font-semibold text-muted bg-surface-container px-3 py-1.5 rounded-lg">Closed</span>
+                      <span class="text-xs font-semibold text-muted bg-surface-container px-3 py-1.5 rounded-lg">{{ "Closed" | translate }}</span>
                     }
                   </div>
                 }
@@ -82,27 +83,27 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                     <span class="material-symbols-outlined">restaurant</span>
                   </div>
                   <div>
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Daily Lunch / Sanitization Break</h3>
-                    <p class="font-body-sm text-body-sm text-muted">All stylist chairs pause simultaneously</p>
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">{{ "Daily Lunch / Sanitization Break" | translate }}</h3>
+                    <p class="font-body-sm text-body-sm text-muted">{{ "All stylist chairs pause simultaneously" | translate }}</p>
                   </div>
                 </div>
-                <app-toggle [checked]="store.brk().enabled" (checkedChange)="store.brk.update(b => ({ ...b, enabled: $event }))" label="Daily break" />
+                <app-toggle [checked]="store.brk().enabled" (checkedChange)="store.brk.update(b => ({ ...b, enabled: $event }))" [label]="'Daily break' | translate" />
               </div>
               @if (store.brk().enabled) {
                 <div class="mt-4 pt-4 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-4">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-semibold text-muted">Break Interval:</span>
+                    <span class="text-xs font-semibold text-muted">{{ "Break Interval:" | translate }}</span>
                     <div class="flex items-center bg-surface-bright px-3 py-1.5 border border-outline-variant/40 rounded-lg text-xs font-medium gap-1">
                       <span class="material-symbols-outlined text-muted text-sm mr-1">timelapse</span>
-                      <input type="time" [class]="timeInput" [ngModel]="store.brk().start" (ngModelChange)="store.brk.update(b => ({ ...b, start: $event }))" aria-label="Break starts" />
+                      <input type="time" [class]="timeInput" [ngModel]="store.brk().start" (ngModelChange)="store.brk.update(b => ({ ...b, start: $event }))" [attr.aria-label]="'Break starts' | translate" />
                       <span>-</span>
-                      <input type="time" [class]="timeInput" [ngModel]="store.brk().end" (ngModelChange)="store.brk.update(b => ({ ...b, end: $event }))" aria-label="Break ends" />
+                      <input type="time" [class]="timeInput" [ngModel]="store.brk().end" (ngModelChange)="store.brk.update(b => ({ ...b, end: $event }))" [attr.aria-label]="'Break ends' | translate" />
                     </div>
                     <span class="text-xs" [class]="breakMins() > 0 ? 'text-muted' : 'text-error'">({{ breakMins() > 0 ? breakMins() + ' mins' : 'end must be after start' }})</span>
                   </div>
                   <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" class="w-4 h-4 rounded text-primary focus:ring-primary border-outline-variant/60" [checked]="store.brk().blockSlots" (change)="store.brk.update(b => ({ ...b, blockSlots: $any($event.target).checked }))" />
-                    <span class="font-body-sm text-body-sm font-medium text-on-surface">Block all booking slots during this break</span>
+                    <span class="font-body-sm text-body-sm font-medium text-on-surface">{{ "Block all booking slots during this break" | translate }}</span>
                   </label>
                 </div>
               }
@@ -112,8 +113,8 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
           <section class="lg:col-span-6 space-y-6">
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-6 shadow-level-1">
               <div class="pb-4 border-b border-outline-variant/20 mb-5">
-                <h2 class="font-headline-md text-headline-md text-on-surface">Slot Generation Engine</h2>
-                <p class="font-body-sm text-body-sm text-muted">Choose how the salon schedule is partitioned into bookable time windows.</p>
+                <h2 class="font-headline-md text-headline-md text-on-surface">{{ "Slot Generation Engine" | translate }}</h2>
+                <p class="font-body-sm text-body-sm text-muted">{{ "Choose how the salon schedule is partitioned into bookable time windows." | translate }}</p>
               </div>
 
               <div class="space-y-4" role="radiogroup">
@@ -123,20 +124,20 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                     <div class="flex-1">
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2 flex-wrap">
-                          <span class="font-headline-sm text-headline-sm text-on-surface">Auto slots by service duration</span>
-                          <span class="px-2 py-0.5 rounded-full bg-primary text-on-primary text-[10px] font-label-sm uppercase tracking-wider">Recommended</span>
+                          <span class="font-headline-sm text-headline-sm text-on-surface">{{ "Auto slots by service duration" | translate }}</span>
+                          <span class="px-2 py-0.5 rounded-full bg-primary text-on-primary text-[10px] font-label-sm uppercase tracking-wider">{{ "Recommended" | translate }}</span>
                         </div>
                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
                       </div>
-                      <p class="font-body-sm text-body-sm text-muted mt-1">Smart Engine: dynamically builds slots based on selected service length and client turnover buffer.</p>
+                      <p class="font-body-sm text-body-sm text-muted mt-1">{{ "Smart Engine: dynamically builds slots based on selected service length and client turnover buffer." | translate }}</p>
                       <div class="mt-3 flex flex-wrap items-center gap-4 pt-3 border-t border-primary/20 text-xs text-on-surface">
                         <div class="flex items-center gap-1.5">
                           <span class="material-symbols-outlined text-sm text-primary">hourglass_empty</span>
-                          <span class="font-medium">Buffer Between Clients:</span>
+                          <span class="font-medium">{{ "Buffer Between Clients:" | translate }}</span>
                         </div>
-                        <select class="text-xs py-1 px-2.5 bg-white border border-outline-variant/40 rounded-md focus:ring-1 focus:ring-primary text-on-surface font-semibold" aria-label="Buffer between clients" [ngModel]="store.buffer()" (ngModelChange)="store.buffer.set(+$event)">
+                        <select class="text-xs py-1 px-2.5 bg-white border border-outline-variant/40 rounded-md focus:ring-1 focus:ring-primary text-on-surface font-semibold" [attr.aria-label]="'Buffer between clients' | translate" [ngModel]="store.buffer()" (ngModelChange)="store.buffer.set(+$event)">
                           @for (b of buffers; track b) {
-                            <option [ngValue]="b">{{ b === 0 ? 'No buffer' : b + ' min buffer' }}</option>
+                            <option [ngValue]="b">{{ b === 0 ? ('No buffer' | translate) : ('{{p1}} min buffer' | translate: { p1: b }) }}</option>
                           }
                         </select>
                       </div>
@@ -149,21 +150,21 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                     <input type="radio" name="slot_mode" class="mt-1 w-4 h-4 text-primary focus:ring-primary border-outline-variant" [checked]="store.slotMode() === 'custom'" (change)="store.slotMode.set('custom')" />
                     <div class="flex-1">
                       <div class="flex items-center justify-between">
-                        <span class="font-headline-sm text-headline-sm text-on-surface">Custom slots (fixed intervals)</span>
+                        <span class="font-headline-sm text-headline-sm text-on-surface">{{ "Custom slots (fixed intervals)" | translate }}</span>
                         <span class="material-symbols-outlined text-muted">tune</span>
                       </div>
-                      <p class="font-body-sm text-body-sm text-muted mt-1">Set fixed slot intervals e.g., 30 min / 45 min / 60 min, starting from opening time.</p>
+                      <p class="font-body-sm text-body-sm text-muted mt-1">{{ "Set fixed slot intervals e.g., 30 min / 45 min / 60 min, starting from opening time." | translate }}</p>
                       <div class="mt-3 flex flex-wrap items-center gap-2 pt-3 border-t border-outline-variant/20 text-xs">
-                        <span class="text-muted font-medium">Standard Interval:</span>
+                        <span class="text-muted font-medium">{{ "Standard Interval:" | translate }}</span>
                         @for (i of store.customIntervals(); track i) {
-                          <button type="button" (click)="pickInterval(i)" class="px-2.5 py-1 rounded border text-xs font-medium transition-colors" [class]="store.slotMode() === 'custom' && store.customInterval() === i ? 'bg-primary text-on-primary border-primary' : 'bg-white border-outline-variant/40 hover:border-primary text-on-surface'">{{ i }} min</button>
+                          <button type="button" (click)="pickInterval(i)" class="px-2.5 py-1 rounded border text-xs font-medium transition-colors" [class]="store.slotMode() === 'custom' && store.customInterval() === i ? 'bg-primary text-on-primary border-primary' : 'bg-white border-outline-variant/40 hover:border-primary text-on-surface'">{{ "{{p1}} min" | translate: { p1: (i) } }}</button>
                         }
                         @if (addingInterval()) {
-                          <input type="number" min="5" step="5" class="w-16 py-1 px-2 text-xs rounded border border-outline-variant/40 focus:ring-1 focus:ring-primary" aria-label="Custom interval in minutes" placeholder="mins" [(ngModel)]="newInterval" (keydown.enter)="$event.preventDefault(); addInterval()" />
-                          <button type="button" class="text-primary font-semibold" (click)="addInterval()">Add</button>
+                          <input type="number" min="5" step="5" class="w-16 py-1 px-2 text-xs rounded border border-outline-variant/40 focus:ring-1 focus:ring-primary" [attr.aria-label]="'Custom interval in minutes' | translate" [placeholder]="'mins' | translate" [(ngModel)]="newInterval" (keydown.enter)="$event.preventDefault(); addInterval()" />
+                          <button type="button" class="text-primary font-semibold" (click)="addInterval()">{{ "Add" | translate }}</button>
                         } @else {
                           <button type="button" class="px-2 py-1 text-primary hover:underline font-semibold ml-auto flex items-center gap-0.5" (click)="addingInterval.set(true)">
-                            <span class="material-symbols-outlined text-sm">add</span> Add Custom
+                            <span class="material-symbols-outlined text-sm">add</span> {{ "Add Custom" | translate }}
                           </button>
                         }
                       </div>
@@ -176,53 +177,53 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-lg">visibility</span>
-                    <h3 class="font-headline-sm text-headline-sm text-on-surface">Visual Slot Preview</h3>
-                    <span class="text-xs text-muted">(Sample generation for Today)</span>
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface">{{ "Visual Slot Preview" | translate }}</h3>
+                    <span class="text-xs text-muted">{{ "(Sample generation for Today)" | translate }}</span>
                   </div>
                   <div class="flex items-center gap-3 text-[11px] font-label-sm">
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border border-primary bg-white inline-block"></span><span class="text-muted">Available</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span><span class="text-muted">Selected</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-surface-variant inline-block"></span><span class="text-muted">Busy</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full border border-primary bg-white inline-block"></span><span class="text-muted">{{ "Available" | translate }}</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-primary inline-block"></span><span class="text-muted">{{ "Selected" | translate }}</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-surface-variant inline-block"></span><span class="text-muted">{{ "Busy" | translate }}</span></span>
                   </div>
                 </div>
                 <div class="bg-surface-bright border border-outline-variant/30 rounded-lg p-3 text-xs text-muted mb-4 flex items-center justify-between gap-3">
                   @if (previewService(); as ps) {
-                    <span>Showing generated slots for <strong class="text-on-surface">{{ ps.name }} ({{ ps.duration }} min)</strong>{{ store.slotMode() === 'auto' ? ' with ' + store.buffer() + ' min turnover buffer.' : ' every ' + store.customInterval() + ' min.' }}</span>
-                    <button type="button" class="text-primary font-semibold hover:underline shrink-0" (click)="cycleService()">Change Service</button>
+                    <span>{{ "Showing generated slots for" | translate }} <strong class="text-on-surface">{{ "{{p1}} ({{p2}} min)" | translate: { p1: (ps.name), p2: (ps.duration) } }}</strong>{{ store.slotMode() === 'auto' ? ' with ' + store.buffer() + ' min turnover buffer.' : ' every ' + store.customInterval() + ' min.' }}</span>
+                    <button type="button" class="text-primary font-semibold hover:underline shrink-0" (click)="cycleService()">{{ "Change Service" | translate }}</button>
                   } @else {
-                    <span>Select at least one service in step 2 to preview slots.</span>
+                    <span>{{ "Select at least one service in step 2 to preview slots." | translate }}</span>
                   }
                 </div>
 
                 @if (todayClosed()) {
-                  <p class="text-center text-sm text-muted py-6">The salon is closed today. Slots are generated for open days.</p>
+                  <p class="text-center text-sm text-muted py-6">{{ "The salon is closed today. Slots are generated for open days." | translate }}</p>
                 } @else {
                   <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                     @for (s of slots(); track s.start + '-' + s.kind) {
                       @if (s.kind === 'break') {
                         <div class="col-span-2 cursor-not-allowed bg-surface-container border border-dashed border-outline-variant text-muted py-2 px-3 rounded-lg text-center font-label-md text-label-md flex items-center justify-center gap-2 opacity-80">
                           <span class="material-symbols-outlined text-sm">restaurant</span>
-                          <span>{{ fmt(s.start) }} - {{ fmt(s.end) }} (Break)</span>
+                          <span>{{ "{{p1}} - {{p2}} (Break)" | translate: { p1: (fmt(s.start)), p2: (fmt(s.end)) } }}</span>
                         </div>
                       } @else if (s.booked) {
                         <div class="cursor-not-allowed bg-surface-container-low border border-outline-variant/20 text-muted py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center line-through opacity-70">
                           <span>{{ fmt(s.start) }}</span>
-                          <span class="text-[10px] text-muted no-underline">Booked</span>
+                          <span class="text-[10px] text-muted no-underline">{{ "Booked" | translate }}</span>
                         </div>
                       } @else if (selectedStart() === s.start) {
                         <button type="button" (click)="selectedStart.set(null)" class="bg-primary text-on-primary py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center shadow-level-2 transform -translate-y-0.5 transition-all">
                           <span class="font-bold">{{ fmt(s.start) }}</span>
-                          <span class="text-[10px] text-on-primary/90 font-normal">Selected</span>
+                          <span class="text-[10px] text-on-primary/90 font-normal">{{ "Selected" | translate }}</span>
                         </button>
                       } @else {
                         <button type="button" (click)="selectedStart.set(s.start)" class="border-[1.5px] border-primary text-primary bg-surface-container-lowest hover:bg-primary/10 transition-colors py-2 px-3 rounded-lg text-center font-label-md text-label-md flex flex-col items-center justify-center">
                           <span>{{ fmt(s.start) }}</span>
-                          <span class="text-[10px] text-primary/80 font-normal">Available</span>
+                          <span class="text-[10px] text-primary/80 font-normal">{{ "Available" | translate }}</span>
                         </button>
                       }
                     }
                   </div>
-                  <p class="text-xs text-muted mt-3 text-right">Total {{ slotCount() }} appointment slots generated for a {{ workHours() }}-hour workday.</p>
+                  <p class="text-xs text-muted mt-3 text-right">{{ "Total {{p1}} appointment slots generated for a {{p2}}-hour workday." | translate: { p1: (slotCount()), p2: (workHours()) } }}</p>
                 }
               </div>
             </div>
@@ -234,15 +235,15 @@ const TIME_INPUT = 'no-picker border-0 p-0 bg-transparent text-xs font-medium fo
         <div class="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between gap-3">
           <button type="button" (click)="back()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-outline-variant/60 text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors">
             <span class="material-symbols-outlined text-lg">arrow_back</span>
-            <span class="hidden sm:inline">Back to Services</span><span class="sm:hidden">Back</span>
+            <span class="hidden sm:inline">{{ "Back to Services" | translate }}</span><span class="sm:hidden">{{ "Back" | translate }}</span>
           </button>
           <div class="flex items-center gap-6">
             <div class="hidden md:flex flex-col text-right">
-              <span class="font-label-sm text-label-sm text-muted">Next Step:</span>
-              <span class="font-headline-sm text-headline-sm text-on-surface">Step 4: Staff &amp; Team</span>
+              <span class="font-label-sm text-label-sm text-muted">{{ "Next Step:" | translate }}</span>
+              <span class="font-headline-sm text-headline-sm text-on-surface">{{ "Step 4: Staff & Team" | translate }}</span>
             </div>
             <button type="button" (click)="next()" class="inline-flex items-center gap-2 px-6 md:px-7 py-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg shadow-level-2 transition-all hover:scale-[1.01] active:scale-[0.99]">
-              <span class="hidden sm:inline">Continue to Staff &amp; Team</span><span class="sm:hidden">Continue</span>
+              <span class="hidden sm:inline">{{ "Continue to Staff & Team" | translate }}</span><span class="sm:hidden">{{ "Continue" | translate }}</span>
               <span class="material-symbols-outlined text-lg">arrow_forward</span>
             </button>
           </div>

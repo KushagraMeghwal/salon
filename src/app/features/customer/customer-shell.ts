@@ -18,7 +18,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
         <div class="flex justify-between items-center w-full px-space-md py-space-sm max-w-screen-md mx-auto">
           <div class="flex items-center gap-space-sm min-w-0">
             @if (showBack()) {
-              <button type="button" aria-label="Go back" (click)="location.back()" class="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-95 transition-all">
+              <button type="button" [attr.aria-label]="'Go back' | translate" (click)="location.back()" class="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low active:scale-95 transition-all">
                 <span class="material-symbols-outlined text-[22px]">arrow_back</span>
               </button>
             }
@@ -41,7 +41,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
 
       <footer class="bg-surface-container-low border-t border-outline-variant py-space-lg px-space-md text-center w-full no-print" [class.mb-16]="showNav()">
         <div class="max-w-screen-md mx-auto flex flex-col items-center justify-center gap-space-xs">
-          <div class="text-label-md font-label-md text-on-surface-variant font-medium">Powered by <span class="font-semibold text-primary">Chairly</span></div>
+          <div class="text-label-md font-label-md text-on-surface-variant font-medium">{{ "Powered by" | translate }} <span class="font-semibold text-primary">{{ "Chairly" | translate }}</span></div>
           <div class="flex items-center gap-space-md text-label-sm font-label-sm text-outline">
             <a class="hover:text-primary hover:underline transition-all duration-150" href="#privacy">{{ 'common.privacy' | translate }}</a><span>•</span>
             <a class="hover:text-primary hover:underline transition-all duration-150" href="#terms">{{ 'common.terms' | translate }}</a><span>•</span>

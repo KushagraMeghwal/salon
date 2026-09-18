@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { SalonStore } from './salon.store';
-import { dateKey, toMin } from '../utils/time';
+import { dateKey, toMin, LOCALE } from '../utils/time';
 
 export interface SlotOption {
   start: number;
@@ -37,8 +37,8 @@ export class AvailabilityService {
       d.setDate(d.getDate() + i);
       const key = dateKey(d);
       out.push({
-        key, date: d, dow: d.toLocaleDateString('en-IN', { weekday: 'short' }), day: d.getDate(),
-        month: d.toLocaleDateString('en-IN', { month: 'short' }), weekend: d.getDay() === 0 || d.getDay() === 6,
+        key, date: d, dow: d.toLocaleDateString(LOCALE(), { weekday: 'short' }), day: d.getDate(),
+        month: d.toLocaleDateString(LOCALE(), { month: 'short' }), weekend: d.getDay() === 0 || d.getDay() === 6,
         closed: !this.store.dayTiming(key).open,
       });
     }

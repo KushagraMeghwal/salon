@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SalonStore } from '../../core/services/salon.store';
@@ -9,22 +10,22 @@ import { Modal } from '../ui/modal';
 
 @Component({
   selector: 'app-booking-modal',
-  imports: [FormsModule, Modal],
+  imports: [FormsModule, Modal, TranslatePipe],
   template: `
-    <app-modal [open]="ui.bookingModal() !== null" title="New Appointment" (closed)="ui.closeBooking()">
+    <app-modal [open]="ui.bookingModal() !== null" [title]="'New Appointment' | translate" (closed)="ui.closeBooking()">
       <form class="space-y-4" (ngSubmit)="submit()" #f="ngForm">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label [class]="label" for="bk-client">Client name</label>
-            <input id="bk-client" name="client" [class]="input" [(ngModel)]="client" required placeholder="e.g., Ananya Roy" />
+            <label [class]="label" for="bk-client">{{ "Client name" | translate }}</label>
+            <input id="bk-client" name="client" [class]="input" [(ngModel)]="client" required [placeholder]="'e.g., Ananya Roy' | translate" />
           </div>
           <div>
-            <label [class]="label" for="bk-phone">Mobile number</label>
+            <label [class]="label" for="bk-phone">{{ "Mobile number" | translate }}</label>
             <input id="bk-phone" name="phone" [class]="input" [(ngModel)]="phone" placeholder="+91 98765 43210" />
           </div>
         </div>
         <div>
-          <label [class]="label" for="bk-service">Service</label>
+          <label [class]="label" for="bk-service">{{ "Service" | translate }}</label>
           <select id="bk-service" name="service" [class]="input" [ngModel]="serviceId()" (ngModelChange)="pickService($event)" required>
             @for (s of store.selectedServices(); track s.id) {
               <option [value]="s.id">{{ s.name }} · ₹{{ s.price }} · {{ s.duration }}m</option>
@@ -33,7 +34,7 @@ import { Modal } from '../ui/modal';
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label [class]="label" for="bk-staff">Stylist</label>
+            <label [class]="label" for="bk-staff">{{ "Stylist" | translate }}</label>
             <select id="bk-staff" name="staff" [class]="input" [(ngModel)]="staffId" required>
               @for (s of store.staff(); track s.id) {
                 <option [value]="s.id">{{ s.name }}</option>
@@ -41,25 +42,25 @@ import { Modal } from '../ui/modal';
             </select>
           </div>
           <div>
-            <label [class]="label" for="bk-date">Date</label>
+            <label [class]="label" for="bk-date">{{ "Date" | translate }}</label>
             <input id="bk-date" name="date" type="date" [class]="input" [(ngModel)]="date" required />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label [class]="label" for="bk-time">Start time</label>
+            <label [class]="label" for="bk-time">{{ "Start time" | translate }}</label>
             <input id="bk-time" name="time" type="time" step="900" [class]="input" [(ngModel)]="time" required />
           </div>
           <div>
-            <label [class]="label" for="bk-duration">Duration (mins)</label>
+            <label [class]="label" for="bk-duration">{{ "Duration (mins)" | translate }}</label>
             <input id="bk-duration" name="duration" type="number" min="5" step="5" [class]="input" [(ngModel)]="duration" required />
           </div>
         </div>
         <div class="flex items-center justify-between pt-4 border-t border-outline-variant/20">
           <span class="font-headline-sm text-headline-sm text-on-surface">₹{{ price() }}</span>
           <div class="flex items-center gap-3">
-            <button type="button" [class]="ghost" (click)="ui.closeBooking()">Cancel</button>
-            <button type="submit" [class]="primary" [disabled]="f.invalid">Book appointment</button>
+            <button type="button" [class]="ghost" (click)="ui.closeBooking()">{{ "Cancel" | translate }}</button>
+            <button type="submit" [class]="primary" [disabled]="f.invalid">{{ "Book appointment" | translate }}</button>
           </div>
         </div>
       </form>
@@ -120,7 +121,7 @@ export class BookingModal {
       this.toast.error(res.error ?? 'Could not create booking');
       return;
     }
-    this.toast.success(`Booked ${this.client} with ${this.store.staffById(this.staffId)?.name}`);
+    this.toast.success('Booked {{p1}} with {{p2}}', { p1: this.client, p2: this.store.staffById(this.staffId)?.name });
     this.ui.closeBooking();
   }
 }

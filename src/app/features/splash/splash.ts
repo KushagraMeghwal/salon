@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SalonStore } from '../../core/services/salon.store';
@@ -11,6 +12,7 @@ const MESSAGES = [
 
 /** The only screen where the Chairly logo is shown. */
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-splash',
   template: `
     <div class="min-h-screen flex items-center justify-center bg-[#F7FAF9] text-on-surface antialiased select-none">
@@ -26,12 +28,12 @@ const MESSAGES = [
             <div class="absolute w-44 h-44 rounded-full border border-primary/25 bg-primary/5 animate-pulse-ring-1 pointer-events-none"></div>
             <div class="absolute w-40 h-40 rounded-full border border-primary/20 bg-primary/5 animate-pulse-ring-2 pointer-events-none"></div>
             <div class="relative z-10 w-28 h-28 rounded-2xl bg-surface-container-lowest flex items-center justify-center shadow-[0px_16px_32px_-8px_rgba(15,157,138,0.16),0px_4px_12px_rgba(31,42,46,0.06)] border border-outline-variant/30 animate-logo-pulse">
-              <img alt="Chairly" class="w-16 h-16 object-contain" src="chairly-logo.svg" />
+              <img [alt]="'Chairly' | translate" class="w-16 h-16 object-contain" src="chairly-logo.svg" />
             </div>
           </div>
           <div class="text-center px-4 max-w-xs">
-            <h1 class="font-headline-lg text-3xl font-bold tracking-tight text-[#1F2A2E] mb-1.5">Chairly</h1>
-            <p class="font-body-md text-body-md text-[#8A9A9E] tracking-tight">Smart Salon Booking &amp; Billing</p>
+            <h1 class="font-headline-lg text-3xl font-bold tracking-tight text-[#1F2A2E] mb-1.5">{{ "Chairly" | translate }}</h1>
+            <p class="font-body-md text-body-md text-[#8A9A9E] tracking-tight">{{ "Smart Salon Booking & Billing" | translate }}</p>
           </div>
         </main>
 

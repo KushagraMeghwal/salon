@@ -1,51 +1,53 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { Booking } from '../../core/models';
 import { AvailabilityService } from '../../core/services/availability.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
-import { fmt12, inr } from '../../core/utils/time';
+import { fmt12, inr, LOCALE } from '../../core/utils/time';
 
 /** Bottom sheet opened from "My Bookings" to move an appointment to a free slot with the same stylist. */
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-reschedule-sheet',
   template: `
-    <div class="fixed inset-0 z-50 flex items-end justify-center no-print" role="dialog" aria-modal="true" aria-label="Reschedule appointment">
+    <div class="fixed inset-0 z-50 flex items-end justify-center no-print" role="dialog" aria-modal="true" [attr.aria-label]="'Reschedule appointment' | translate">
       <div class="absolute inset-0 bg-[#1F2A2E]/55 backdrop-blur-[3px]" (click)="closed.emit()"></div>
       <div class="relative z-10 w-full max-w-md max-h-[92%] flex flex-col bg-surface-container-lowest rounded-t-3xl shadow-2xl border-t border-outline-variant/30 overflow-hidden">
         <div class="pt-3 pb-1 flex justify-center"><div class="w-12 h-1.5 rounded-full bg-outline-variant"></div></div>
         <div class="overflow-y-auto no-scrollbar px-5 pt-2 pb-6 space-y-4">
           <div class="flex items-center justify-between pb-1">
-            <div><h2 class="text-headline-lg-mobile font-headline-lg-mobile text-on-surface font-bold tracking-tight">Reschedule Appointment</h2><p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Select a new date &amp; time slot for your service</p></div>
-            <button type="button" aria-label="Close" (click)="closed.emit()" class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-surface-variant text-on-surface transition-colors active:scale-95"><span class="material-symbols-outlined text-xl">close</span></button>
+            <div><h2 class="text-headline-lg-mobile font-headline-lg-mobile text-on-surface font-bold tracking-tight">{{ "Reschedule Appointment" | translate }}</h2><p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">{{ "Select a new date & time slot for your service" | translate }}</p></div>
+            <button type="button" [attr.aria-label]="'Close' | translate" (click)="closed.emit()" class="w-9 h-9 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-surface-variant text-on-surface transition-colors active:scale-95"><span class="material-symbols-outlined text-xl">close</span></button>
           </div>
 
           <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/40"><span class="material-symbols-outlined text-primary text-sm">bookmark</span><span class="text-label-sm font-label-sm text-on-surface-variant font-semibold">#{{ booking().bookingNo }} · {{ booking().serviceName }}</span></div>
 
           <div class="flex items-center gap-3 p-3.5 rounded-xl bg-surface-container/60 border border-outline-variant/50">
             <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant shrink-0"><span class="material-symbols-outlined text-lg">history</span></div>
-            <div><p class="text-label-sm font-label-sm text-outline uppercase tracking-wider font-semibold">Current Booking</p><p class="text-label-md font-label-md text-on-surface font-medium">{{ label(booking().date) }}, {{ fmt(booking().start) }} <span class="text-on-surface-variant font-normal">with {{ stylist() }}</span></p></div>
+            <div><p class="text-label-sm font-label-sm text-outline uppercase tracking-wider font-semibold">{{ "Current Booking" | translate }}</p><p class="text-label-md font-label-md text-on-surface font-medium">{{ label(booking().date) }}, {{ fmt(booking().start) }} <span class="text-on-surface-variant font-normal">{{ "with {{p1}}" | translate: { p1: (stylist()) } }}</span></p></div>
           </div>
 
           <div class="space-y-2 pt-1">
-            <div class="flex items-center justify-between"><span class="text-label-md font-label-md text-on-surface font-semibold tracking-wide">Select New Date</span><span class="text-label-sm font-label-sm text-primary font-medium flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">calendar_month</span> {{ month() }}</span></div>
+            <div class="flex items-center justify-between"><span class="text-label-md font-label-md text-on-surface font-semibold tracking-wide">{{ "Select New Date" | translate }}</span><span class="text-label-sm font-label-sm text-primary font-medium flex items-center gap-0.5"><span class="material-symbols-outlined text-xs">calendar_month</span> {{ month() }}</span></div>
             <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
               @for (d of days; track d.key; let i = $index) {
                 <button type="button" [disabled]="d.closed" (click)="date.set(d.key); start.set(null)" class="shrink-0 flex flex-col items-center justify-center min-w-[76px] py-2.5 px-3 rounded-xl transition-all active:scale-95 disabled:cursor-not-allowed"
                   [class]="date() === d.key ? 'bg-primary text-on-primary shadow-md shadow-primary/20 border border-primary' : d.closed ? 'border border-dashed border-outline-variant bg-surface-container text-outline opacity-70' : 'border border-outline-variant/70 bg-surface-container-lowest hover:border-primary text-on-surface'">
-                  <span class="text-label-sm font-label-sm" [class]="date() === d.key ? 'text-primary-fixed font-semibold' : 'text-outline'">{{ i === 0 ? 'Today' : d.dow }}</span>
+                  <span class="text-label-sm font-label-sm" [class]="date() === d.key ? 'text-primary-fixed font-semibold' : 'text-outline'">{{ i === 0 ? ('Today' | translate) : d.dow }}</span>
                   <span class="text-headline-sm font-headline-sm font-bold mt-0.5">{{ d.day }}</span>
-                  <span class="text-label-sm font-label-sm" [class]="date() === d.key ? 'text-primary-fixed' : 'text-outline'">{{ d.closed ? 'Closed' : d.month }}</span>
+                  <span class="text-label-sm font-label-sm" [class]="date() === d.key ? 'text-primary-fixed' : 'text-outline'">{{ d.closed ? ('Closed' | translate) : d.month }}</span>
                 </button>
               }
             </div>
           </div>
 
           <div class="space-y-3.5 pt-1">
-            <div class="flex items-center justify-between"><span class="text-label-md font-label-md text-on-surface font-semibold tracking-wide">Available Time Slots</span><span class="text-label-sm font-label-sm text-outline">IST (GMT +5:30)</span></div>
+            <div class="flex items-center justify-between"><span class="text-label-md font-label-md text-on-surface font-semibold tracking-wide">{{ "Available Time Slots" | translate }}</span><span class="text-label-sm font-label-sm text-outline">{{ "IST (GMT +5:30)" | translate }}</span></div>
             @for (g of groups(); track g.key) {
               @if (g.slots.length) {
                 <div class="space-y-1.5">
-                  <div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline font-semibold"><span class="material-symbols-outlined text-sm" [class]="g.tone">{{ g.icon }}</span><span>{{ g.label }}</span></div>
+                  <div class="flex items-center gap-1.5 text-label-sm font-label-sm text-outline font-semibold"><span class="material-symbols-outlined text-sm" [class]="g.tone">{{ g.icon }}</span><span>{{ (g.label) | translate }}</span></div>
                   <div class="grid grid-cols-3 gap-2">
                     @for (s of g.slots; track s.start) {
                       @if (!s.staffIds.length) {
@@ -60,22 +62,22 @@ import { fmt12, inr } from '../../core/utils/time';
                 </div>
               }
             } @empty {}
-            @if (!slots().length) { <p class="text-body-sm text-outline text-center py-3">No slots on this day. Pick another date.</p> }
+            @if (!slots().length) { <p class="text-body-sm text-outline text-center py-3">{{ "No slots on this day. Pick another date." | translate }}</p> }
           </div>
 
           <div class="p-3 rounded-xl bg-surface-container-low border border-primary/20 flex gap-2.5 items-start">
             <span class="material-symbols-outlined text-primary text-lg mt-0.5 shrink-0">info</span>
             <div class="space-y-0.5 text-left">
-              <h4 class="text-label-sm font-label-sm text-on-surface font-bold tracking-tight">Cancellation &amp; Reschedule Policy</h4>
-              <p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">Free rescheduling up to {{ store.settings().cancelWindowHrs }} hours prior to slot. Within {{ store.settings().cancelWindowHrs }} hours, a {{ store.settings().latePenaltyPct }}% salon prep fee applies@if (fee() > 0) { <strong class="text-secondary"> — {{ inr(fee()) }} for this booking</strong> }.</p>
+              <h4 class="text-label-sm font-label-sm text-on-surface font-bold tracking-tight">{{ "Cancellation & Reschedule Policy" | translate }}</h4>
+              <p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">{{ "Free rescheduling up to {{p1}} hours prior to slot. Within {{p2}} hours, a {{p3}}% salon prep fee applies" | translate: { p1: (store.settings().cancelWindowHrs), p2: (store.settings().cancelWindowHrs), p3: (store.settings().latePenaltyPct) } }}@if (fee() > 0) { <strong class="text-secondary"> {{ "— {{p1}} for this booking" | translate: { p1: (inr(fee())) } }}</strong> }.</p>
             </div>
           </div>
 
           <div class="space-y-2 pt-2">
-            <button type="button" (click)="confirm()" [disabled]="start() === null" class="w-full h-12 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary active:scale-[0.98] font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"><span class="material-symbols-outlined text-xl">check</span><span>Confirm Reschedule</span></button>
-            <button type="button" (click)="closed.emit()" class="w-full h-10 bg-transparent hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md rounded-xl transition-colors">Keep Original Time</button>
+            <button type="button" (click)="confirm()" [disabled]="start() === null" class="w-full h-12 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary active:scale-[0.98] font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"><span class="material-symbols-outlined text-xl">check</span><span>{{ "Confirm Reschedule" | translate }}</span></button>
+            <button type="button" (click)="closed.emit()" class="w-full h-10 bg-transparent hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md rounded-xl transition-colors">{{ "Keep Original Time" | translate }}</button>
           </div>
-          <p class="pt-2 text-center text-label-sm font-label-sm text-on-surface-variant opacity-75">Powered by Chairly</p>
+          <p class="pt-2 text-center text-label-sm font-label-sm text-on-surface-variant opacity-75">{{ "Powered by Chairly" | translate }}</p>
         </div>
       </div>
     </div>
@@ -98,7 +100,7 @@ export class RescheduleSheet implements OnInit {
 
   protected readonly stylist = computed(() => this.store.staffById(this.booking().staffId)?.name ?? '');
   protected readonly fee = computed(() => this.store.cancellationFee(this.booking()));
-  protected readonly month = computed(() => new Date((this.date() || this.days[0].key) + 'T00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }));
+  protected readonly month = computed(() => new Date((this.date() || this.days[0].key) + 'T00:00').toLocaleDateString(LOCALE(), { month: 'long', year: 'numeric' }));
   protected readonly slots = computed(() =>
     this.date() ? this.avail.slots(this.date(), { duration: this.booking().duration, staffId: this.booking().staffId, ignoreBookingId: this.booking().id, includeBusy: true }) : [],
   );
@@ -115,7 +117,7 @@ export class RescheduleSheet implements OnInit {
   }
 
   label(date: string) {
-    return new Date(date + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    return new Date(date + 'T00:00').toLocaleDateString(LOCALE(), { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   confirm() {
@@ -123,7 +125,7 @@ export class RescheduleSheet implements OnInit {
     if (s === null) return;
     const err = this.store.rescheduleBooking(this.booking().id, this.date(), s);
     if (err) return this.toast.error(err);
-    this.toast.success(`Rescheduled to ${this.label(this.date())}, ${fmt12(s)}`);
+    this.toast.success('Rescheduled to {{p1}}, {{p2}}', { p1: this.label(this.date()), p2: fmt12(s) });
     this.done.emit();
   }
 }

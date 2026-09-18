@@ -1,3 +1,4 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -15,7 +16,7 @@ const FIELD =
 
 @Component({
   selector: 'app-staff-step',
-  imports: [FormsModule, WizardHeader, DayPicker],
+  imports: [FormsModule, WizardHeader, DayPicker, TranslatePipe],
   template: `
     <div class="min-h-screen flex flex-col bg-surface text-on-surface antialiased">
       <app-wizard-header [active]="4" />
@@ -24,17 +25,17 @@ const FIELD =
         <div class="mb-8">
           <div class="flex items-center gap-2 text-primary font-label-sm text-label-sm uppercase tracking-wider mb-2">
             <span class="material-symbols-outlined text-[16px]">group_add</span>
-            <span>Final Step • Setup Complete in ~3 Mins</span>
+            <span>{{ "Final Step • Setup Complete in ~3 Mins" | translate }}</span>
           </div>
-          <h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface tracking-tight">Add Your Stylists &amp; Specialists</h1>
-          <p class="text-body-lg font-body-lg text-muted mt-1 max-w-2xl">Assign staff members, the services they perform, working shifts, and commission splits.</p>
+          <h1 class="text-headline-lg-mobile md:text-headline-lg font-headline-lg text-on-surface tracking-tight">{{ "Add Your Stylists & Specialists" | translate }}</h1>
+          <p class="text-body-lg font-body-lg text-muted mt-1 max-w-2xl">{{ "Assign staff members, the services they perform, working shifts, and commission splits." | translate }}</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <section class="lg:col-span-7 flex flex-col gap-6">
             <div class="flex items-center gap-2">
-              <h2 class="text-headline-sm font-headline-sm text-on-surface">Active Team Roster</h2>
-              <span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold">{{ store.staff().length }} Added</span>
+              <h2 class="text-headline-sm font-headline-sm text-on-surface">{{ "Active Team Roster" | translate }}</h2>
+              <span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold">{{ "{{p1}} Added" | translate: { p1: (store.staff().length) } }}</span>
             </div>
 
             <div class="grid grid-cols-1 gap-4">
@@ -53,37 +54,37 @@ const FIELD =
                       <div class="min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                           <h3 class="text-headline-sm font-headline-sm text-on-surface">{{ m.name }}</h3>
-                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-[#22A06B]/15 text-[#166534]">Active</span>
+                          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-[#22A06B]/15 text-[#166534]">{{ "Active" | translate }}</span>
                         </div>
-                        <p class="text-label-md font-label-md text-primary font-medium">{{ m.title || m.role }}</p>
+                        <p class="text-label-md font-label-md text-primary font-medium">{{ (m.title || m.role) | translate }}</p>
                         <p class="text-body-sm font-body-sm text-muted flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-[14px]">call</span> {{ m.phone }}</p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 self-end sm:self-center">
-                      <button type="button" class="p-2 rounded-lg text-muted hover:text-primary hover:bg-surface-container-low transition-colors duration-150" title="Edit Staff Details" (click)="edit(m)"><span class="material-symbols-outlined text-[20px]">edit</span></button>
-                      <button type="button" class="p-2 rounded-lg text-muted hover:text-error hover:bg-error-container/30 transition-colors duration-150" title="Remove Staff" (click)="remove(m)"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+                      <button type="button" class="p-2 rounded-lg text-muted hover:text-primary hover:bg-surface-container-low transition-colors duration-150" [title]="'Edit Staff Details' | translate" (click)="edit(m)"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+                      <button type="button" class="p-2 rounded-lg text-muted hover:text-error hover:bg-error-container/30 transition-colors duration-150" [title]="'Remove Staff' | translate" (click)="remove(m)"><span class="material-symbols-outlined text-[20px]">delete</span></button>
                     </div>
                   </div>
                   <div class="pt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-2">
-                      <span class="text-label-sm font-label-sm text-muted block mb-1.5 uppercase">Services Assigned</span>
+                      <span class="text-label-sm font-label-sm text-muted block mb-1.5 uppercase">{{ "Services Assigned" | translate }}</span>
                       <div class="flex flex-wrap gap-1.5">
                         @for (n of serviceNames(m); track n) {
                           <span class="px-2.5 py-1 rounded-md text-label-sm font-label-sm bg-surface-container text-on-surface">{{ n }}</span>
                         } @empty {
-                          <span class="text-body-sm text-muted">None yet</span>
+                          <span class="text-body-sm text-muted">{{ "None yet" | translate }}</span>
                         }
                       </div>
                     </div>
                     <div>
-                      <span class="text-label-sm font-label-sm text-muted block mb-1.5 uppercase">Commission Split</span>
+                      <span class="text-label-sm font-label-sm text-muted block mb-1.5 uppercase">{{ "Commission Split" | translate }}</span>
                       <div class="flex items-center gap-1.5 text-headline-sm font-headline-sm text-primary">
-                        <span class="material-symbols-outlined text-[18px]">percent</span><span>{{ m.commission }}% on services</span>
+                        <span class="material-symbols-outlined text-[18px]">percent</span><span>{{ "{{p1}}% on services" | translate: { p1: (m.commission) } }}</span>
                       </div>
                     </div>
                   </div>
                   <div class="mt-4 pt-3 border-t border-outline-variant/10 flex items-center justify-between">
-                    <span class="text-label-sm font-label-sm text-muted">Working Shifts</span>
+                    <span class="text-label-sm font-label-sm text-muted">{{ "Working Shifts" | translate }}</span>
                     <div class="flex gap-1">
                       @for (d of m.days; track $index) {
                         <span class="w-6 h-6 rounded flex items-center justify-center text-label-sm font-label-sm" [class]="d ? 'bg-primary text-on-primary' : 'bg-surface-container text-muted opacity-40'">{{ dayLetters[$index] }}</span>
@@ -94,8 +95,8 @@ const FIELD =
               } @empty {
                 <div class="rounded-xl border-2 border-dashed border-outline-variant/50 p-10 text-center text-muted">
                   <span class="material-symbols-outlined text-4xl text-primary/40">group_add</span>
-                  <p class="mt-2 font-label-lg text-label-lg text-on-surface">No team members yet</p>
-                  <p class="text-body-sm">Add your first stylist using the form.</p>
+                  <p class="mt-2 font-label-lg text-label-lg text-on-surface">{{ "No team members yet" | translate }}</p>
+                  <p class="text-body-sm">{{ "Add your first stylist using the form." | translate }}</p>
                 </div>
               }
             </div>
@@ -103,8 +104,8 @@ const FIELD =
             <div class="rounded-lg p-4 bg-surface-container-low border border-outline-variant/20 flex items-start gap-3">
               <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">info</span>
               <div>
-                <h4 class="text-label-lg font-label-lg text-on-surface">Auto-Sync Shifts with Appointment Calendar</h4>
-                <p class="text-body-sm font-body-sm text-muted mt-0.5">Staff will only appear bookable on customer portals during their assigned working days and active slots.</p>
+                <h4 class="text-label-lg font-label-lg text-on-surface">{{ "Auto-Sync Shifts with Appointment Calendar" | translate }}</h4>
+                <p class="text-body-sm font-body-sm text-muted mt-0.5">{{ "Staff will only appear bookable on customer portals during their assigned working days and active slots." | translate }}</p>
               </div>
             </div>
           </section>
@@ -114,11 +115,11 @@ const FIELD =
               <div class="flex items-center gap-2.5">
                 <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[20px]">{{ editingId() ? 'edit' : 'person_add' }}</span></div>
                 <div>
-                  <h2 class="text-headline-sm font-headline-sm text-on-surface">{{ editingId() ? 'Edit Staff Member' : 'Add New Staff Member' }}</h2>
-                  <p class="text-body-sm font-body-sm text-muted">Direct invite or manual profile</p>
+                  <h2 class="text-headline-sm font-headline-sm text-on-surface">{{ editingId() ? ('Edit Staff Member' | translate) : ('Add New Staff Member' | translate) }}</h2>
+                  <p class="text-body-sm font-body-sm text-muted">{{ "Direct invite or manual profile" | translate }}</p>
                 </div>
               </div>
-              <span class="text-label-sm font-label-sm text-muted bg-surface-container px-2 py-0.5 rounded">{{ editingId() ? 'Editing' : 'Chair #' + (store.staff().length + 1) }}</span>
+              <span class="text-label-sm font-label-sm text-muted bg-surface-container px-2 py-0.5 rounded">{{ editingId() ? ('Editing' | translate) : ('Chair #{{p1}}' | translate: { p1: store.staff().length + 1 }) }}</span>
             </div>
 
             <form class="space-y-5" (submit)="$event.preventDefault(); submit()" novalidate>
@@ -126,43 +127,43 @@ const FIELD =
                 <label class="relative w-16 h-16 rounded-full border-2 border-dashed border-outline-variant flex flex-col items-center justify-center bg-surface-container-low text-muted hover:border-primary cursor-pointer transition-colors group overflow-hidden shrink-0">
                   <input type="file" class="sr-only" accept="image/png,image/jpeg" (change)="onPhoto($any($event.target).files?.[0])" />
                   @if (photo()) {
-                    <img [src]="photo()" alt="Staff photo preview" class="absolute inset-0 w-full h-full object-cover" />
+                    <img [src]="photo()" [alt]="'Staff photo preview' | translate" class="absolute inset-0 w-full h-full object-cover" />
                   } @else {
                     <span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">add_a_photo</span>
-                    <span class="text-[9px] font-medium mt-0.5 text-outline">Upload</span>
+                    <span class="text-[9px] font-medium mt-0.5 text-outline">{{ "Upload" | translate }}</span>
                   }
                 </label>
                 <div>
-                  <p class="text-label-md font-label-md text-on-surface">Staff Profile Photo</p>
-                  <p class="text-body-sm font-body-sm text-muted">PNG, JPG up to 5MB. Clear face photo recommended.</p>
+                  <p class="text-label-md font-label-md text-on-surface">{{ "Staff Profile Photo" | translate }}</p>
+                  <p class="text-body-sm font-body-sm text-muted">{{ "PNG, JPG up to 5MB. Clear face photo recommended." | translate }}</p>
                 </div>
               </div>
 
               <div>
-                <label class="block text-label-md font-label-md text-on-surface mb-1.5" for="st-name">Full Name</label>
+                <label class="block text-label-md font-label-md text-on-surface mb-1.5" for="st-name">{{ "Full Name" | translate }}</label>
                 <div class="relative">
                   <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline"><span class="material-symbols-outlined text-[18px]">person</span></span>
-                  <input id="st-name" type="text" name="name" [class]="field" placeholder="e.g., Amit Patel" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+                  <input id="st-name" type="text" name="name" [class]="field" [placeholder]="'e.g., Amit Patel' | translate" [ngModel]="name()" (ngModelChange)="name.set($event)" />
                 </div>
-                @if (submitted() && !name().trim()) { <p class="text-body-sm text-error mt-1">Name is required.</p> }
+                @if (submitted() && !name().trim()) { <p class="text-body-sm text-error mt-1">{{ "Name is required." | translate }}</p> }
               </div>
 
               <div>
-                <label class="block text-label-md font-label-md text-on-surface mb-1.5" for="st-phone">Phone Number</label>
+                <label class="block text-label-md font-label-md text-on-surface mb-1.5" for="st-phone">{{ "Phone Number" | translate }}</label>
                 <div class="relative">
                   <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline"><span class="material-symbols-outlined text-[18px]">call</span></span>
                   <input id="st-phone" type="tel" name="phone" [class]="field" placeholder="+91 98111 22233" [ngModel]="phone()" (ngModelChange)="phone.set($event)" />
                 </div>
-                @if (submitted() && !phoneOk()) { <p class="text-body-sm text-error mt-1">Enter a valid 10-digit mobile number.</p> }
+                @if (submitted() && !phoneOk()) { <p class="text-body-sm text-error mt-1">{{ "Enter a valid 10-digit mobile number." | translate }}</p> }
               </div>
 
               <div>
-                <span class="block text-label-md font-label-md text-on-surface mb-1.5">Role / Designation</span>
+                <span class="block text-label-md font-label-md text-on-surface mb-1.5">{{ "Role / Designation" | translate }}</span>
                 <div class="grid grid-cols-2 gap-2" role="radiogroup">
                   @for (r of roles; track r) {
                     <label class="flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-label-sm font-label-sm transition-colors" [class]="role() === r ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant/40 hover:border-primary text-on-surface'">
                       <input type="radio" name="role" class="text-primary focus:ring-primary h-4 w-4" [checked]="role() === r" (change)="role.set(r)" />
-                      <span>{{ r }}</span>
+                      <span>{{ r | translate }}</span>
                     </label>
                   }
                 </div>
@@ -170,8 +171,8 @@ const FIELD =
 
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <span class="text-label-md font-label-md text-on-surface">Services Assigned</span>
-                  <button type="button" class="text-label-sm font-label-sm text-primary hover:underline" (click)="toggleAllServices()">{{ allSelected() ? 'Clear All' : 'Select All' }}</button>
+                  <span class="text-label-md font-label-md text-on-surface">{{ "Services Assigned" | translate }}</span>
+                  <button type="button" class="text-label-sm font-label-sm text-primary hover:underline" (click)="toggleAllServices()">{{ allSelected() ? ('Clear All' | translate) : ('Select All' | translate) }}</button>
                 </div>
                 <div class="flex flex-wrap gap-2 pt-1">
                   @for (s of store.selectedServices(); track s.id) {
@@ -181,33 +182,33 @@ const FIELD =
                     </button>
                   }
                 </div>
-                @if (submitted() && !serviceIds().length) { <p class="text-body-sm text-error mt-1">Assign at least one service.</p> }
+                @if (submitted() && !serviceIds().length) { <p class="text-body-sm text-error mt-1">{{ "Assign at least one service." | translate }}</p> }
               </div>
 
               <div>
-                <span class="block text-label-md font-label-md text-on-surface mb-1.5">Working Days</span>
+                <span class="block text-label-md font-label-md text-on-surface mb-1.5">{{ "Working Days" | translate }}</span>
                 <app-day-picker [days]="days()" (daysChange)="days.set($event)" />
               </div>
 
               <div>
                 <div class="flex items-center justify-between mb-1.5">
-                  <label class="text-label-md font-label-md text-on-surface" for="st-commission">Commission on Services</label>
+                  <label class="text-label-md font-label-md text-on-surface" for="st-commission">{{ "Commission on Services" | translate }}</label>
                   <div class="flex items-center gap-1 bg-surface-container px-2.5 py-1 rounded-md">
-                    <input type="number" min="0" max="100" name="commission-num" aria-label="Commission percent" class="w-10 p-0 text-right bg-transparent border-0 font-bold text-primary focus:ring-0 text-label-md" [ngModel]="commission()" (ngModelChange)="setCommission($event)" />
+                    <input type="number" min="0" max="100" name="commission-num" [attr.aria-label]="'Commission percent' | translate" class="w-10 p-0 text-right bg-transparent border-0 font-bold text-primary focus:ring-0 text-label-md" [ngModel]="commission()" (ngModelChange)="setCommission($event)" />
                     <span class="text-label-sm font-label-sm text-primary">%</span>
                   </div>
                 </div>
                 <input id="st-commission" type="range" min="0" max="70" class="w-full accent-primary h-2 bg-surface-container-high rounded-lg cursor-pointer" [value]="commission()" (input)="setCommission($any($event.target).value)" />
-                <div class="flex justify-between text-[11px] text-muted mt-1"><span>0% (Salary Only)</span><span>20% (Standard)</span><span>50%+ (Senior)</span></div>
+                <div class="flex justify-between text-[11px] text-muted mt-1"><span>{{ "0% (Salary Only)" | translate }}</span><span>{{ "20% (Standard)" | translate }}</span><span>{{ "50%+ (Senior)" | translate }}</span></div>
               </div>
 
               <div class="pt-2 flex gap-2">
                 @if (editingId()) {
-                  <button type="button" (click)="reset()" class="py-2.5 px-4 rounded-lg border border-outline-variant/50 text-on-surface hover:bg-surface-container-low font-semibold text-label-lg transition-all">Cancel</button>
+                  <button type="button" (click)="reset()" class="py-2.5 px-4 rounded-lg border border-outline-variant/50 text-on-surface hover:bg-surface-container-low font-semibold text-label-lg transition-all">{{ "Cancel" | translate }}</button>
                 }
                 <button type="submit" class="flex-1 py-2.5 px-4 rounded-lg border-2 border-primary text-primary hover:bg-primary/5 font-semibold text-label-lg flex items-center justify-center gap-2 transition-all active:scale-[0.99]">
                   <span class="material-symbols-outlined text-[20px]">{{ editingId() ? 'save' : 'add' }}</span>
-                  <span>{{ editingId() ? 'Save Changes' : 'Add Staff Member' }}</span>
+                  <span>{{ editingId() ? ('Save Changes' | translate) : ('Add Staff Member' | translate) }}</span>
                 </button>
               </div>
             </form>
@@ -218,15 +219,15 @@ const FIELD =
       <footer class="fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest/95 backdrop-blur-md border-t border-outline-variant/20 py-4 px-4 md:px-12 shadow-[0_-8px_25px_rgba(31,42,46,0.06)]">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <button type="button" (click)="back()" class="inline-flex items-center gap-2 text-label-lg font-label-lg text-muted hover:text-on-surface px-4 py-2 rounded-lg hover:bg-surface-container-low transition-colors duration-150">
-            <span class="material-symbols-outlined text-[18px]">arrow_back</span><span>Back to Timings</span>
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span><span>{{ "Back to Timings" | translate }}</span>
           </button>
           <div class="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
             <div class="hidden lg:flex flex-col text-right">
-              <span class="text-label-sm font-label-sm font-semibold" [class]="store.staff().length ? 'text-primary' : 'text-secondary'">{{ store.staff().length ? '100% Steps Configured' : 'Add at least one team member' }}</span>
-              <span class="text-body-sm font-body-sm text-muted">Ready to take online appointments</span>
+              <span class="text-label-sm font-label-sm font-semibold" [class]="store.staff().length ? 'text-primary' : 'text-secondary'">{{ store.staff().length ? '100% Steps Configured' : ('Add at least one team member' | translate) }}</span>
+              <span class="text-body-sm font-body-sm text-muted">{{ "Ready to take online appointments" | translate }}</span>
             </div>
             <button type="button" (click)="finish()" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-secondary-container hover:bg-[#ff6842] text-on-secondary-container font-headline-sm text-headline-sm tracking-wide shadow-[0_8px_20px_-2px_rgba(253,121,88,0.45)] hover:shadow-[0_12px_28px_-2px_rgba(253,121,88,0.55)] transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2.5">
-              <span>Complete Setup &amp; Launch Salon 🚀</span>
+              <span>{{ "Complete Setup & Launch Salon 🚀" | translate }}</span>
             </button>
           </div>
         </div>
@@ -311,7 +312,7 @@ export class StaffStep {
   remove(m: StaffMember) {
     this.store.removeStaff(m.id);
     if (this.editingId() === m.id) this.reset();
-    this.toast.info(`${m.name} removed`);
+    this.toast.info('{{p1}} removed', { p1: m.name });
   }
 
   submit() {
@@ -332,7 +333,7 @@ export class StaffStep {
       status: existing?.status ?? 'on-duty',
     };
     this.store.upsertStaff(m);
-    this.toast.success(existing ? `${m.name} updated` : `${m.name} added to your team`);
+    this.toast.success(existing ? '{{p1}} updated' : '{{p1}} added to your team', { p1: m.name });
     this.reset();
   }
 

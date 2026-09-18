@@ -1,16 +1,18 @@
 import { Component, model } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 const LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 @Component({
   selector: 'app-day-picker',
+  imports: [TranslatePipe],
   template: `
     <div class="flex items-center justify-between gap-1.5">
       @for (d of days(); track $index) {
         <button
           type="button"
-          [attr.aria-label]="names[$index]"
+          [attr.aria-label]="names[$index] | translate"
           [attr.aria-pressed]="d"
           (click)="toggle($index)"
           class="w-9 h-9 rounded-lg text-label-md font-label-md transition-colors"

@@ -8,7 +8,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { BookingFlowStore } from '../../core/services/booking-flow.store';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
-import { fmt12, inr } from '../../core/utils/time';
+import { fmt12, inr, LOCALE } from '../../core/utils/time';
 import { StepBar } from '../../shared/customer/step-bar';
 
 @Component({
@@ -32,48 +32,48 @@ import { StepBar } from '../../shared/customer/step-bar';
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
           <div class="flex items-center gap-space-sm bg-surface-container-low p-space-sm rounded-xl border border-outline-variant">
             <div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant"><span class="material-symbols-outlined text-[22px]">face</span></div>
-            <div><div class="text-label-sm font-label-sm text-on-surface-variant">Stylist</div><div class="text-label-lg font-label-lg text-on-surface font-semibold">{{ stylistName() }}</div>@if (stylistRole()) { <div class="text-body-sm font-body-sm text-primary font-medium">{{ stylistRole() }}</div> }</div>
+            <div><div class="text-label-sm font-label-sm text-on-surface-variant">{{ "Stylist" | translate }}</div><div class="text-label-lg font-label-lg text-on-surface font-semibold">{{ stylistName() }}</div>@if (stylistRole()) { <div class="text-body-sm font-body-sm text-primary font-medium">{{ stylistRole() }}</div> }</div>
           </div>
           <div class="flex items-center gap-space-sm bg-surface-container-low p-space-sm rounded-xl border border-outline-variant">
             <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[22px]">calendar_month</span></div>
-            <div><div class="text-label-sm font-label-sm text-on-surface-variant">Date &amp; Time</div><div class="text-label-lg font-label-lg text-on-surface font-semibold">{{ when() }}</div><div class="text-body-sm font-body-sm text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">schedule</span> {{ flow.totalDuration() }} mins duration</div></div>
+            <div><div class="text-label-sm font-label-sm text-on-surface-variant">{{ "Date & Time" | translate }}</div><div class="text-label-lg font-label-lg text-on-surface font-semibold">{{ when() }}</div><div class="text-body-sm font-body-sm text-outline flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">schedule</span> {{ "{{p1}} mins duration" | translate: { p1: (flow.totalDuration()) } }}</div></div>
           </div>
         </div>
 
         <div class="flex flex-col gap-space-xs pt-space-xs border-t border-outline-variant">
-          <span class="text-label-md font-label-md text-on-surface-variant font-semibold tracking-wide">Selected Services</span>
+          <span class="text-label-md font-label-md text-on-surface-variant font-semibold tracking-wide">{{ "Selected Services" | translate }}</span>
           @for (s of flow.services(); track s.id) {
             <div class="flex justify-between items-center py-1 gap-2">
-              <div class="flex items-center gap-space-xs min-w-0"><span class="material-symbols-outlined text-outline text-[18px]">check_circle</span><span class="text-body-md font-body-md text-on-surface font-medium truncate">{{ s.name }}</span><span class="text-label-sm font-label-sm text-outline px-1.5 py-0.5 rounded bg-surface-container whitespace-nowrap">{{ s.duration }} mins</span></div>
+              <div class="flex items-center gap-space-xs min-w-0"><span class="material-symbols-outlined text-outline text-[18px]">check_circle</span><span class="text-body-md font-body-md text-on-surface font-medium truncate">{{ s.name }}</span><span class="text-label-sm font-label-sm text-outline px-1.5 py-0.5 rounded bg-surface-container whitespace-nowrap">{{ "{{p1}} mins" | translate: { p1: (s.duration) } }}</span></div>
               <span class="text-label-lg font-label-lg text-on-surface font-semibold">{{ inr(s.price) }}</span>
             </div>
           }
         </div>
 
         <div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low border border-outline-variant mt-space-xs">
-          <div><span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider block">Total payable</span>@if (store.settings().gstRegistered) { <span class="text-body-sm font-body-sm text-outline">Inclusive of GST</span> }</div>
+          <div><span class="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider block">{{ "Total payable" | translate }}</span>@if (store.settings().gstRegistered) { <span class="text-body-sm font-body-sm text-outline">{{ "Inclusive of GST" | translate }}</span> }</div>
           <span class="font-numeric-stat text-numeric-stat text-primary font-bold">{{ inr(flow.totalPrice()) }}</span>
         </div>
       </section>
 
       @if (needsName()) {
         <section class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant elevation-1">
-          <label class="block font-label-md text-label-md text-on-surface mb-1.5" for="cust-name">Your name</label>
-          <input id="cust-name" type="text" class="w-full h-11 px-3.5 rounded-xl border border-[#E2ECE9] bg-white text-on-surface font-body-md focus:ring-2 focus:ring-primary focus:border-primary" placeholder="e.g., Ananya Roy" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+          <label class="block font-label-md text-label-md text-on-surface mb-1.5" for="cust-name">{{ "Your name" | translate }}</label>
+          <input id="cust-name" type="text" class="w-full h-11 px-3.5 rounded-xl border border-[#E2ECE9] bg-white text-on-surface font-body-md focus:ring-2 focus:ring-primary focus:border-primary" [placeholder]="'e.g., Ananya Roy' | translate" [ngModel]="name()" (ngModelChange)="name.set($event)" />
         </section>
       }
 
       <section class="flex flex-col gap-space-md">
-        <div class="flex items-center justify-between"><h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ 'pay.title' | translate }}</h2><span class="text-label-sm font-label-sm text-tertiary-container flex items-center gap-1 font-semibold"><span class="material-symbols-outlined text-[16px]">lock</span> 256-bit Encrypted</span></div>
+        <div class="flex items-center justify-between"><h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ 'pay.title' | translate }}</h2><span class="text-label-sm font-label-sm text-tertiary-container flex items-center gap-1 font-semibold"><span class="material-symbols-outlined text-[16px]">lock</span> {{ "256-bit Encrypted" | translate }}</span></div>
 
         <label class="relative flex flex-col p-space-md bg-surface-container-lowest rounded-xl cursor-pointer transition-all duration-150 elevation-1 hover:elevation-2" [class]="flow.payment() === 'online' ? 'border-2 border-primary' : 'border border-outline-variant hover:border-primary/50'">
           <div class="flex items-start gap-space-md">
             <input type="radio" name="payment_method" class="mt-1 h-5 w-5 text-primary border-outline focus:ring-primary" [checked]="flow.payment() === 'online'" (change)="flow.payment.set('online')" />
             <div class="flex flex-col">
-              <div class="flex items-center gap-space-xs flex-wrap"><span class="text-label-lg font-label-lg text-on-surface font-bold">{{ 'pay.online' | translate }}</span><span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-container/10 text-tertiary font-semibold">Instant Confirmation</span></div>
-              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">100% cashless checkout with zero convenience fees. Supported by all major banks.</p>
+              <div class="flex items-center gap-space-xs flex-wrap"><span class="text-label-lg font-label-lg text-on-surface font-bold">{{ 'pay.online' | translate }}</span><span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-container/10 text-tertiary font-semibold">{{ "Instant Confirmation" | translate }}</span></div>
+              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">{{ "100% cashless checkout with zero convenience fees. Supported by all major banks." | translate }}</p>
               <div class="flex items-center gap-2 mt-space-sm flex-wrap">
-                @for (b of badges; track b.label) { <div class="px-2.5 py-1 rounded bg-surface-container border border-outline-variant text-label-sm font-label-sm font-semibold text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" [style.color]="b.color">{{ b.icon }}</span> {{ b.label }}</div> }
+                @for (b of badges; track b.label) { <div class="px-2.5 py-1 rounded bg-surface-container border border-outline-variant text-label-sm font-label-sm font-semibold text-on-surface flex items-center gap-1"><span class="material-symbols-outlined text-[16px]" [style.color]="b.color">{{ b.icon }}</span> {{ (b.label) | translate }}</div> }
               </div>
             </div>
           </div>
@@ -83,18 +83,18 @@ import { StepBar } from '../../shared/customer/step-bar';
           <div class="flex items-start gap-space-md">
             <input type="radio" name="payment_method" class="mt-1 h-5 w-5 text-primary border-outline focus:ring-primary" [disabled]="!!salonBlocked()" [checked]="flow.payment() === 'salon'" (change)="flow.payment.set('salon')" />
             <div class="flex flex-col">
-              <div class="flex items-center gap-space-xs flex-wrap"><span class="text-label-lg font-label-lg text-on-surface font-semibold">{{ 'pay.salon' | translate }}</span><span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-variant text-on-surface-variant">Counter Settlement</span></div>
-              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">{{ salonBlocked() || 'Pay via Cash/Card after your service at the counter. Front desk will generate your final tax receipt.' }}</p>
+              <div class="flex items-center gap-space-xs flex-wrap"><span class="text-label-lg font-label-lg text-on-surface font-semibold">{{ 'pay.salon' | translate }}</span><span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-variant text-on-surface-variant">{{ "Counter Settlement" | translate }}</span></div>
+              <p class="text-body-sm font-body-sm text-on-surface-variant mt-1">{{ salonBlocked() || ('Pay via Cash/Card after your service at the counter. Front desk will generate your final tax receipt.' | translate) }}</p>
             </div>
           </div>
         </label>
 
         <div class="pt-space-xs">
           <button type="button" (click)="confirm()" [disabled]="processing()" class="w-full py-3.5 px-space-lg rounded-xl bg-[#FF7A59] hover:bg-[#F06543] active:scale-[0.98] transition-all duration-150 text-white font-label-lg text-label-lg font-bold shadow-md hover:shadow-lg flex items-center justify-center gap-space-sm disabled:opacity-70">
-            @if (processing()) { <span class="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span><span>Processing payment...</span> }
+            @if (processing()) { <span class="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span><span>{{ "Processing payment..." | translate }}</span> }
             @else { <span class="material-symbols-outlined text-[20px]">verified_user</span><span>{{ (flow.payment() === 'online' ? 'pay.confirm' : 'pay.confirmSalon') | translate }}{{ flow.payment() === 'online' ? ' ' + inr(flow.totalPrice()) : '' }}</span> }
           </button>
-          <p class="text-center text-body-sm font-body-sm text-on-surface-variant mt-2">By continuing, you agree to {{ store.profile().name }} cancellation &amp; rescheduling policies (free until {{ store.settings().cancelWindowHrs }}h before, then {{ store.settings().latePenaltyPct }}% fee).</p>
+          <p class="text-center text-body-sm font-body-sm text-on-surface-variant mt-2">{{ "By continuing, you agree to {{p1}} cancellation & rescheduling policies (free until {{p2}}h before, then {{p3}}% fee)." | translate: { p1: (store.profile().name), p2: (store.settings().cancelWindowHrs), p3: (store.settings().latePenaltyPct) } }}</p>
         </div>
       </section>
     </main>
@@ -104,22 +104,22 @@ import { StepBar } from '../../shared/customer/step-bar';
         <div class="bg-surface-container-lowest w-full max-w-lg rounded-xl p-space-lg elevation-level-3 border border-outline-variant flex flex-col items-center text-center relative max-h-[92vh] overflow-y-auto" role="dialog" aria-modal="true">
           <div class="w-20 h-20 rounded-full bg-tertiary-container/20 flex items-center justify-center mb-space-sm pulse-glow"><div class="w-14 h-14 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary shadow-lg"><span class="material-symbols-outlined text-[34px] font-bold">check</span></div></div>
           <h3 class="font-headline-lg text-headline-lg text-on-surface font-extrabold tracking-tight">{{ 'pay.confirmed' | translate }}</h3>
-          <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-sm">Your slot is locked in at {{ store.profile().name }}. A confirmation SMS and WhatsApp ticket will be sent.</p>
+          <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-sm">{{ "Your slot is locked in at {{p1}}. A confirmation SMS and WhatsApp ticket will be sent." | translate: { p1: (store.profile().name) } }}</p>
           <div class="mt-space-md mb-space-md px-4 py-1.5 rounded-full bg-surface-container-low border border-outline-variant flex items-center gap-2">
-            <span class="text-label-sm font-label-sm text-on-surface-variant font-medium">Booking ID:</span><span class="font-label-md text-label-md text-primary font-bold tracking-wider">#{{ b.bookingNo }}</span>
-            <button type="button" class="text-outline hover:text-primary transition-colors active:scale-90" title="Copy ID" (click)="copyId(b)"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
+            <span class="text-label-sm font-label-sm text-on-surface-variant font-medium">{{ "Booking ID:" | translate }}</span><span class="font-label-md text-label-md text-primary font-bold tracking-wider">#{{ b.bookingNo }}</span>
+            <button type="button" class="text-outline hover:text-primary transition-colors active:scale-90" [title]="'Copy ID' | translate" (click)="copyId(b)"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
           </div>
           <div class="w-full bg-surface-container-low/70 border border-outline-variant rounded-xl p-space-md text-left flex flex-col gap-2 mb-space-md">
-            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">Service Time:</span><span class="text-on-surface font-semibold text-right">{{ dateLabel(b) }} • {{ fmt(b.start) }} ({{ b.duration }}m)</span></div>
-            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">Stylist:</span><span class="text-on-surface font-semibold">{{ store.staffById(b.staffId)?.name }}</span></div>
-            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">Services:</span><span class="text-on-surface font-semibold text-right">{{ b.serviceName }}</span></div>
-            <div class="flex justify-between gap-3 text-body-sm pt-1 border-t border-outline-variant"><span class="text-on-surface-variant">{{ b.paid ? 'Amount Paid:' : 'Pay at salon:' }}</span><span class="text-primary font-bold">{{ inr(b.price) }} {{ b.paid ? '(Online Paid)' : '' }}</span></div>
+            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">{{ "Service Time:" | translate }}</span><span class="text-on-surface font-semibold text-right">{{ dateLabel(b) }} • {{ fmt(b.start) }} ({{ b.duration }}m)</span></div>
+            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">{{ "Stylist:" | translate }}</span><span class="text-on-surface font-semibold">{{ store.staffById(b.staffId)?.name }}</span></div>
+            <div class="flex justify-between gap-3 text-body-sm"><span class="text-on-surface-variant">{{ "Services:" | translate }}</span><span class="text-on-surface font-semibold text-right">{{ b.serviceName }}</span></div>
+            <div class="flex justify-between gap-3 text-body-sm pt-1 border-t border-outline-variant"><span class="text-on-surface-variant">{{ b.paid ? ('Amount Paid:' | translate) : ('Pay at salon:' | translate) }}</span><span class="text-primary font-bold">{{ inr(b.price) }} {{ b.paid ? '(Online Paid)' : '' }}</span></div>
           </div>
           <div class="flex flex-col items-center bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant w-full mb-space-md">
-            <div class="w-36 h-36 bg-surface p-2 rounded-lg border border-outline-variant flex items-center justify-center">@if (qr()) { <img [src]="qr()" alt="Check-in QR code" class="w-full h-full" /> }</div>
-            <span class="text-label-sm font-label-sm text-on-surface-variant font-medium mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span> Scan at salon reception desk for express check-in</span>
+            <div class="w-36 h-36 bg-surface p-2 rounded-lg border border-outline-variant flex items-center justify-center">@if (qr()) { <img [src]="qr()" [alt]="'Check-in QR code' | translate" class="w-full h-full" /> }</div>
+            <span class="text-label-sm font-label-sm text-on-surface-variant font-medium mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-primary">qr_code_scanner</span> {{ "Scan at salon reception desk for express check-in" | translate }}</span>
           </div>
-          <a [href]="calendarUrl(b)" target="_blank" rel="noopener" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-outline-variant hover:bg-surface-container-low text-on-surface text-label-md font-label-md font-semibold transition-colors duration-150 mb-space-md"><span class="material-symbols-outlined text-primary text-[18px]">event</span><span>Add to Google Calendar</span></a>
+          <a [href]="calendarUrl(b)" target="_blank" rel="noopener" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-outline-variant hover:bg-surface-container-low text-on-surface text-label-md font-label-md font-semibold transition-colors duration-150 mb-space-md"><span class="material-symbols-outlined text-primary text-[18px]">event</span><span>{{ "Add to Google Calendar" | translate }}</span></a>
           <div class="flex flex-col gap-space-sm w-full">
             <button type="button" (click)="goBookings()" class="w-full py-3 rounded-xl bg-primary hover:bg-primary-container text-white font-label-lg text-label-lg font-bold transition-colors active:scale-95 shadow-sm">{{ 'pay.viewBookings' | translate }}</button>
             <button type="button" (click)="goHome()" class="w-full py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container-low text-on-surface font-label-md text-label-md font-semibold transition-colors">{{ 'pay.home' | translate }}</button>
@@ -155,7 +155,7 @@ export class PayPage implements OnInit {
   protected readonly when = computed(() => {
     const d = this.flow.date();
     const s = this.flow.start();
-    return d && s !== null ? `${new Date(d + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} at ${fmt12(s)}` : '';
+    return d && s !== null ? `${new Date(d + 'T00:00').toLocaleDateString(LOCALE(), { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })} at ${fmt12(s)}` : '';
   });
   protected readonly salonBlocked = computed(() => {
     const s = this.store.settings();
@@ -201,7 +201,7 @@ export class PayPage implements OnInit {
   }
 
   dateLabel(b: Booking) {
-    return new Date(b.date + 'T00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+    return new Date(b.date + 'T00:00').toLocaleDateString(LOCALE(), { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
   calendarUrl(b: Booking) {

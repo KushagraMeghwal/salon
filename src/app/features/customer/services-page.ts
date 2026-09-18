@@ -21,12 +21,12 @@ import { StepBar } from '../../shared/customer/step-bar';
       <section class="mb-space-md sticky top-14 bg-background/95 backdrop-blur-md pt-1 pb-2 z-30 -mx-space-md px-space-md border-b border-outline-variant/30">
         <div class="flex items-center gap-space-xs overflow-x-auto no-scrollbar py-1">
           @for (c of ['All'].concat(store.categories()); track c) {
-            <button type="button" (click)="filter.set(c)" class="px-4 py-2 rounded-full font-label-md text-label-md whitespace-nowrap transition-all active:scale-95" [class]="filter() === c ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'bg-surface-container-lowest border border-outline-variant/70 text-on-surface-variant hover:border-primary hover:text-primary'">{{ c }}</button>
+            <button type="button" (click)="filter.set(c)" class="px-4 py-2 rounded-full font-label-md text-label-md whitespace-nowrap transition-all active:scale-95" [class]="filter() === c ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'bg-surface-container-lowest border border-outline-variant/70 text-on-surface-variant hover:border-primary hover:text-primary'">{{ c | translate }}</button>
           }
         </div>
       </section>
 
-      <section aria-label="Available Services" class="flex flex-col gap-space-md">
+      <section [attr.aria-label]="'Available Services' | translate" class="flex flex-col gap-space-md">
         @for (s of visible(); track s.id) {
           <article (click)="flow.toggle(s.id)" class="relative bg-surface-container-lowest rounded-xl p-space-sm transition-all group cursor-pointer" [class]="flow.has(s.id) ? 'border-2 border-primary elevation-2' : 'border border-outline-variant/60 elevation-1 hover:border-outline hover:-translate-y-0.5'">
             <div class="flex items-start gap-space-md p-space-xs">
@@ -55,11 +55,11 @@ import { StepBar } from '../../shared/customer/step-bar';
         <div class="flex flex-col">
           <div class="flex items-center gap-2 flex-wrap">
             <span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">{{ flow.serviceIds().length }} {{ 'services.selected' | translate }}</span>
-            <span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-0.5"><span class="material-symbols-outlined text-[14px]">schedule</span> {{ flow.totalDuration() }} mins</span>
+            <span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-0.5"><span class="material-symbols-outlined text-[14px]">schedule</span> {{ "{{p1}} mins" | translate: { p1: (flow.totalDuration()) } }}</span>
           </div>
           <div class="flex items-baseline gap-1.5 mt-0.5">
             <span class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">{{ inr(flow.totalPrice()) }}</span>
-            @if (store.settings().gstRegistered) { <span class="text-[11px] text-outline">incl. GST</span> }
+            @if (store.settings().gstRegistered) { <span class="text-[11px] text-outline">{{ "incl. GST" | translate }}</span> }
           </div>
         </div>
         <button type="button" (click)="next()" class="flex-1 max-w-[240px] bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary py-3 px-space-md rounded-xl font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95" [class.opacity-60]="!flow.serviceIds().length">

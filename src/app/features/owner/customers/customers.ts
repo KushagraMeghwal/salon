@@ -1,40 +1,42 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CustomerRecord } from '../../../core/models';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { dateKey, downloadText, initials, inr, toCsv } from '../../../core/utils/time';
+import { tr } from '../../../core/utils/i18n';
 import { Topbar } from '../../../shared/layout/topbar';
 
 type SortKey = 'lastVisit' | 'visits' | 'totalSpent' | 'name';
 
 @Component({
   selector: 'app-owner-customers',
-  imports: [FormsModule, Topbar],
+  imports: [FormsModule, Topbar, TranslatePipe],
   template: `
     <app-topbar>
       <div left class="flex items-center gap-4 flex-1 max-w-xl">
         <div class="relative w-full max-w-sm">
           <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
-          <input type="text" class="w-full pl-9 pr-4 py-1.5 text-body-sm bg-surface-container-low border border-outline-variant/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-on-surface" placeholder="Search by name or phone..." aria-label="Search customers" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+          <input type="text" class="w-full pl-9 pr-4 py-1.5 text-body-sm bg-surface-container-low border border-outline-variant/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-on-surface" [placeholder]="'Search by name or phone...' | translate" [attr.aria-label]="'Search customers' | translate" [ngModel]="search()" (ngModelChange)="search.set($event)" />
         </div>
       </div>
       <ng-container right>
-        <button type="button" (click)="exportCsv()" class="px-3.5 py-1.5 rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md flex items-center gap-1.5 hover:bg-surface-container active:scale-95 transition-all"><span class="material-symbols-outlined text-[18px]">download</span><span class="hidden sm:inline">Export CSV</span></button>
+        <button type="button" (click)="exportCsv()" class="px-3.5 py-1.5 rounded-lg border border-outline-variant text-on-surface font-label-md text-label-md flex items-center gap-1.5 hover:bg-surface-container active:scale-95 transition-all"><span class="material-symbols-outlined text-[18px]">download</span><span class="hidden sm:inline">{{ "Export CSV" | translate }}</span></button>
       </ng-container>
     </app-topbar>
 
     <main class="lg:pl-64 pt-16 min-h-screen bg-background">
       <div class="p-4 md:p-6 flex flex-col gap-6">
         <div>
-          <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface tracking-tight">Customers</h2>
-          <p class="font-body-md text-body-md text-muted">Everyone who has visited your salon, with their visit history.</p>
+          <h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-on-surface tracking-tight">{{ "Customers" | translate }}</h2>
+          <p class="font-body-md text-body-md text-muted">{{ "Everyone who has visited your salon, with their visit history." | translate }}</p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4"><p class="font-label-sm text-label-sm text-muted">Total Customers</p><p class="font-numeric-stat text-numeric-stat text-on-surface font-bold">{{ store.customers().length }}</p></div>
-          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4"><p class="font-label-sm text-label-sm text-muted">Returning (2+ visits)</p><p class="font-numeric-stat text-numeric-stat text-on-surface font-bold">{{ returning() }}</p></div>
-          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4 col-span-2 md:col-span-1"><p class="font-label-sm text-label-sm text-muted">Flagged for no-shows</p><p class="font-numeric-stat text-numeric-stat text-error font-bold">{{ flagged() }}</p></div>
+          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4"><p class="font-label-sm text-label-sm text-muted">{{ "Total Customers" | translate }}</p><p class="font-numeric-stat text-numeric-stat text-on-surface font-bold">{{ store.customers().length }}</p></div>
+          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4"><p class="font-label-sm text-label-sm text-muted">{{ "Returning (2+ visits)" | translate }}</p><p class="font-numeric-stat text-numeric-stat text-on-surface font-bold">{{ returning() }}</p></div>
+          <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 p-4 col-span-2 md:col-span-1"><p class="font-label-sm text-label-sm text-muted">{{ "Flagged for no-shows" | translate }}</p><p class="font-numeric-stat text-numeric-stat text-error font-bold">{{ flagged() }}</p></div>
         </div>
 
         <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 overflow-hidden">
@@ -44,10 +46,10 @@ type SortKey = 'lastVisit' | 'visits' | 'totalSpent' | 'name';
                 <tr>
                   @for (c of cols; track c.key) {
                     <th class="px-4 py-3 font-semibold" [class.text-right]="c.right">
-                      <button type="button" (click)="sortBy(c.key)" class="inline-flex items-center gap-1 hover:text-primary">{{ c.label }}@if (sort() === c.key) { <span class="material-symbols-outlined text-[14px]">{{ dir() === 1 ? 'arrow_upward' : 'arrow_downward' }}</span> }</button>
+                      <button type="button" (click)="sortBy(c.key)" class="inline-flex items-center gap-1 hover:text-primary">{{ (c.label) | translate }}@if (sort() === c.key) { <span class="material-symbols-outlined text-[14px]">{{ dir() === 1 ? 'arrow_upward' : 'arrow_downward' }}</span> }</button>
                     </th>
                   }
-                  <th class="px-4 py-3 font-semibold text-right">No-shows</th>
+                  <th class="px-4 py-3 font-semibold text-right">{{ "No-shows" | translate }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/30 font-body-md text-body-md">
@@ -63,7 +65,7 @@ type SortKey = 'lastVisit' | 'visits' | 'totalSpent' | 'name';
                     </td>
                   </tr>
                 } @empty {
-                  <tr><td colspan="5" class="px-4 py-10 text-center text-outline">No customers match your search.</td></tr>
+                  <tr><td colspan="5" class="px-4 py-10 text-center text-outline">{{ "No customers match your search." | translate }}</td></tr>
                 }
               </tbody>
             </table>
@@ -112,9 +114,9 @@ export class OwnerCustomers {
   lastVisit(c: CustomerRecord) {
     if (!c.lastVisit) return '—';
     const days = Math.round((Date.parse(dateKey(new Date())) - Date.parse(c.lastVisit)) / 86400000);
-    if (days <= 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    return `${days} days ago`;
+    if (days <= 0) return tr('Today');
+    if (days === 1) return tr('Yesterday');
+    return tr('{{p1}} days ago', { p1: days });
   }
 
   exportCsv() {

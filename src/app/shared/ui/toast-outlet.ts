@@ -1,7 +1,9 @@
+import { TranslatePipe } from '@ngx-translate/core';
 import { Component, inject } from '@angular/core';
 import { ToastService } from '../../core/services/toast.service';
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-toast-outlet',
   template: `
     <div class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 no-print" aria-live="polite">
@@ -21,7 +23,7 @@ import { ToastService } from '../../core/services/toast.service';
             {{ t.kind === 'success' ? 'check_circle' : t.kind === 'error' ? 'error' : 'info' }}
           </span>
           <span class="flex-1">{{ t.message }}</span>
-          <button type="button" class="p-1 rounded-lg opacity-70 hover:opacity-100" (click)="toasts.dismiss(t.id)" aria-label="Dismiss">
+          <button type="button" class="p-1 rounded-lg opacity-70 hover:opacity-100" (click)="toasts.dismiss(t.id)" [attr.aria-label]="'Dismiss' | translate">
             <span class="material-symbols-outlined text-[16px]">close</span>
           </button>
         </div>

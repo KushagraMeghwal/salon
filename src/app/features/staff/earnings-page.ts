@@ -16,7 +16,7 @@ type Period = 'today' | 'week' | 'month';
         <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary font-headline-sm flex items-center justify-center font-bold shrink-0">{{ initials(me()?.name ?? '') }}</div>
         <div class="min-w-0">
           <div class="flex items-center gap-1.5"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">{{ me()?.name }}</h1><span class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span></div>
-          <p class="font-label-sm text-label-sm text-on-surface-variant truncate">Chair #{{ chair() }} • {{ me()?.role }}</p>
+          <p class="font-label-sm text-label-sm text-on-surface-variant truncate">{{ "Chair #{{p1}} • {{p2}}" | translate: { p1: (chair()), p2: ((me()?.role ?? '') | translate) } }}</p>
         </div>
       </div>
     </div>
@@ -32,35 +32,35 @@ type Period = 'today' | 'week' | 'month';
         <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
         <div class="flex justify-between items-start mb-2 relative z-10 gap-2">
           <span class="text-label-md font-label-md text-primary-fixed uppercase tracking-wider font-semibold">{{ 'staff.netEarnings' | translate }}</span>
-          @if (growth() !== null) { <div class="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full text-[11px] text-white font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-[14px]">{{ growth()! >= 0 ? 'trending_up' : 'trending_down' }}</span><span>{{ growth()! >= 0 ? '+' : '' }}{{ growth() }}% vs last {{ period() }}</span></div> }
+          @if (growth() !== null) { <div class="flex items-center gap-1 bg-white/20 backdrop-blur-md px-2 py-0.5 rounded-full text-[11px] text-white font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-[14px]">{{ growth()! >= 0 ? 'trending_up' : 'trending_down' }}</span><span>{{ (period() === 'month' ? "{{p1}}{{p2}}% vs last month" : "{{p1}}{{p2}}% vs last week") | translate: { p1: (growth()! >= 0 ? '+' : ''), p2: growth() } }}</span></div> }
         </div>
         <div class="font-numeric-stat text-numeric-stat font-bold text-white tracking-tight mb-4 flex items-baseline gap-1 relative z-10"><span class="text-2xl font-normal opacity-90">₹</span>{{ net().toLocaleString('en-IN') }}</div>
         <div class="grid grid-cols-3 gap-2 pt-3.5 border-t border-white/20 relative z-10">
-          <div class="flex flex-col"><span class="text-[11px] text-white/80 leading-tight">Base Commission</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ inr(commission()) }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">{{ me()?.commission }}% cut</span></div>
-          <div class="flex flex-col border-l border-white/15 pl-2"><span class="text-[11px] text-white/80 leading-tight">Total Billed</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ inr(d().revenue) }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">GST-inclusive</span></div>
-          <div class="flex flex-col border-l border-white/15 pl-2"><span class="text-[11px] text-white/80 leading-tight">Clients Served</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ d().clients }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">this {{ period() }}</span></div>
+          <div class="flex flex-col"><span class="text-[11px] text-white/80 leading-tight">{{ "Base Commission" | translate }}</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ inr(commission()) }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">{{ "{{p1}}% cut" | translate: { p1: (me()?.commission) } }}</span></div>
+          <div class="flex flex-col border-l border-white/15 pl-2"><span class="text-[11px] text-white/80 leading-tight">{{ "Total Billed" | translate }}</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ inr(d().revenue) }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">{{ "GST-inclusive" | translate }}</span></div>
+          <div class="flex flex-col border-l border-white/15 pl-2"><span class="text-[11px] text-white/80 leading-tight">{{ "Clients Served" | translate }}</span><span class="font-headline-sm text-headline-sm text-white font-bold mt-0.5">{{ d().clients }}</span><span class="text-[10px] text-primary-fixed-dim mt-0.5">{{ (period() === 'today' ? "today" : period() === 'month' ? "this month" : "this week") | translate }}</span></div>
         </div>
       </div>
 
 
       <div class="bg-surface-container-lowest rounded-2xl p-4 border border-outline-variant elevation-level-1">
-        <p class="text-label-sm font-label-sm text-on-surface-variant mb-3">Your commission rate: <span class="font-bold text-primary">{{ me()?.commission }}%</span> of every completed service.</p>
-        <div><button type="button" (click)="statement()" class="w-full py-2 px-3 bg-surface-container-low border border-outline-variant hover:border-primary text-primary rounded-xl text-label-md font-label-md font-semibold text-center transition-all">View Payout Statement</button></div>
+        <p class="text-label-sm font-label-sm text-on-surface-variant mb-3">{{ "Your commission rate:" | translate }} <span class="font-bold text-primary">{{ me()?.commission }}%</span> {{ "of every completed service." | translate }}</p>
+        <div><button type="button" (click)="statement()" class="w-full py-2 px-3 bg-surface-container-low border border-outline-variant hover:border-primary text-primary rounded-xl text-label-md font-label-md font-semibold text-center transition-all">{{ "View Payout Statement" | translate }}</button></div>
       </div>
 
       <div class="pt-1">
-        <div class="flex items-center justify-between mb-2.5"><div class="flex items-center gap-2"><h2 class="text-headline-sm font-headline-sm text-on-surface">{{ 'staff.commissionLog' | translate }}</h2><span class="bg-surface-container-high text-on-surface-variant text-[11px] font-semibold px-2 py-0.5 rounded-full">{{ todayDone().length ? 'Today' : 'Recent' }}</span></div></div>
+        <div class="flex items-center justify-between mb-2.5"><div class="flex items-center gap-2"><h2 class="text-headline-sm font-headline-sm text-on-surface">{{ 'staff.commissionLog' | translate }}</h2><span class="bg-surface-container-high text-on-surface-variant text-[11px] font-semibold px-2 py-0.5 rounded-full">{{ todayDone().length ? ('Today' | translate) : ('Recent' | translate) }}</span></div></div>
         <div class="space-y-2.5">
           @for (b of log(); track b.id) {
             <div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-outline-variant elevation-level-1 flex items-center justify-between hover:elevation-level-2 transition-all gap-2">
               <div class="flex items-center gap-3 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-surface-container-low flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-[22px]">content_cut</span></div>
-                <div class="min-w-0"><h3 class="text-body-md font-body-md font-bold text-on-surface truncate">{{ b.client }}</h3><p class="text-body-sm font-body-sm text-on-surface-variant truncate">{{ b.serviceName }}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[11px] text-outline">Bill: {{ inr(b.price) }}</span></div></div>
+                <div class="min-w-0"><h3 class="text-body-md font-body-md font-bold text-on-surface truncate">{{ b.client }}</h3><p class="text-body-sm font-body-sm text-on-surface-variant truncate">{{ b.serviceName }}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[11px] text-outline">{{ "Bill: {{p1}}" | translate: { p1: (inr(b.price)) } }}</span></div></div>
               </div>
-              <div class="text-right shrink-0"><span class="text-headline-sm font-headline-sm text-primary font-bold block">+{{ inr(cut(b.price)) }}</span><span class="text-[10px] text-outline block">Cut: {{ inr(cut(b.price)) }}</span></div>
+              <div class="text-right shrink-0"><span class="text-headline-sm font-headline-sm text-primary font-bold block">+{{ inr(cut(b.price)) }}</span><span class="text-[10px] text-outline block">{{ "Cut: {{p1}}" | translate: { p1: (inr(cut(b.price))) } }}</span></div>
             </div>
           } @empty {
-            <p class="text-center text-body-sm text-outline py-6">Completed clients will show up here.</p>
+            <p class="text-center text-body-sm text-outline py-6">{{ "Completed clients will show up here." | translate }}</p>
           }
         </div>
       </div>

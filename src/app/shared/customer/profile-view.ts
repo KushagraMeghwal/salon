@@ -15,7 +15,7 @@ import { initials } from '../../core/utils/time';
       <section class="bg-surface-container-lowest rounded-2xl border border-outline-variant/60 shadow-level-1 p-space-md flex items-center gap-space-md">
         <div class="w-14 h-14 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-sm text-headline-sm font-bold shrink-0">{{ initial() }}</div>
         <div class="min-w-0">
-          <p class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">{{ name() || ('Guest' | translate) }}</p>
+          <p class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">{{ name() || (('Guest' | translate) | translate) }}</p>
           @if (subtitle()) { <p class="font-body-sm text-body-sm text-on-surface-variant truncate">{{ subtitle() | translate }}</p> }
         </div>
       </section>
@@ -28,7 +28,7 @@ import { initials } from '../../core/utils/time';
         <div class="p-space-md flex items-center justify-between gap-3">
           <div class="flex items-center gap-3 text-on-surface-variant"><span class="material-symbols-outlined text-primary">translate</span><span class="font-label-md text-label-md">{{ 'Language' | translate }}</span></div>
           <div class="flex items-center bg-surface-container p-1 rounded-xl border border-outline-variant/40" role="radiogroup" [attr.aria-label]="'Language' | translate">
-            <button type="button" role="radio" [attr.aria-checked]="lang.lang() === 'en'" (click)="lang.set('en')" class="px-3.5 py-1 rounded-lg text-label-md font-label-md transition-all" [class]="lang.lang() === 'en' ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'text-on-surface-variant'">English</button>
+            <button type="button" role="radio" [attr.aria-checked]="lang.lang() === 'en'" (click)="lang.set('en')" class="px-3.5 py-1 rounded-lg text-label-md font-label-md transition-all" [class]="lang.lang() === 'en' ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'text-on-surface-variant'">{{ "English" | translate }}</button>
             <button type="button" role="radio" [attr.aria-checked]="lang.lang() === 'hi'" (click)="lang.set('hi')" class="px-3.5 py-1 rounded-lg text-label-md font-label-md transition-all" [class]="lang.lang() === 'hi' ? 'bg-primary text-on-primary font-semibold shadow-sm' : 'text-on-surface-variant'">हिंदी</button>
           </div>
         </div>

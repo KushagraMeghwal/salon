@@ -5,6 +5,7 @@ import { BookingFlowStore } from '../../core/services/booking-flow.store';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
 import { serviceIcon } from '../../core/utils/icons';
+import { tr } from '../../core/utils/i18n';
 import { dateKey, fmt12Str, inr } from '../../core/utils/time';
 
 @Component({
@@ -14,8 +15,8 @@ import { dateKey, fmt12Str, inr } from '../../core/utils/time';
     @if (!found()) {
       <main class="flex-1 flex flex-col items-center justify-center text-center px-space-md py-space-2xl gap-3">
         <span class="material-symbols-outlined text-5xl text-primary/40">storefront</span>
-        <h1 class="text-headline-md font-headline-md text-on-surface">Salon not found</h1>
-        <p class="text-body-md text-on-surface-variant max-w-xs">This booking link isn't active. Please check the link with your salon.</p>
+        <h1 class="text-headline-md font-headline-md text-on-surface">{{ "Salon not found" | translate }}</h1>
+        <p class="text-body-md text-on-surface-variant max-w-xs">{{ "This booking link isn't active. Please check the link with your salon." | translate }}</p>
       </main>
     } @else {
       <main class="max-w-screen-md w-full mx-auto px-space-md pt-space-md space-y-space-lg flex-1">
@@ -32,14 +33,14 @@ import { dateKey, fmt12Str, inr } from '../../core/utils/time';
             <div class="absolute top-space-md left-space-md right-space-md flex justify-between items-center gap-2">
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md font-label-sm text-label-sm border border-outline-variant/40 shadow-sm" [class]="status().open ? 'text-tertiary' : 'text-error'">
                 <span class="w-2 h-2 rounded-full animate-pulse" [class]="status().open ? 'bg-tertiary' : 'bg-error'"></span>
-                {{ status().label }}
+                {{ (status().label) | translate }}
               </span>
               <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-label-sm text-label-sm border border-outline-variant/40 shadow-sm">
-                <span class="material-symbols-outlined text-secondary-container text-sm" style="font-variation-settings: 'FILL' 1;">star</span> New
+                <span class="material-symbols-outlined text-secondary-container text-sm" style="font-variation-settings: 'FILL' 1;">star</span> {{ "New" | translate }}
               </span>
             </div>
             <div class="absolute bottom-space-md left-space-md right-space-md text-inverse-on-surface">
-              <div class="inline-block bg-primary/80 backdrop-blur-sm text-on-primary text-label-sm font-label-sm px-2 py-0.5 rounded mb-1">{{ store.profile().category }}</div>
+              <div class="inline-block bg-primary/80 backdrop-blur-sm text-on-primary text-label-sm font-label-sm px-2 py-0.5 rounded mb-1">{{ store.profile().category | translate }}</div>
               <h1 class="text-headline-lg font-headline-lg text-inverse-on-surface drop-shadow-sm leading-tight">{{ store.profile().name }}</h1>
               <p class="text-body-sm font-body-sm text-inverse-on-surface/90 flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-sm">location_on</span> {{ area() }}</p>
             </div>
@@ -66,7 +67,7 @@ import { dateKey, fmt12Str, inr } from '../../core/utils/time';
 
         <section class="bg-surface-container-low/70 border border-outline-variant/70 rounded-xl p-space-sm px-space-md flex items-center justify-center gap-space-sm text-center">
           <span class="material-symbols-outlined text-primary text-base">verified_user</span>
-          <p class="text-label-md font-label-md text-on-surface-variant font-medium"><span class="text-primary font-bold">{{ 'home.sanitized' | translate }}</span> · Premium Styling Products</p>
+          <p class="text-label-md font-label-md text-on-surface-variant font-medium"><span class="text-primary font-bold">{{ 'home.sanitized' | translate }}</span> {{ "· Premium Styling Products" | translate }}</p>
         </section>
 
         <section class="space-y-space-md">
@@ -100,7 +101,7 @@ import { dateKey, fmt12Str, inr } from '../../core/utils/time';
       @if (flow.serviceIds().length) {
         <div class="fixed bottom-16 left-0 w-full z-40 px-space-md no-print">
           <div class="max-w-screen-md mx-auto bg-inverse-surface text-inverse-on-surface rounded-xl px-space-md py-2.5 shadow-xl flex items-center justify-between gap-3">
-            <div><p class="text-label-md font-label-md font-bold">{{ flow.serviceIds().length }} {{ 'services.selected' | translate }}</p><p class="text-body-sm opacity-80">{{ flow.totalDuration() }} min · {{ inr(flow.totalPrice()) }}</p></div>
+            <div><p class="text-label-md font-label-md font-bold">{{ flow.serviceIds().length }} {{ 'services.selected' | translate }}</p><p class="text-body-sm opacity-80">{{ "{{p1}} min · {{p2}}" | translate: { p1: (flow.totalDuration()), p2: (inr(flow.totalPrice())) } }}</p></div>
             <button type="button" (click)="book()" class="px-4 py-2 rounded-lg bg-secondary-container text-on-secondary-container font-label-lg text-label-lg font-bold active:scale-95">{{ 'common.bookNow' | translate }}</button>
           </div>
         </div>
@@ -127,16 +128,16 @@ export class CustomerHome {
   protected readonly status = computed(() => {
     const t = this.store.dayTiming(this.today);
     const now = this.store.nowMin();
-    if (!t.open) return { open: false, label: 'Closed today' };
+    if (!t.open) return { open: false, label: tr('Closed today') };
     const [sh, sm] = t.start.split(':').map(Number);
     const [eh, em] = t.end.split(':').map(Number);
-    if (now < sh * 60 + sm) return { open: false, label: `Opens ${fmt12Str(t.start)}` };
-    if (now >= eh * 60 + em) return { open: false, label: 'Closed for today' };
-    return { open: true, label: `Open Now · Closes ${fmt12Str(t.end)}` };
+    if (now < sh * 60 + sm) return { open: false, label: tr('Opens {{p1}}', { p1: fmt12Str(t.start) }) };
+    if (now >= eh * 60 + em) return { open: false, label: tr('Closed for today') };
+    return { open: true, label: tr('Open Now · Closes {{p1}}', { p1: fmt12Str(t.end) }) };
   });
   protected readonly hoursToday = computed(() => {
     const t = this.store.dayTiming(this.today);
-    return t.open ? `Today ${fmt12Str(t.start)} – ${fmt12Str(t.end)}` : 'Closed today';
+    return t.open ? tr('Today {{p1}} – {{p2}}', { p1: fmt12Str(t.start), p2: fmt12Str(t.end) }) : tr('Closed today');
   });
 
   book() {

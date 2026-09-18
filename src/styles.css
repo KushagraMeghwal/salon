@@ -1,3 +1,260 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens ported 1:1 from the Stitch Tailwind config (v3 CDN -> v4 @theme) */
+@theme {
+  --color-surface-container-high: #deeaef;
+  --color-tertiary: #4f5f62;
+  --color-on-primary-fixed: #00201b;
+  --color-on-error: #ffffff;
+  --color-primary: #00685b;
+  --color-surface-bright: #f2fbff;
+  --color-surface-variant: #d8e4ea;
+  --color-tertiary-fixed-dim: #b9c9ce;
+  --color-on-secondary-fixed: #3c0700;
+  --color-surface-container: #e4f0f5;
+  --color-secondary-container: #fd7958;
+  --color-on-surface-variant: #3d4946;
+  --color-secondary-fixed: #ffdad2;
+  --color-surface-container-highest: #d8e4ea;
+  --color-surface: #f2fbff;
+  --color-surface-dim: #d0dce1;
+  --color-outline: #6d7a76;
+  --color-on-primary: #ffffff;
+  --color-inverse-primary: #65dac4;
+  --color-surface-container-low: #eaf6fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-background: #f2fbff;
+  --color-on-secondary-fixed-variant: #862208;
+  --color-on-tertiary-container: #f8fdff;
+  --color-on-tertiary-fixed-variant: #3a494d;
+  --color-inverse-on-surface: #e7f3f8;
+  --color-on-secondary: #ffffff;
+  --color-on-tertiary: #ffffff;
+  --color-primary-fixed-dim: #65dac4;
+  --color-on-primary-container: #f4fffb;
+  --color-tertiary-container: #68777b;
+  --color-on-error-container: #93000a;
+  --color-secondary-fixed-dim: #ffb4a2;
+  --color-on-secondary-container: #6e1500;
+  --color-error: #ba1a1a;
+  --color-primary-fixed: #83f6e0;
+  --color-error-container: #ffdad6;
+  --color-inverse-surface: #273236;
+  --color-primary-container: #008373;
+  --color-surface-tint: #006b5d;
+  --color-secondary: #a7391e;
+  --color-tertiary-fixed: #d5e5ea;
+  --color-outline-variant: #bcc9c5;
+  --color-on-primary-fixed-variant: #005046;
+  --color-on-background: #121d21;
+  --color-on-surface: #121d21;
+  --color-on-tertiary-fixed: #0f1e21;
+
+  --font-headline-lg-mobile: 'Plus Jakarta Sans', sans-serif;
+  --font-headline-xl-mobile: 'Plus Jakarta Sans', sans-serif;
+  --font-headline-xl: 'Plus Jakarta Sans', sans-serif;
+  --font-headline-lg: 'Plus Jakarta Sans', sans-serif;
+  --font-headline-md: 'Plus Jakarta Sans', sans-serif;
+  --font-headline-sm: 'Plus Jakarta Sans', sans-serif;
+  --font-body-lg: 'Inter', sans-serif;
+  --font-body-md: 'Inter', sans-serif;
+  --font-body-sm: 'Inter', sans-serif;
+  --font-label-lg: 'Inter', sans-serif;
+  --font-label-md: 'Inter', sans-serif;
+  --font-label-sm: 'Inter', sans-serif;
+
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 32px;
+  --text-headline-lg-mobile--letter-spacing: -0.01em;
+  --text-headline-lg-mobile--font-weight: 600;
+  --text-headline-xl-mobile: 30px;
+  --text-headline-xl-mobile--line-height: 36px;
+  --text-headline-xl-mobile--letter-spacing: -0.02em;
+  --text-headline-xl-mobile--font-weight: 700;
+  --text-headline-xl: 40px;
+  --text-headline-xl--line-height: 48px;
+  --text-headline-xl--letter-spacing: -0.02em;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.015em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-sm: 16px;
+  --text-headline-sm--line-height: 24px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--font-weight: 400;
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--font-weight: 400;
+  --text-label-lg: 14px;
+  --text-label-lg--line-height: 20px;
+  --text-label-lg--letter-spacing: 0.01em;
+  --text-label-lg--font-weight: 600;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 500;
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.04em;
+  --text-label-sm--font-weight: 600;
+
+  --shadow-level-1: 0px 2px 8px -1px rgba(31, 42, 46, 0.05), 0px 1px 3px 0px rgba(31, 42, 46, 0.03);
+  --shadow-level-2: 0px 8px 20px -4px rgba(15, 157, 138, 0.08), 0px 4px 8px -2px rgba(31, 42, 46, 0.04);
+  --shadow-level-3: 0px 16px 36px -6px rgba(31, 42, 46, 0.12), 0px 6px 12px -2px rgba(31, 42, 46, 0.04);
+
+  --animate-pulse-dot: subtle-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-pulse-ring-1: pulse-ring 3.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  --animate-pulse-ring-2: pulse-ring-delayed 3.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite 1.2s;
+  --animate-logo-pulse: logo-breathe 3.4s ease-in-out infinite;
+  --animate-progress-loading: progress-loading 2.1s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.88); opacity: 0.7; }
+  50% { transform: scale(1.22); opacity: 0.18; }
+  100% { transform: scale(1.48); opacity: 0; }
+}
+@keyframes pulse-ring-delayed {
+  0% { transform: scale(0.85); opacity: 0; }
+  30% { transform: scale(1.05); opacity: 0.45; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@keyframes logo-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+@keyframes progress-loading {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(10%); }
+  100% { transform: translateX(110%); }
+}
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Tailwind v3 -> v4 compat: default border colour */
+*, ::after, ::before, ::backdrop, ::file-selector-button {
+  border-color: var(--color-gray-200, #e5e7eb);
+}
+
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-size: 24px;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(45deg, rgba(138, 154, 158, 0.08), rgba(138, 154, 158, 0.08) 8px, transparent 8px, transparent 16px);
+}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f2fbff; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #bcc9c5; border-radius: 9999px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media print {
+  aside, header, footer, .no-print { display: none !important; }
+  main { padding-left: 0 !important; margin: 0 !important; width: 100% !important; }
+}
+
+input.no-picker::-webkit-calendar-picker-indicator { display: none; }
+
+/* ---- Customer / Staff / Settings screens (second Stitch token set) ---- */
+@theme {
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2rem;
+  --spacing-space-2xl: 3rem;
+  --spacing-gutter-sm: 1rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-lg: 2rem;
+  --spacing-margin-mobile: 1rem;
+  --spacing-margin: 1.5rem;
+  --spacing-margin-desktop: 2.5rem;
+
+  --font-numeric-stat: 'Plus Jakarta Sans', sans-serif;
+  --text-numeric-stat: 32px;
+  --text-numeric-stat--line-height: 38px;
+  --text-numeric-stat--letter-spacing: -0.02em;
+  --text-numeric-stat--font-weight: 700;
+}
+
+/* Scope: this palette turns "tertiary" green and resizes the headline scale. */
+.theme-v2 {
+  --color-tertiary: #006a43;
+  --color-tertiary-container: #008656;
+  --color-tertiary-fixed: #86f9bc;
+  --color-tertiary-fixed-dim: #69dca1;
+  --color-on-tertiary-fixed: #002112;
+  --color-on-tertiary-fixed-variant: #005233;
+  --color-on-tertiary-container: #f6fff6;
+  --text-headline-xl: 36px;
+  --text-headline-xl--line-height: 44px;
+  --text-headline-lg: 28px;
+  --text-headline-lg--line-height: 36px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-xl-mobile: 28px;
+  --text-headline-xl-mobile--line-height: 36px;
+  --text-headline-xl-mobile--letter-spacing: -0.01em;
+  --text-headline-lg-mobile: 22px;
+  --text-headline-lg-mobile--line-height: 30px;
+  --text-headline-md--letter-spacing: -0.005em;
+  --shadow-level-1: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04);
+  --shadow-level-2: 0 12px 28px -4px rgba(15, 157, 138, 0.12), 0 4px 10px -2px rgba(31, 42, 46, 0.04);
+  --shadow-level-3: 0 24px 48px -8px rgba(31, 42, 46, 0.16), 0 8px 16px -4px rgba(15, 157, 138, 0.08);
+}
+
+@utility elevation-1 { box-shadow: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04); }
+@utility elevation-2 { box-shadow: 0 12px 28px -4px rgba(15, 157, 138, 0.12), 0 4px 10px -2px rgba(31, 42, 46, 0.04); }
+@utility elevation-3 { box-shadow: 0 -8px 24px -4px rgba(31, 42, 46, 0.08), 0 -2px 6px -1px rgba(15, 157, 138, 0.04); }
+@utility elevation-level-1 { box-shadow: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04); }
+@utility elevation-level-2 { box-shadow: 0 12px 28px -4px rgba(15, 157, 138, 0.12), 0 4px 10px -2px rgba(31, 42, 46, 0.04); }
+@utility elevation-level-3 { box-shadow: 0 24px 48px -8px rgba(31, 42, 46, 0.16), 0 8px 16px -4px rgba(15, 157, 138, 0.08); }
+@utility elevation-cta { box-shadow: 0 10px 24px -4px rgba(253, 121, 88, 0.35); }
+@utility coral-btn-glow { box-shadow: 0 8px 24px -2px rgba(253, 121, 88, 0.4); }
+@utility nordic-shadow { box-shadow: 0 4px 20px -2px rgba(15, 157, 138, 0.06), 0 2px 6px -1px rgba(31, 42, 46, 0.04); }
+
+@keyframes pulse-success {
+  0% { box-shadow: 0 0 0 0 rgba(0, 134, 86, 0.4); }
+  70% { box-shadow: 0 0 0 16px rgba(0, 134, 86, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 134, 86, 0); }
+}
+.pulse-glow { animation: pulse-success 2s infinite ease-out; }

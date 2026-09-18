@@ -1,0 +1,111 @@
+{
+  "nav": {
+    "services": "Services",
+    "appointments": "Appointments",
+    "profile": "Profile",
+    "signIn": "Sign in",
+    "myToday": "My Today",
+    "earnings": "Earnings"
+  },
+  "common": {
+    "bookNow": "Book Now",
+    "add": "Add",
+    "inCart": "In Cart",
+    "cancel": "Cancel",
+    "back": "Back",
+    "viewAll": "View All",
+    "total": "total",
+    "change": "Change",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "support": "Support"
+  },
+  "home": {
+    "popular": "Popular Services",
+    "popularSub": "Curated salon experiences tailored for you",
+    "call": "Call",
+    "directions": "Directions",
+    "share": "Share",
+    "hours": "Operational Hours",
+    "sanitized": "100% Sanitized Tools",
+    "openNow": "Open Now",
+    "closed": "Closed"
+  },
+  "step": {
+    "of": "Step {{n}} of {{total}}",
+    "services": "Select Services",
+    "slot": "Select Date & Time",
+    "stylist": "Select Specialist",
+    "pay": "Payment & Review"
+  },
+  "services": {
+    "continue": "Continue to Slot",
+    "selected": "Services Selected",
+    "hint": "Choose treatments for your grooming session. Multiple selections allowed."
+  },
+  "slot": {
+    "selectDate": "Select Date",
+    "selectTime": "Select Time Slot",
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "evening": "Evening",
+    "choose": "Choose Stylist",
+    "available": "Available",
+    "selected": "Selected",
+    "busy": "Busy / Booked"
+  },
+  "stylist": {
+    "any": "Any Available Specialist",
+    "anySub": "Instant assignment, quickest appointment guarantee",
+    "recommended": "Recommended",
+    "proceed": "Proceed to Payment",
+    "unavailable": "Unavailable at this time"
+  },
+  "pay": {
+    "title": "Select Payment Option",
+    "online": "Pay Online (UPI / Card / NetBanking)",
+    "salon": "Pay at Salon",
+    "confirm": "Confirm & Pay",
+    "confirmSalon": "Confirm Booking",
+    "confirmed": "Appointment Confirmed!",
+    "viewBookings": "View in My Appointments",
+    "home": "Back to Salon Home"
+  },
+  "bookings": {
+    "title": "My Bookings",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "reschedule": "Reschedule",
+    "cancel": "Cancel Booking",
+    "viewPass": "View Pass / QR",
+    "empty": "No bookings here yet"
+  },
+  "login": {
+    "title": "Welcome Back",
+    "sub": "Enter your mobile number to access appointments, rewards & express check-in.",
+    "sendOtp": "Send OTP",
+    "verify": "Verify & Continue",
+    "google": "Continue with Google"
+  },
+  "staff": {
+    "goodMorning": "Good morning",
+    "bookings": "Bookings",
+    "chairTime": "Chair Time",
+    "projected": "Projected",
+    "all": "All",
+    "active": "In-Chair / Active",
+    "upcoming": "Upcoming",
+    "completed": "Completed",
+    "markDone": "Mark Done",
+    "startService": "Start Service",
+    "addOn": "Add Add-on",
+    "delay": "Client Delay (+10m)",
+    "today": "Today",
+    "week": "This Week",
+    "month": "This Month",
+    "netEarnings": "Total Net Earnings",
+    "commissionLog": "Client Commission Log",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening"
+  }
+}

@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Logos and staff photos. Anyone can view; only the salon's owner can upload (images up to 5 MB).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() { return request.auth != null; }
+
+    function isOwner(salonId) {
+      return signedIn() && (
+        (request.auth.token.get('role', '') == 'owner' && salonId in request.auth.token.get('salonIds', [])) ||
+        firestore.get(/databases/(default)/documents/salons/$(salonId)).data.ownerId == request.auth.uid
+      );
+    }
+
+    match /salons/{salonId}/{kind}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(salonId)
+        && kind in ['logo', 'staff', 'gallery']
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp)');
+      allow delete: if isOwner(salonId);
+    }
+  }
+}

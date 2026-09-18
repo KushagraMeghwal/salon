@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
+  <defs>
+    <linearGradient id="chairlyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#14B8A6" />
+      <stop offset="100%" stop-color="#0F9D8A" />
+    </linearGradient>
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0F9D8A" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <circle cx="80" cy="80" r="70" fill="url(#chairlyGrad)" filter="url(#softGlow)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M52 56 Q52 86 80 86 Q108 86 108 56" />
+    <path d="M48 88 Q80 94 112 88" stroke-width="7" />
+    <path d="M80 94 L80 116" stroke-width="7" />
+    <path d="M56 122 C64 118 96 118 104 122" stroke-width="7" />
+  </g>
+  <circle cx="108" cy="52" r="5" fill="#FF7A59" />
+</svg>

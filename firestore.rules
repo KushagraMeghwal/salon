@@ -1,0 +1,204 @@
+rules_version = '2';
+
+// Chairly security rules.
+//
+// Trust model
+//  - Roles and salon membership live in Auth custom claims (`role`, `salonIds`, `staffId`),
+//    set only by Cloud Functions. Clients cannot forge them.
+//  - Owners edit their own salon setup (profile, services, staff, timings) directly.
+//  - Everything money- or booking-critical (bookings, bills, stats, customers, subscription,
+//    slug claims, availability locks) is written ONLY by Cloud Functions (Admin SDK bypasses rules).
+//  - Public browsing (salon page, services, stylists) is allowed without login, but private data
+//    (commission, payouts, billing, customers) is never public.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function role() { return request.auth.token.get('role', 'customer'); }
+    function claimedSalons() { return request.auth.token.get('salonIds', []); }
+    function isSuper() { return signedIn() && role() == 'superadmin'; }
+    function isStaffOf(salonId) { return signedIn() && role() == 'staff' && salonId in claimedSalons(); }
+    function isMyStaffDoc(staffId) { return request.auth.token.get('staffId', '') == staffId; }
+
+    function salonPath(salonId) { return /databases/$(database)/documents/salons/$(salonId); }
+
+    // Owner = has the owner claim for this salon, OR is the recorded ownerId of the salon
+    // (covers onboarding, before the claim has been issued).
+    function isOwner(salonId) {
+      return signedIn() && (
+        (role() == 'owner' && salonId in claimedSalons()) ||
+        (exists(salonPath(salonId)) && get(salonPath(salonId)).data.ownerId == uid())
+      );
+    }
+
+    function noneOf(keys) { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(keys); }
+    function onlyKeys(allowed) { return request.resource.data.keys().hasOnly(allowed); }
+
+    // ---------- validators ----------
+    function validSalonFields() {
+      return onlyKeys([
+        'ownerId', 'status', 'bookable', 'slug', 'profile', 'logoUrl', 'timings', 'breaks', 'holidays',
+        'slotMode', 'customSlots', 'buffer', 'settings', 'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.profile is map
+      && request.resource.data.profile.name is string
+      && request.resource.data.profile.name.size() >= 2
+      && request.resource.data.profile.name.size() <= 100
+      && request.resource.data.settings is map
+      && request.resource.data.settings.cancelWindowHrs is number
+      && request.resource.data.settings.latePenaltyPct is number
+      && request.resource.data.settings.latePenaltyPct >= 0
+      && request.resource.data.settings.latePenaltyPct <= 100
+      && request.resource.data.settings.noShowThreshold is number
+      && request.resource.data.settings.noShowThreshold >= 1
+      && request.resource.data.settings.allowPayAtSalon is bool
+      && request.resource.data.settings.requireOnlineAfterNoShows is bool;
+    }
+
+    function validService() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'category', 'description', 'price', 'duration', 'active', 'custom', 'sortOrder', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 100
+        && d.category is string && d.category.size() <= 60
+        && d.price is number && d.price >= 0 && d.price <= 100000
+        && d.duration is int && d.duration >= 5 && d.duration <= 480
+        && d.active is bool;
+    }
+
+    function validStaff() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'role', 'title', 'serviceIds', 'days', 'photoUrl', 'active', 'order', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() >= 2 && d.name.size() <= 100
+        && d.serviceIds is list && d.serviceIds.size() <= 60
+        && d.days is list && d.days.size() == 7
+        && d.active is bool;
+    }
+
+    function validStaffPrivate() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['phone', 'email', 'commission', 'updatedAt'])
+        && d.commission is number && d.commission >= 0 && d.commission <= 100
+        && d.phone is string && d.phone.size() <= 20;
+    }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      allow read: if signedIn() && (userId == uid() || isSuper());
+
+      // Self-registration always starts as a plain customer. Role/salons/no-show count are function-managed.
+      allow create: if signedIn() && userId == uid()
+        && onlyKeys(['name', 'phone', 'role', 'salonIds', 'noShowCount', 'lang', 'createdAt'])
+        && request.resource.data.role == 'customer'
+        && request.resource.data.salonIds == []
+        && request.resource.data.noShowCount == 0;
+
+      allow update: if signedIn() && userId == uid()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'lang', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // ---------- public lookups & platform ----------
+    match /slugs/{slug} {
+      allow get: if true;    // resolves /s/:slug to a salonId
+      allow list, write: if false;
+    }
+
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if isSuper();
+    }
+
+    match /platform/{docId} {
+      allow read: if isSuper();
+      allow write: if false;
+    }
+
+    // ---------- salons ----------
+    match /salons/{salonId} {
+      // Anyone can open a salon page by id (no listing, so salons cannot be scraped).
+      allow get: if true;
+      allow list: if isSuper() || (signedIn() && resource.data.ownerId == uid());
+
+      // New salon: creator becomes owner, starts as a draft. Function trigger issues claims, slug and trial.
+      allow create: if signedIn()
+        && request.resource.data.ownerId == uid()
+        && request.resource.data.status == 'draft'
+        && request.resource.data.get('bookable', false) == false
+        && validSalonFields();
+
+      allow update: if isSuper()
+        || (isOwner(salonId) && noneOf(['ownerId', 'status', 'bookable', 'slug', 'createdAt']) && validSalonFields());
+
+      allow delete: if isSuper();
+
+      match /services/{serviceId} {
+        allow read: if true;
+        allow create, update: if isOwner(salonId) && validService();
+        allow delete: if isOwner(salonId);
+      }
+
+      // Public stylist card (no commission, no phone).
+      match /staff/{staffId} {
+        allow read: if true;
+        allow create, update: if isOwner(salonId) && validStaff();
+        allow delete: if isOwner(salonId);
+      }
+
+      match /staffPrivate/{staffId} {
+        allow read: if isOwner(salonId) || (isStaffOf(salonId) && isMyStaffDoc(staffId)) || isSuper();
+        allow create, update: if isOwner(salonId) && validStaffPrivate();
+        allow delete: if isOwner(salonId);
+      }
+
+      // Aggregates maintained by Cloud Functions.
+      match /staffStats/{staffId} {
+        allow read: if isOwner(salonId) || (isStaffOf(salonId) && isMyStaffDoc(staffId)) || isSuper();
+        allow write: if false;
+      }
+
+      match /stats/{statId} {
+        allow read: if isOwner(salonId) || isSuper();
+        allow write: if false;
+      }
+
+      // Payout display data (owner-editable) and billing/subscription (functions only).
+      match /private/{docId} {
+        allow read: if isOwner(salonId) || isSuper();
+        allow write: if isSuper() || (docId == 'payout' && isOwner(salonId));
+      }
+
+      // Bookings are created/changed only through callable functions (transactions prevent double booking).
+      match /bookings/{bookingId} {
+        allow read: if isSuper()
+          || isOwner(salonId)
+          || (isStaffOf(salonId) && resource.data.staffId == request.auth.token.get('staffId', ''))
+          || (signedIn() && resource.data.customerId == uid());
+        allow write: if false;
+      }
+
+      match /bills/{billId} {
+        allow read: if isOwner(salonId) || isSuper();
+        allow write: if false;
+      }
+
+      // Per-salon customer record (visit history, no-show count). Customers see only their own.
+      match /customers/{customerId} {
+        allow read: if isOwner(salonId) || isSuper() || (signedIn() && customerId == uid());
+        allow write: if false;
+      }
+
+      // Availability locks used inside booking transactions. Never client-accessible.
+      match /staffDays/{dayId} {
+        allow read, write: if false;
+      }
+    }
+
+    // "My bookings" across salons: a customer may query the bookings collection group for their own bookings.
+    match /{path=**}/bookings/{bookingId} {
+      allow read: if signedIn() && resource.data.customerId == uid();
+    }
+  }
+}

@@ -7,7 +7,7 @@
                     "build":  "ng build",
                     "watch":  "ng build --watch --configuration development",
                     "test":  "ng test",
-                    "test:rules":  "firebase emulators:exec --only firestore,storage --project demo-chairly \"vitest run --config vitest.rules.config.ts\"",
+                    "test:rules":  "firebase emulators:exec --only firestore --project demo-chairly \"vitest run --config vitest.rules.config.ts\"",
                     "emulators":  "firebase emulators:start --project demo-chairly",
                     "test:functions":  "npm --prefix functions run build \u0026\u0026 firebase emulators:exec --only firestore --project demo-chairly \"npm --prefix functions test\""
                 },

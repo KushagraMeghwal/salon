@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StaffMember } from '../../../core/models';
+import { CloudinaryService } from '../../../core/services/cloudinary.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { initials } from '../../../core/utils/time';
@@ -132,6 +133,9 @@ const FIELD =
                     <span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">add_a_photo</span>
                     <span class="text-[9px] font-medium mt-0.5 text-outline">{{ "Upload" | translate }}</span>
                   }
+                  @if (photoUploading()) {
+                    <div class="absolute inset-0 bg-surface/70 flex items-center justify-center"><span class="material-symbols-outlined animate-spin text-primary text-lg">progress_activity</span></div>
+                  }
                 </label>
                 <div>
                   <p class="text-label-md font-label-md text-on-surface">{{ "Staff Profile Photo" | translate }}</p>
@@ -239,6 +243,7 @@ export class StaffStep {
   protected readonly store = inject(SalonStore);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly cloudinary = inject(CloudinaryService);
   protected readonly roles = ROLES;
   protected readonly dayLetters = DAY_LETTERS;
   protected readonly field = FIELD;
@@ -253,6 +258,7 @@ export class StaffStep {
   protected readonly days = signal<boolean[]>([true, true, true, true, true, false, false]);
   protected readonly commission = signal(20);
   protected readonly photo = signal<string | null>(null);
+  protected readonly photoUploading = signal(false);
 
   protected readonly phoneOk = computed(() => this.phone().replace(/\D/g, '').length >= 10);
   protected readonly allSelected = computed(() => {
@@ -280,9 +286,17 @@ export class StaffStep {
     if (!file) return;
     if (!['image/png', 'image/jpeg'].includes(file.type)) return this.toast.error('Photo must be a PNG or JPG image.');
     if (file.size > 5 * 1024 * 1024) return this.toast.error('Photo must be 5MB or smaller.');
+    // Instant local preview while the upload is in flight.
     const reader = new FileReader();
     reader.onload = () => this.photo.set(reader.result as string);
     reader.readAsDataURL(file);
+
+    this.photoUploading.set(true);
+    this.cloudinary
+      .uploadImage(file)
+      .then((url) => this.photo.set(url))
+      .catch(() => this.toast.error('Could not upload the photo. The preview is local only until you retry.'))
+      .finally(() => this.photoUploading.set(false));
   }
 
   edit(m: StaffMember) {
@@ -306,6 +320,7 @@ export class StaffStep {
     this.days.set([true, true, true, true, true, false, false]);
     this.commission.set(20);
     this.photo.set(null);
+    this.photoUploading.set(false);
     this.submitted.set(false);
   }
 

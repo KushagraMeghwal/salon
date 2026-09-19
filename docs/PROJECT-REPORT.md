@@ -9,7 +9,7 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 |---|---|---|
 | 1 | Analysis, route map, removals | Done |
 | 2 | All Stitch screens as Angular components with mock data | Done (loading skeletons still pending) |
-| 3 | Firestore data model, security rules, Storage rules, emulator setup | Done and tested |
+| 3 | Firestore data model, security rules, emulator setup | Done and tested |
 | 4 | Cloud Functions business logic, payments stub, subscriptions | **Pending** |
 | 5 | Quality: skeletons, empty states, more tests, README | **Pending** |
 
@@ -17,7 +17,7 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 
 - Angular 21, standalone components, signals, lazy-loaded routes. Tailwind v4 with the Stitch tokens ported to `@theme`.
 - `@ngx-translate` v18 for English / Hindi. `qrcode` for QR codes. Firebase SDK v12 installed.
-- Firebase project `salon-79da5`. Web config is in `src/environments/environment.ts` (production). `environment.development.ts` points at the **emulators** so local work never touches real data. `FirebaseService` (`src/app/core/firebase/firebase.service.ts`) creates Auth, Firestore and Storage from that file.
+- Firebase project `salon-79da5`. Web config is in `src/environments/environment.ts` (production). `environment.development.ts` points at the **emulators** so local work never touches real data. `FirebaseService` (`src/app/core/firebase/firebase.service.ts`) creates Auth, Firestore and Cloud Functions from that file. No Firebase Storage (never enabled on the project) — logos and staff photos upload to Cloudinary instead (`core/services/cloudinary.service.ts`, unsigned preset).
 - Commands: `npm start`, `npm run build`, `npm test` (17 unit tests), `npm run test:rules` (29 rules tests, needs Java), `npm run emulators`.
 - Branding: the salon's own name/logo in headers, "Powered by Chairly" in footers, the Chairly logo only on the splash.
 
@@ -71,9 +71,9 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 
 ## 5. Backend foundation (Phase 3)
 
-- `firestore.rules`, `storage.rules`, `firestore.indexes.json`, emulator ports, typed schema (`schema.ts`), `docs/data-model.md`.
+- `firestore.rules`, `firestore.indexes.json`, emulator ports, typed schema (`schema.ts`), `docs/data-model.md`.
 - Roles via Auth custom claims. Bookings, bills, stats, customers, billing and availability locks are **write-only from Cloud Functions**. Private data (commission, payouts, billing) is split into owner-only documents.
-- 25 Firestore and 4 Storage rules tests pass against the emulator.
+- Firestore rules tests pass against the emulator (`npm run test:rules`).
 
 ## 6. Pending
 
@@ -89,8 +89,9 @@ Status: **Phases 1, 2 and 3 done. Phases 4 and 5 pending. The app still runs on 
 ### Connecting the frontend to Firebase (part of Phase 4)
 - Replace the mock `SalonStore`, `AdminStore` and login with Firestore, callable functions and Firebase Auth (Google and real Phone OTP). Add `@angular/fire` if you want its Angular wrappers, or use the existing `FirebaseService`.
 - Real role guards (today the guard is a mock that lets the owner open admin and staff).
-- Upload logos and photos to Storage instead of storing them in the browser.
 - Reports and dashboard KPIs from the aggregates instead of sample numbers.
+
+Logos and staff photos already upload to Cloudinary (not Firebase Storage, which is unused) and only the hosted URL is stored — done ahead of the rest of this section.
 
 ### Phase 5: quality
 - Loading skeletons and empty states everywhere, consistent error toasts, form validation review.

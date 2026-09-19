@@ -4,6 +4,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SalonProfile } from '../../../core/models';
+import { CloudinaryService } from '../../../core/services/cloudinary.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { SalonMark } from '../../../shared/layout/salon-mark';
@@ -86,11 +87,14 @@ const INPUT =
                         } @else {
                           <app-salon-mark size="md" />
                         }
+                        @if (logoUploading()) {
+                          <div class="absolute inset-0 bg-surface/70 flex items-center justify-center"><span class="material-symbols-outlined animate-spin text-primary text-lg">progress_activity</span></div>
+                        }
                       </div>
                       <div class="flex-1 min-w-0">
                         @if (p().logo) {
                           <p class="text-label-md font-label-md text-on-surface truncate">{{ logoName() }}</p>
-                          <p class="text-body-sm font-body-sm text-muted">{{ "{{p1}} • Done" | translate: { p1: (logoSize()) } }}</p>
+                          <p class="text-body-sm font-body-sm text-muted">{{ (logoUploading() ? "{{p1}} • Uploading..." : "{{p1}} • Done") | translate: { p1: (logoSize()) } }}</p>
                           <div class="flex items-center gap-2 mt-1">
                             <label class="text-label-sm font-label-sm text-primary hover:underline flex items-center gap-0.5 cursor-pointer">
                               <input type="file" class="sr-only" accept="image/png,image/jpeg" (change)="onFile($any($event.target).files?.[0])" />
@@ -355,6 +359,7 @@ export class SalonStep {
   protected readonly store = inject(SalonStore);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly cloudinary = inject(CloudinaryService);
   protected readonly input = INPUT;
   protected readonly states = STATES;
   protected readonly categories = CATEGORIES;
@@ -364,6 +369,7 @@ export class SalonStep {
   protected readonly dragging = signal(false);
   protected readonly zoom = signal(1);
   protected readonly logoName = signal('logo');
+  protected readonly logoUploading = signal(false);
   protected readonly logoSize = signal('');
 
   protected readonly nameOk = computed(() => this.p().name.trim().length >= 2);
@@ -403,13 +409,19 @@ export class SalonStep {
     if (!file) return;
     if (!['image/png', 'image/jpeg'].includes(file.type)) return this.toast.error('Logo must be a PNG or JPG image.');
     if (file.size > 5 * 1024 * 1024) return this.toast.error('Logo must be 5MB or smaller.');
+    this.logoName.set(file.name);
+    this.logoSize.set(file.size > 1024 * 1024 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB');
+    // Instant local preview while the upload is in flight.
     const reader = new FileReader();
-    reader.onload = () => {
-      this.logoName.set(file.name);
-      this.logoSize.set(file.size > 1024 * 1024 ? (file.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(file.size / 1024)) + ' KB');
-      this.patch({ logo: reader.result as string });
-    };
+    reader.onload = () => this.patch({ logo: reader.result as string });
     reader.readAsDataURL(file);
+
+    this.logoUploading.set(true);
+    this.cloudinary
+      .uploadImage(file)
+      .then((url) => this.patch({ logo: url }))
+      .catch(() => this.toast.error('Could not upload the logo. The preview is local only until you retry.'))
+      .finally(() => this.logoUploading.set(false));
   }
 
   removeLogo() {

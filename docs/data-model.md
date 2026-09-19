@@ -1,6 +1,8 @@
 # Chairly data model and access rules
 
-Types: `src/app/core/firebase/schema.ts`. Rules: `firestore.rules`, `storage.rules`. Tests: `npm run test:rules` (needs Java).
+Types: `src/app/core/firebase/schema.ts`. Rules: `firestore.rules`. Tests: `npm run test:rules` (needs Java).
+
+Firebase Storage is not used (never enabled on the Firebase project). Salon logos and staff photos upload to Cloudinary instead (`src/app/core/services/cloudinary.service.ts`, unsigned upload preset); only the resulting hosted URL is stored on the salon/staff document.
 
 ## Roles
 

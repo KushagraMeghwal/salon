@@ -16,5 +16,8 @@ export const environment = {
     appId: '1:730220142825:web:9aa581d965240ee82bd078',
     measurementId: 'G-2VB4B0JE71',
   },
-  publicBaseUrl: 'https://chairly.app',
+  // The working, deployed origin (Firebase Hosting's own domain). chairly.app is the intended
+  // custom domain but is not connected/verified on Firebase Hosting yet — links built from it
+  // don't resolve. Switch this back once chairly.app is added and verified under Hosting settings.
+  publicBaseUrl: 'https://salon-79da5.web.app',
 };

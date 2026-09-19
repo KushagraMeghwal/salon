@@ -46,7 +46,7 @@ firebase functions:secrets:set RAZORPAY_OAUTH_REDIRECT_URI     # the callback fu
 firebase functions:secrets:set RAZORPAY_WEBHOOK_SECRET
 ```
 
-Also set the string param `PUBLIC_BASE_URL` (the frontend origin, for example `https://chairly.app`). `RAZORPAY_PLATFORM_KEY_ID/SECRET` are not used: orders are created with the salon's own OAuth token, not a platform key.
+Also set the string param `PUBLIC_BASE_URL` (the frontend origin — currently `https://salon-79da5.web.app`, since `chairly.app` isn't connected/verified on Firebase Hosting yet; see `functions/.env.salon-79da5`). `RAZORPAY_PLATFORM_KEY_ID/SECRET` are not used: orders are created with the salon's own OAuth token, not a platform key.
 
 ## Data
 

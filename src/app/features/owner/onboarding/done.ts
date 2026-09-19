@@ -2,13 +2,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { toDataURL } from 'qrcode';
+import { environment } from '../../../../environments/environment';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { fmt12Str } from '../../../core/utils/time';
 import { SalonMark } from '../../../shared/layout/salon-mark';
 import { WizardHeader } from '../../../shared/layout/wizard-header';
-
-export const PUBLIC_BASE_URL = 'https://chairly.app';
 
 @Component({
   selector: 'app-setup-done',
@@ -157,7 +156,7 @@ export class SetupDone implements OnInit {
 
   protected readonly qr = signal('');
   protected readonly copied = signal(false);
-  protected readonly link = computed(() => `${PUBLIC_BASE_URL}/s/${this.store.profile().slug}`);
+  protected readonly link = computed(() => `${environment.publicBaseUrl}/s/${this.store.profile().slug}`);
   protected readonly area = computed(() => [this.store.profile().landmark.split(',').pop()?.trim(), this.store.profile().city].filter(Boolean).join(', '));
   protected readonly hoursLabel = computed(() => {
     const open = this.store.timings().filter((t) => t.open);

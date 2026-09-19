@@ -7,6 +7,7 @@ Do every item before real customers or salons use Chairly.
 - [ ] **Restrict the Firebase web API key to our domains.** In Google Cloud console > APIs & Services > Credentials, limit the browser key to the production domain(s) (plus `localhost` for development only) and to the Firebase APIs we use. The key is already in the git history of the public repo, so restrict it first.
 - [ ] **Enable App Check** (reCAPTCHA Enterprise on web) for Firestore and Cloud Functions, then switch each to enforced mode once traffic looks healthy. (Firebase Storage is not used — images upload to Cloudinary.)
 - [ ] **Test on a real Android phone and a real iPhone** (Chrome and Safari): phone OTP, Google sign-in, booking flow, UPI/online payment, Hindi text rendering, install prompt and the check-in QR.
+- [ ] **Connect the `chairly.app` custom domain to Firebase Hosting** (Hosting > Add custom domain > verify ownership > update DNS). Until this is done, `chairly.app` does not resolve to the app, so `environment.ts`'s `publicBaseUrl` and `functions/.env.salon-79da5`'s `PUBLIC_BASE_URL` point at the working `https://salon-79da5.web.app` instead (customer booking links, WhatsApp/SMS/Facebook share, the QR code, and the Razorpay OAuth callback redirect all use this). Once `chairly.app` is verified and live, switch both back to `https://chairly.app` and redeploy hosting + functions.
 
 ## Payments (Razorpay)
 

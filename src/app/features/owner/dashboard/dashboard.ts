@@ -3,21 +3,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { QueueItem } from '../../../core/models';
+import { AnalyticsService } from '../../../core/services/analytics.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { UiService } from '../../../core/services/ui.service';
 import { fmt12, inr, LOCALE } from '../../../core/utils/time';
 import { tr } from '../../../core/utils/i18n';
 import { Topbar } from '../../../shared/layout/topbar';
-
-const RUSH = [
-  { label: '9 AM', from: 9, value: 3400 },
-  { label: '11 AM', from: 11, value: 7800 },
-  { label: '1 PM', from: 13, value: 4200 },
-  { label: '3 PM', from: 15, value: 8100 },
-  { label: '6 PM', from: 18, value: 11200 },
-  { label: '8 PM', from: 20, value: 5100 },
-];
 
 @Component({
   selector: 'app-dashboard',
@@ -77,7 +69,7 @@ const RUSH = [
               <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[22px]">payments</span></div>
             </div>
             <div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between">
-              <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-[14px]">trending_up</span><span>{{ "+14% vs yesterday" | translate }}</span></div>
+              <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-semibold whitespace-nowrap"><span class="material-symbols-outlined text-[14px]">trending_up</span><span>{{ vsYesterday() }}</span></div>
               <svg class="w-14 h-6 shrink-0 text-primary stroke-current fill-none stroke-2" viewBox="0 0 80 24"><path d="M 0 18 Q 20 22, 35 12 T 60 8 T 80 4"></path></svg>
             </div>
           </div>
@@ -108,11 +100,11 @@ const RUSH = [
             <div class="mt-4 pt-3 border-t border-outline-variant/20 flex flex-col gap-1.5">
               <div class="w-full bg-surface-container h-2 rounded-full overflow-hidden flex">
                 <div class="bg-primary h-full" [style.width.%]="walkinPct()" [title]="'Walk-ins: ' + walkins()"></div>
-                <div class="bg-secondary-container h-full" [style.width.%]="100 - walkinPct()" [title]="'Online: ' + online()"></div>
+                <div class="bg-secondary-container h-full" [style.width.%]="onlinePct()" [title]="'Online: ' + online()"></div>
               </div>
               <div class="flex items-center justify-between font-label-sm text-label-sm text-outline">
                 <span>{{ "Walk-ins:" | translate }} <b class="text-primary">{{ walkinPct() }}%</b></span>
-                <span>{{ "Online:" | translate }} <b class="text-secondary">{{ 100 - walkinPct() }}%</b></span>
+                <span>{{ "Online:" | translate }} <b class="text-secondary">{{ onlinePct() }}%</b></span>
               </div>
             </div>
           </div>
@@ -231,14 +223,14 @@ const RUSH = [
           <div class="xl:col-span-4 flex flex-col gap-6">
             <div class="bg-surface-container-lowest rounded-[16px] border border-outline-variant/30 shadow-level-1 p-5 flex flex-col gap-4">
               <div class="flex items-center justify-between gap-2">
-                <div><h3 class="font-headline-sm text-headline-sm text-on-surface">{{ "Footfall & Rush Hours" | translate }}</h3><p class="font-body-sm text-body-sm text-outline">{{ "Revenue spikes across operational shifts" | translate }}</p></div>
+                <div><h3 class="font-headline-sm text-headline-sm text-on-surface">{{ "Footfall & Rush Hours" | translate }}</h3><p class="font-body-sm text-body-sm text-outline">{{ "Bookings per shift, last 30 days" | translate }}</p></div>
                 <span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold whitespace-nowrap">{{ "Peak: {{p1}}" | translate: { p1: (peak()) } }}</span>
               </div>
               <div class="pt-3 pb-1 flex flex-col gap-3">
                 <div class="h-36 w-full flex items-end justify-between gap-2 px-1">
                   @for (b of rush(); track b.label) {
                     <div class="flex-1 flex flex-col items-center gap-1.5 group cursor-pointer">
-                      <span class="text-[10px] font-semibold transition-colors" [class]="b.now ? 'text-primary font-bold' : 'text-outline group-hover:text-primary'">₹{{ (b.value / 1000).toFixed(1) }}k</span>
+                      <span class="text-[10px] font-semibold transition-colors" [class]="b.now ? 'text-primary font-bold' : 'text-outline group-hover:text-primary'">{{ b.value }}</span>
                       <div class="w-full rounded-t-lg transition-all duration-200 relative" [class]="b.now ? 'bg-primary hover:bg-primary-container shadow-sm' : b.peak ? 'bg-primary-container/80 hover:bg-primary' : 'bg-surface-container hover:bg-primary/40'" [style.height.px]="b.h">
                         @if (b.now) { <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-secondary-container"></div> }
                       </div>
@@ -273,6 +265,7 @@ const RUSH = [
 })
 export class Dashboard {
   protected readonly store = inject(SalonStore);
+  private readonly analytics = inject(AnalyticsService);
   protected readonly toast = inject(ToastService);
   protected readonly ui = inject(UiService);
   protected readonly inr = inr;
@@ -292,29 +285,38 @@ export class Dashboard {
   protected readonly done = computed(() => this.store.queue().filter((q) => q.stage === 'done' && this.matches(q)).reverse());
   protected readonly categories = computed(() => [...new Set(this.store.queue().map((q) => q.category))]);
 
-  private readonly doneAll = computed(() => this.store.queue().filter((q) => q.stage === 'done'));
-  protected readonly earnings = computed(() => this.store.base.earnings + this.doneAll().reduce((a, q) => a + q.price, 0));
-  protected readonly doneCount = computed(() => this.store.base.done + this.doneAll().length);
-  protected readonly totalBookings = computed(() => this.doneCount() + this.store.queue().filter((q) => q.stage !== 'done').length + this.store.base.upcoming);
+  private readonly kpi = this.analytics.todayStats;
+  protected readonly earnings = computed(() => this.kpi().earnings);
+  protected readonly doneCount = computed(() => this.kpi().done);
+  protected readonly totalBookings = computed(() => this.kpi().total);
   protected readonly concluded = computed(() => Math.round((this.doneCount() / Math.max(1, this.totalBookings())) * 100));
-  protected readonly walkins = computed(() => this.store.base.walkins + this.store.queue().filter((q) => q.source === 'walkin').length);
-  protected readonly online = computed(() => this.store.base.online + this.store.queue().filter((q) => q.source === 'app').length);
+  protected readonly walkins = computed(() => this.kpi().walkins);
+  protected readonly online = computed(() => this.kpi().online);
   protected readonly walkinPct = computed(() => Math.round((this.walkins() / Math.max(1, this.walkins() + this.online())) * 100));
-  protected readonly upi = computed(() => this.store.base.upi + this.doneAll().filter((q) => q.payMethod === 'UPI').reduce((a, q) => a + q.price, 0));
+  protected readonly onlinePct = computed(() => (this.walkins() + this.online() ? 100 - this.walkinPct() : 0));
+  protected readonly vsYesterday = computed(() => {
+    const d = this.analytics.periods().day;
+    if (!d.prevRevenue) return tr('No sales yesterday');
+    const p = Math.round(((d.revenue - d.prevRevenue) / d.prevRevenue) * 100);
+    return tr('{{p1}}% vs yesterday', { p1: (p >= 0 ? '+' : '') + p });
+  });
+  protected readonly upi = computed(() => this.kpi().upi);
   protected readonly upiPct = computed(() => Math.round((this.upi() / Math.max(1, this.earnings())) * 100));
 
   protected readonly rush = computed(() => {
+    const rows = this.analytics.rush();
     const hour = Math.floor(this.store.nowMin() / 60);
-    const max = Math.max(...RUSH.map((r) => r.value));
-    const nowIdx = RUSH.reduce((acc, r, i) => (r.from <= hour ? i : acc), 0);
-    return RUSH.map((r, i) => ({ ...r, h: Math.round((r.value / max) * 115), now: i === nowIdx, peak: r.value === max }));
+    const max = Math.max(1, ...rows.map((r) => r.value));
+    const nowIdx = rows.reduce((acc, r, i) => (r.from <= hour ? i : acc), 0);
+    const top = Math.max(...rows.map((r) => r.value));
+    return rows.map((r, i) => ({ ...r, h: Math.max(r.value ? 6 : 2, Math.round((r.value / max) * 115)), now: i === nowIdx, peak: top > 0 && r.value === top }));
   });
   protected readonly peak = computed(() => this.rush().find((r) => r.peak)?.label ?? '');
 
   protected readonly topStylist = computed(() => {
-    const best = [...this.store.stats()].sort((a, b) => b.revenue - a.revenue)[0];
+    const best = [...this.analytics.staffStats()].sort((a, b) => b.revenue - a.revenue)[0];
     const staff = this.store.staffById(best?.staffId);
-    return best && staff ? { staff, stats: best } : null;
+    return best && best.revenue > 0 && staff ? { staff, stats: best } : null;
   });
 
   first(id: string | null | undefined) {
@@ -343,8 +345,7 @@ export class Dashboard {
   seat(q: QueueItem) {
     const err = this.store.seat(q.id);
     if (err) return this.toast.error(err);
-    const updated = this.store.queue().find((x) => x.id === q.id);
-    this.toast.success('{{p1}} seated with {{p2}} (Station {{p3}})', { p1: q.client, p2: this.first(updated?.staffId), p3: updated?.station });
+    this.toast.success('{{p1}} is being seated', { p1: q.client });
   }
 
   notify() {

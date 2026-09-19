@@ -41,7 +41,7 @@ type SortKey = 'lastVisit' | 'visits' | 'totalSpent' | 'name';
 
         <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 shadow-level-1 overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[680px]">
+            <table class="w-full text-left min-w-[520px]">
               <thead class="bg-surface-container-low text-muted font-label-sm text-label-sm">
                 <tr>
                   @for (c of cols; track c.key) {

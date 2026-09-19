@@ -92,7 +92,7 @@ service cloud.firestore {
     function validQueueItem() {
       let d = request.resource.data;
       return d.keys().hasOnly(['stage', 'client', 'phone', 'service', 'category', 'price', 'duration', 'requestedStaffId', 'staffId',
-                               'station', 'source', 'arrivedAt', 'startedAt', 'createdAt', 'updatedAt'])
+                               'station', 'source', 'arrivedAt', 'startedAt', 'date', 'createdAt', 'updatedAt'])
         && d.stage in ['waiting', 'in-chair']
         && d.client is string && d.client.size() >= 1 && d.client.size() <= 100
         && d.phone is string && d.phone.size() <= 20
@@ -105,7 +105,7 @@ service cloud.firestore {
 
     function validStaffPrivate() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['phone', 'email', 'commission', 'updatedAt'])
+      return d.keys().hasOnly(['phone', 'phoneKey', 'email', 'commission', 'updatedAt'])
         && d.commission is number && d.commission >= 0 && d.commission <= 100
         && d.phone is string && d.phone.size() <= 20;
     }
@@ -116,13 +116,13 @@ service cloud.firestore {
 
       // Self-registration always starts as a plain customer. Role/salons/no-show count are function-managed.
       allow create: if signedIn() && userId == uid()
-        && onlyKeys(['name', 'phone', 'role', 'salonIds', 'noShowCount', 'lang', 'createdAt'])
+        && onlyKeys(['name', 'phone', 'email', 'role', 'salonIds', 'noShowCount', 'lang', 'createdAt'])
         && request.resource.data.role == 'customer'
         && request.resource.data.salonIds == []
         && request.resource.data.noShowCount == 0;
 
       allow update: if signedIn() && userId == uid()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'lang', 'updatedAt']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'email', 'lang', 'updatedAt']);
 
       allow delete: if false;
     }

@@ -23,12 +23,12 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
               </button>
             }
             <div class="text-headline-sm font-headline-sm text-on-surface flex items-center gap-space-xs font-bold tracking-tight min-w-0">
-              @if (store.profile().logo; as logo) {
+              @if (inSalon() && store.profile().logo; as logo) {
                 <img [src]="logo" [alt]="store.profile().name" class="w-7 h-7 rounded-lg object-contain bg-white border border-outline-variant/40 shrink-0" />
               } @else {
                 <span class="material-symbols-outlined text-primary text-[22px]">content_cut</span>
               }
-              <span class="truncate">{{ store.profile().name }}</span>
+              <span class="truncate">{{ inSalon() ? store.profile().name : ('Chairly' | translate) }}</span>
             </div>
           </div>
           <app-lang-toggle />
@@ -62,6 +62,8 @@ export class CustomerShell {
     this.router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), map((e) => e.urlAfterRedirects.split('?')[0]), startWith(this.router.url.split('?')[0])),
     { initialValue: '/' },
   );
+  /** Pages under /s/:slug belong to one salon; My bookings and login span salons and show the platform name. */
+  protected readonly inSalon = computed(() => this.url().startsWith('/s/') && this.store.mode() === 'public');
   protected readonly showBack = computed(() => /^\/s\/[^/]+\/(services|slot|stylist|pay)$/.test(this.url()) || this.url() === '/login');
   protected readonly showNav = computed(() => /^\/s\/[^/]+$/.test(this.url()) || this.url() === '/my/bookings' || this.url() === '/my/profile');
 }

@@ -59,7 +59,7 @@ export const WIZARD_STEPS = [
         }
         <button type="button" (click)="exit()" class="text-body-sm font-label-lg px-3.5 py-1.5 rounded-lg text-secondary hover:bg-error-container/20 active:scale-[0.99] transition-all">{{ "Exit Setup" | translate }}</button>
         <div class="hidden sm:block h-6 w-px bg-outline-variant/30 mx-1"></div>
-        <div class="hidden sm:flex w-8 h-8 rounded-full bg-primary-container text-on-primary-container items-center justify-center text-label-md font-label-md ring-2 ring-surface-variant">{{ initials(auth.user().name) }}</div>
+        <div class="hidden sm:flex w-8 h-8 rounded-full bg-primary-container text-on-primary-container items-center justify-center text-label-md font-label-md ring-2 ring-surface-variant">{{ initials(auth.profile().name) }}</div>
       </div>
     </header>
     <div class="md:hidden bg-surface-container-lowest px-4 py-2.5 border-b border-outline-variant/20 flex items-center justify-between no-print">
@@ -85,18 +85,21 @@ export class WizardHeader {
   readonly complete = input(false);
   protected readonly progress = computed(() => (this.complete() ? 100 : this.active() * 25));
 
-  saveDraft() {
+  async saveDraft() {
+    await this.store.flush();
     this.store.markSaved();
     this.toast.success('Draft saved');
   }
 
-  exit() {
+  async exit() {
+    await this.store.flush();
     if (this.store.onboarded()) {
       this.router.navigateByUrl('/owner/dashboard');
     } else {
-      this.store.markSaved();
       this.toast.info('Progress saved. Resume setup anytime.');
-      this.router.navigateByUrl('/splash');
+      // Everything is already saved to the account; sign in again later to continue.
+      await this.auth.signOut();
+      this.router.navigateByUrl('/');
     }
   }
 }

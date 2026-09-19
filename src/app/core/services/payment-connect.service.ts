@@ -38,7 +38,7 @@ export class PaymentConnectService {
 
   /** TODO(Phase 4b): the salon's real Firestore id. Until the app is wired to Firestore the slug stands in. */
   private salonId() {
-    return this.store.profile().slug;
+    return this.store.salonId() ?? '';
   }
 
   constructor() {

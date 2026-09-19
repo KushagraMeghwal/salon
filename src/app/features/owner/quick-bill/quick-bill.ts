@@ -1,11 +1,11 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toDataURL } from 'qrcode';
 import { Bill, CatalogService, PayMethod } from '../../../core/models';
 import { AuthService } from '../../../core/services/auth.service';
-import { SalonStore } from '../../../core/services/salon.store';
+import { SalonStore, callableMessage } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { splitGst } from '../../../core/utils/gst';
 import { inr, initials } from '../../../core/utils/time';
@@ -31,7 +31,7 @@ const SVC_ICONS: Record<string, string> = { Hair: 'content_cut', 'Beard & Shave'
 
 @Component({
   selector: 'app-quick-bill',
-  imports: [FormsModule, Topbar, Modal, TranslatePipe],
+  imports: [FormsModule, RouterLink, Topbar, Modal, TranslatePipe],
   template: `
     <app-topbar>
       <div left class="flex items-center gap-3 md:gap-4 min-w-0">
@@ -42,7 +42,7 @@ const SVC_ICONS: Record<string, string> = { Hair: 'content_cut', 'Beard & Shave'
         <div class="hidden md:block h-4 w-px bg-outline-variant/50"></div>
         <div class="hidden md:flex items-center gap-2 bg-surface-container px-2.5 py-1 rounded-full border border-outline-variant/40">
           <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-          <span class="font-label-sm text-label-sm text-on-surface">{{ "Cashier:" | translate }} <strong>{{ auth.user().name }}</strong></span>
+          <span class="font-label-sm text-label-sm text-on-surface">{{ "Cashier:" | translate }} <strong>{{ auth.profile().name }}</strong></span>
         </div>
       </div>
       <ng-container right>
@@ -52,8 +52,8 @@ const SVC_ICONS: Record<string, string> = { Hair: 'content_cut', 'Beard & Shave'
         </div>
         <button type="button" class="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors" [title]="'Help' | translate" (click)="toast.info('Tap a service to add it to the invoice')"><span class="material-symbols-outlined text-[20px]">help</span></button>
         <div class="flex items-center gap-2.5 pl-1">
-          <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-label-md border border-primary/20">{{ initials(auth.user().name) }}</div>
-          <div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md leading-tight text-on-surface font-semibold">{{ auth.user().name }}</span><span class="font-label-sm text-label-sm text-muted">{{ (auth.user().title) | translate }}</span></div>
+          <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-label-md font-label-md border border-primary/20">{{ initials(auth.profile().name) }}</div>
+          <div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md leading-tight text-on-surface font-semibold">{{ auth.profile().name }}</span><span class="font-label-sm text-label-sm text-muted">{{ (auth.profile().title) | translate }}</span></div>
         </div>
       </ng-container>
     </app-topbar>
@@ -205,15 +205,19 @@ const SVC_ICONS: Record<string, string> = { Hair: 'content_cut', 'Beard & Shave'
               <div class="p-3 bg-surface-container-low rounded-xl border border-primary/20 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                   <div class="w-16 h-16 bg-white p-1 rounded-lg border border-outline-variant/30 flex items-center justify-center shadow-xs shrink-0">
-                    @if (upiQr()) { <img [src]="upiQr()" [alt]="'UPI payment QR' | translate" class="w-full h-full" /> } @else { <span class="material-symbols-outlined text-[44px] text-on-surface">qr_code_2</span> }
+                    @if (upiQr() && vpa()) { <img [src]="upiQr()" [alt]="'UPI payment QR' | translate" class="w-full h-full" /> } @else { <span class="material-symbols-outlined text-[44px] text-outline">qr_code_2</span> }
                   </div>
-                  <div class="flex flex-col min-w-0"><span class="font-label-md text-label-md font-bold text-on-surface">{{ "Scan & Pay {{p1}}" | translate: { p1: (inr(total())) } }}</span><span class="text-[11px] text-muted truncate">{{ vpa() }}</span></div>
+                  @if (vpa()) {
+                    <div class="flex flex-col min-w-0"><span class="font-label-md text-label-md font-bold text-on-surface">{{ "Scan & Pay {{p1}}" | translate: { p1: (inr(total())) } }}</span><span class="text-[11px] text-muted truncate">{{ vpa() }}</span></div>
+                  } @else {
+                    <div class="flex flex-col min-w-0"><span class="font-label-md text-label-md font-bold text-on-surface">{{ "Add your UPI ID to show a payment QR" | translate }}</span><a routerLink="/owner/settings" class="text-[11px] text-primary font-semibold hover:underline">{{ "Open Settings" | translate }}</a></div>
+                  }
                 </div>
               </div>
             }
 
             <div class="flex flex-col gap-2.5 pt-1">
-              <button type="button" (click)="complete()" [disabled]="!cart().length" class="w-full bg-secondary-container hover:bg-[#ff6842] text-on-secondary-container py-3.5 px-4 rounded-xl font-label-lg text-label-lg font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+              <button type="button" (click)="complete()" [disabled]="!cart().length || saving()" class="w-full bg-secondary-container hover:bg-[#ff6842] text-on-secondary-container py-3.5 px-4 rounded-xl font-label-lg text-label-lg font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
                 <span class="material-symbols-outlined text-[20px]">check_circle</span><span>{{ "Generate & Complete Bill" | translate }}</span>
               </button>
               <div class="grid grid-cols-2 gap-2.5">
@@ -276,6 +280,8 @@ export class QuickBill implements OnInit {
   protected readonly receipt = signal<Bill | null>(null);
   protected readonly upiQr = signal('');
   private queueId: string | null = null;
+  private bookingId: string | null = null;
+  protected readonly saving = signal(false);
 
   protected readonly visible = computed(() => {
     const c = this.category();
@@ -300,11 +306,12 @@ export class QuickBill implements OnInit {
     this.store.bills();
     return this.store.nextInvoiceNo();
   });
-  protected readonly vpa = computed(() => `${this.store.profile().slug.replace(/-/g, '').slice(0, 18)}@upi`);
+  /** The salon's own UPI id from Settings. Empty until the owner adds it. */
+  protected readonly vpa = computed(() => (this.store.settings().upiId ?? '').trim());
 
   constructor() {
     effect(() => {
-      if (this.method() !== 'UPI' || this.total() <= 0) return;
+      if (this.method() !== 'UPI' || this.total() <= 0 || !this.vpa()) return;
       const uri = `upi://pay?pa=${this.vpa()}&pn=${encodeURIComponent(this.store.profile().name)}&am=${this.total()}&cu=INR&tn=${encodeURIComponent(this.invoiceNo())}`;
       toDataURL(uri, { margin: 0, width: 160, color: { dark: '#121d21', light: '#ffffff' } }).then((u) => this.upiQr.set(u));
     });
@@ -321,6 +328,18 @@ export class QuickBill implements OnInit {
       this.cart.set([{ serviceId: 'queue:' + q.id, name: q.service, price: q.price, qty: 1, duration: q.duration, staffId: q.staffId ?? this.staffId() }]);
     } else {
       this.queueId = null;
+      const b = this.store.bookings().find((x) => x.id === this.route.snapshot.queryParamMap.get('bookingId'));
+      if (b && !b.billed) {
+        this.bookingId = b.id;
+        this.client.set(b.client);
+        this.phone.set(b.customerPhone ?? '');
+        this.staffId.set(b.staffId);
+        this.cart.set(
+          (b.services?.length ? b.services : [{ serviceId: undefined, name: b.serviceName, price: b.price, duration: b.duration }]).map((l, i) => ({
+            serviceId: l.serviceId ?? 'booking:' + i, name: l.name, price: l.price, qty: 1, duration: l.duration, staffId: b.staffId,
+          })),
+        );
+      }
     }
   }
 
@@ -361,17 +380,25 @@ export class QuickBill implements OnInit {
     return {
       client: this.client().trim(), phone: this.phone().trim(),
       lines: this.cart().map((l) => ({ serviceId: l.serviceId, name: l.name, price: l.price, qty: l.qty, staffId: l.staffId })),
-      discount: this.discount(), couponCode: this.applied()?.code, method: this.method(), queueId: this.queueId,
+      discount: this.discount(), couponCode: this.applied()?.code, method: this.method(), queueId: this.queueId, bookingId: this.bookingId,
     };
   }
 
-  complete() {
+  async complete() {
     this.attempted.set(true);
     if (!this.cart().length) return this.toast.error('Add at least one service.');
     if (!this.client().trim()) return this.toast.error('Enter the client name.');
-    const bill = this.store.createBill(this.billInput());
-    this.receipt.set(bill);
-    this.toast.success('Bill {{p1}} · {{p2}} paid via {{p3}}', { p1: bill.no, p2: inr(bill.total), p3: bill.method });
+    if (this.saving()) return;
+    this.saving.set(true);
+    try {
+      const bill = await this.store.createBill(this.billInput());
+      this.receipt.set(bill);
+      this.toast.success('Bill {{p1}} · {{p2}} paid via {{p3}}', { p1: bill.no, p2: inr(bill.total), p3: bill.method });
+    } catch (e) {
+      this.toast.error(callableMessage(e));
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   closeReceipt() {
@@ -385,6 +412,7 @@ export class QuickBill implements OnInit {
     this.attempted.set(false);
     this.fromQueue.set(false);
     this.queueId = null;
+    this.bookingId = null;
     if (fromQueue) this.router.navigateByUrl('/owner/dashboard');
   }
 

@@ -1,6 +1,7 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Booking } from '../../../core/models';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
@@ -12,17 +13,17 @@ import { BTN_GHOST } from '../../../shared/ui/form-classes';
 import { Modal } from '../../../shared/ui/modal';
 
 const PX_PER_MIN = 1.6; // 48px per 30-minute row
-const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Progress', completed: 'Completed', confirmed: 'Confirmed', vip: 'VIP Slot', cancelled: 'Cancelled', 'no-show': 'No-show' };
+const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Progress', completed: 'Completed', confirmed: 'Confirmed', vip: 'VIP Slot', cancelled: 'Cancelled', 'no-show': 'No-show', held: 'Awaiting payment', expired: 'Expired' };
 
 @Component({
   selector: 'app-calendar',
   imports: [FormsModule, Topbar, Modal, TranslatePipe],
   template: `
     <app-topbar>
-      <div left class="flex items-center gap-3 md:gap-5">
-        <div class="flex items-center gap-1 md:gap-2 bg-surface-container-low px-2 md:px-3 py-1.5 rounded-lg border border-outline-variant/30">
+      <div left class="flex items-center gap-3 md:gap-5 min-w-0">
+        <div class="flex items-center gap-1 md:gap-2 bg-surface-container-low px-2 md:px-3 py-1.5 rounded-lg border border-outline-variant/30 min-w-0">
           <button type="button" [attr.aria-label]="'Previous day' | translate" (click)="shift(-1)" class="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-surface-container-lowest transition-colors active:scale-95"><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
-          <div class="flex items-center gap-2 px-1"><span class="material-symbols-outlined text-[18px] text-primary hidden sm:inline">calendar_month</span><span class="font-headline-sm text-headline-sm text-on-surface whitespace-nowrap">{{ dateLabel() }}</span></div>
+          <div class="flex items-center gap-2 px-1 min-w-0"><span class="material-symbols-outlined text-[18px] text-primary hidden sm:inline">calendar_month</span><span class="font-headline-sm text-headline-sm text-on-surface truncate text-[15px] sm:text-inherit">{{ dateLabel() }}</span></div>
           <button type="button" [attr.aria-label]="'Next day' | translate" (click)="shift(1)" class="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-surface-container-lowest transition-colors active:scale-95"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
         </div>
         @if (!isToday()) { <button type="button" (click)="goToday()" class="hidden sm:block text-label-md font-label-md text-primary hover:underline">{{ "Today" | translate }}</button> }
@@ -201,15 +202,18 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
           </dl>
           @if (b.notes) { <p class="text-body-sm bg-surface-container-low p-2 rounded">{{ b.notes }}</p> }
           <div class="flex flex-wrap items-center justify-end gap-2 pt-4 border-t border-outline-variant/20">
-            <button type="button" [class]="ghost + ' text-error!'" (click)="cancelBooking(b)">{{ "Cancel booking" | translate }}</button>
+            @if (b.status === 'confirmed' || b.status === 'vip' || b.status === 'held') {
+              <button type="button" [class]="ghost + ' text-error!'" [disabled]="busy()" (click)="cancelBooking(b)">{{ "Cancel booking" | translate }}</button>
+            }
             @if (b.status === 'confirmed' || b.status === 'vip') {
-              <button type="button" [class]="ghost + ' text-error!'" (click)="markNoShow(b)">{{ "Mark no-show" | translate }}</button>
+              <button type="button" [class]="ghost + ' text-error!'" [disabled]="busy()" (click)="markNoShow(b)">{{ "Mark no-show" | translate }}</button>
+              <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md border border-primary text-primary hover:bg-primary/5 disabled:opacity-50" [disabled]="busy()" (click)="setStatus(b, 'in-progress')">{{ "Start service" | translate }}</button>
             }
-            @if (b.status !== 'in-progress' && b.status !== 'completed') {
-              <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md border border-primary text-primary hover:bg-primary/5" (click)="setStatus(b, 'in-progress')">{{ "Start service" | translate }}</button>
+            @if (b.status === 'confirmed' || b.status === 'vip' || b.status === 'in-progress') {
+              <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md bg-primary text-on-primary hover:bg-primary-container font-semibold disabled:opacity-50" [disabled]="busy()" (click)="setStatus(b, 'completed')">{{ "Mark completed" | translate }}</button>
             }
-            @if (b.status !== 'completed') {
-              <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md bg-primary text-on-primary hover:bg-primary-container font-semibold" (click)="setStatus(b, 'completed')">{{ "Mark completed" | translate }}</button>
+            @if (b.status === 'completed' && !b.billed) {
+              <button type="button" class="px-4 py-2 rounded-lg text-label-md font-label-md border border-primary text-primary hover:bg-primary/5" (click)="bill(b)">{{ "Create bill" | translate }}</button>
             }
           </div>
         </div>
@@ -230,6 +234,8 @@ export class CalendarPage {
   protected readonly viewMonth = signal(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   protected readonly search = signal('');
   protected readonly selected = signal<Booking | null>(null);
+  protected readonly busy = signal(false);
+  private readonly router = inject(Router);
 
   protected readonly dateStr = computed(() => dateKey(this.date()));
   protected readonly isToday = computed(() => this.dateStr() === dateKey(new Date()));
@@ -341,20 +347,29 @@ export class CalendarPage {
   open(b: Booking) {
     this.selected.set(b);
   }
-  markNoShow(b: Booking) {
-    this.store.markNoShow(b.id);
+  /** Runs a server-side booking change once, with a busy flag so a double tap cannot fire it twice. */
+  private async run(b: Booking, job: () => Promise<string | null>, ok: () => void) {
+    if (this.busy()) return;
+    this.busy.set(true);
+    const err = await job();
+    this.busy.set(false);
+    if (err) return this.toast.error(err);
     this.selected.set(null);
-    this.toast.info('{{p1}} marked as a no-show', { p1: b.client });
+    ok();
+  }
+
+  markNoShow(b: Booking) {
+    return this.run(b, () => this.store.markNoShow(b.id), () => this.toast.info('{{p1}} marked as a no-show', { p1: b.client }));
   }
   setStatus(b: Booking, status: Booking['status']) {
-    if (status === 'completed') this.store.completeBooking(b.id);
-    else this.store.updateBooking(b.id, { status });
-    this.selected.set(null);
-    this.toast.success('{{p1}}: {{p2}}', { p1: b.client, t_p2: STATUS_LABEL[status] });
+    const job = status === 'completed' ? () => this.store.completeBooking(b.id) : () => this.store.startBooking(b.id);
+    return this.run(b, job, () => this.toast.success('{{p1}}: {{p2}}', { p1: b.client, t_p2: STATUS_LABEL[status] }));
   }
   cancelBooking(b: Booking) {
-    this.store.removeBooking(b.id);
+    return this.run(b, () => this.store.cancelBooking(b.id), () => this.toast.info('Booking for {{p1}} cancelled', { p1: b.client }));
+  }
+  bill(b: Booking) {
     this.selected.set(null);
-    this.toast.info('Booking for {{p1}} cancelled', { p1: b.client });
+    void this.router.navigate(['/owner/quick-bill'], { queryParams: { bookingId: b.id } });
   }
 }

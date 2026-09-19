@@ -1,6 +1,7 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 import { SalonStore } from '../../core/services/salon.store';
 
 const MESSAGES = [
@@ -53,6 +54,7 @@ const MESSAGES = [
 export class Splash implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly store = inject(SalonStore);
+  private readonly auth = inject(AuthService);
   protected readonly message = signal(MESSAGES[0]);
   protected readonly fading = signal(false);
   private timers: ReturnType<typeof setTimeout>[] = [];
@@ -70,11 +72,26 @@ export class Splash implements OnInit, OnDestroy {
         }, 200),
       );
     }, 900);
-    this.timers.push(
-      setTimeout(() => {
-        this.router.navigateByUrl(this.store.onboarded() ? '/owner/dashboard' : '/owner/onboarding/salon');
-      }, 2600),
-    );
+    void this.route();
+  }
+
+  /** Holds the brand screen for a moment, then sends each person where they belong. */
+  private async route() {
+    const minimum = new Promise((r) => this.timers.push(setTimeout(r, 1800)));
+    await this.auth.ready;
+    const role = this.auth.role();
+    let target = '/';
+    try {
+      if (this.auth.user() && role === 'owner' && this.auth.salonId()) {
+        await this.store.loadOwner(this.auth.salonId()!);
+        target = this.store.onboarded() ? '/owner/dashboard' : '/owner/onboarding/salon';
+      } else if (this.auth.user() && role === 'superadmin') target = '/admin';
+      else if (this.auth.user() && role === 'staff') target = '/staff';
+    } catch {
+      target = '/';
+    }
+    await minimum;
+    void this.router.navigateByUrl(target);
   }
 
   ngOnDestroy() {

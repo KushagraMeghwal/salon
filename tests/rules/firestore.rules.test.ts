@@ -292,3 +292,30 @@ describe('platform', () => {
     await assertFails(setDoc(doc(admin(), 'platform/stats'), { x: 1 }));
   });
 });
+
+describe('multi-tenant SaaS flows', () => {
+  it('the owner of one salon cannot touch another salon’s setup, queue or private data', async () => {
+    await assertFails(updateDoc(doc(otherOwner(), `salons/${SALON}`), { buffer: 5 }));
+    await assertFails(setDoc(doc(otherOwner(), `salons/${SALON}/services/sv9`), service));
+    await assertFails(getDoc(doc(otherOwner(), `salons/${SALON}/customers/p_9876543210`)));
+    await assertFails(getDoc(doc(otherOwner(), `salons/${SALON}/bills/bl1`)));
+    await assertFails(getDocs(collection(otherOwner(), `salons/${SALON}/bookings`)));
+  });
+  it('the owner can save a queue entry with its day, and a stylist phone key that the stylist login matches on', async () => {
+    const entry = { stage: 'waiting', client: 'Amit', phone: '', service: 'Haircut', category: 'Hair', price: 450, duration: 45, requestedStaffId: null, staffId: null, station: null, source: 'walkin', arrivedAt: 600, startedAt: null, date: '2026-10-01' };
+    await assertSucceeds(setDoc(doc(owner(), `salons/${SALON}/queue/qd`), entry));
+    await assertSucceeds(setDoc(doc(owner(), `salons/${SALON}/staffPrivate/stf1`), { commission: 15, phone: '98201 44521', phoneKey: '9820144521', email: '' }));
+    await assertFails(setDoc(doc(otherOwner(), `salons/${SALON}/staffPrivate/stf1`), { commission: 15, phone: '1', phoneKey: '1' }));
+  });
+  it('a signed-in customer saves their own profile (with email) but can never give themselves a role or a salon', async () => {
+    await assertSucceeds(setDoc(doc(customer('c9'), 'users/c9'), { name: 'New', phone: '9876543210', email: 'n@x.com', role: 'customer', salonIds: [], noShowCount: 0 }));
+    await assertFails(setDoc(doc(customer('c8'), 'users/c8'), { name: 'Sneaky', role: 'owner', salonIds: [SALON], noShowCount: 0 }));
+    await assertFails(setDoc(doc(customer('c8'), 'users/c8'), { name: 'Sneaky', role: 'superadmin', salonIds: [], noShowCount: 0 }));
+    await assertFails(updateDoc(doc(customer('c1'), 'users/c1'), { role: 'owner' }));
+    await assertFails(getDoc(doc(customer('c9'), 'users/c1')));
+  });
+  it('a customer sees only their own bookings across salons (collection-group query on customerId)', async () => {
+    await assertSucceeds(getDocs(query(collectionGroup(customer('c1'), 'bookings'), where('customerId', '==', 'c1'))));
+    await assertFails(getDocs(query(collectionGroup(customer('c1'), 'bookings'), where('customerId', '==', 'c2'))));
+  });
+});

@@ -1,5 +1,6 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
+import { AnalyticsService } from '../../../core/services/analytics.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { UiService } from '../../../core/services/ui.service';
@@ -7,7 +8,7 @@ import { dateKey, downloadText, inr, toCsv } from '../../../core/utils/time';
 import { Topbar } from '../../../shared/layout/topbar';
 import { DonutChart } from '../../../shared/ui/donut-chart';
 import { LineChart } from '../../../shared/ui/line-chart';
-import { PERIODS, PeriodKey } from './reports.data';
+import { PERIOD_KEYS, PeriodKey } from './reports.data';
 
 @Component({
   selector: 'app-reports',
@@ -161,19 +162,21 @@ export class Reports {
   protected readonly ui = inject(UiService);
   protected readonly toast = inject(ToastService);
   protected readonly inr = inr;
-  protected readonly periods = Object.values(PERIODS);
+  private readonly analytics = inject(AnalyticsService);
+  protected readonly periods = PERIOD_KEYS;
 
   protected readonly period = signal<PeriodKey>('month');
   protected readonly sortBy = signal<'revenue' | 'volume'>('revenue');
   protected readonly hoverIdx = signal<number | null>(null);
 
-  protected readonly d = computed(() => PERIODS[this.period()]);
-  protected readonly revDelta = computed(() => (((this.d().revenue - this.d().prevRevenue) / this.d().prevRevenue) * 100).toFixed(1));
+  protected readonly d = computed(() => this.analytics.periods()[this.period()]);
+  protected readonly revDelta = computed(() => (this.d().prevRevenue ? (((this.d().revenue - this.d().prevRevenue) / this.d().prevRevenue) * 100).toFixed(1) : '0.0'));
   protected readonly peak = computed(() => Math.max(...this.d().current));
   protected readonly peakLabel = computed(() => this.pointLabel(this.d().current.indexOf(this.peak())));
   protected readonly avg = computed(() => Math.round(this.d().current.reduce((a, b) => a + b, 0) / this.d().current.length));
   protected readonly yMax = computed(() => {
     const m = Math.max(...this.d().current, ...this.d().previous);
+    if (m <= 0) return 1000;
     const step = Math.pow(10, Math.floor(Math.log10(m)));
     return Math.ceil(m / step) * step;
   });
@@ -193,20 +196,18 @@ export class Reports {
       { label: 'UPI Instant', value: p.upi, color: '#00685b' },
       { label: 'Cards', value: p.card, color: '#fd7958' },
       { label: 'Cash POS', value: p.cash, color: '#68777b' },
-      { label: 'Vouchers', value: p.voucher, color: '#83f6e0' },
+      { label: 'Online / Split', value: p.voucher, color: '#83f6e0' },
     ];
   });
   protected readonly services = computed(() => {
     const key = this.sortBy();
     const list = [...this.d().services].sort((a, b) => b[key] - a[key]);
-    const max = Math.max(...list.map((s) => s[key]));
-    return list.map((s) => ({ ...s, bar: Math.round((s[key] / max) * 100), share: ((s.revenue / this.d().revenue) * 100).toFixed(1) }));
+    const max = Math.max(1, ...list.map((s) => s[key]));
+    return list.map((s) => ({ ...s, bar: Math.round((s[key] / max) * 100), share: this.d().revenue ? ((s.revenue / this.d().revenue) * 100).toFixed(1) : '0.0' }));
   });
 
   pointLabel(i: number) {
-    const d = this.d();
-    if (d.labels.length === d.current.length) return d.labels[i];
-    return `Day ${Math.round(1 + (i * 23) / Math.max(1, d.current.length - 1))}`;
+    return this.d().pointLabels[i] ?? '';
   }
 
   short(n: number, axis = false) {

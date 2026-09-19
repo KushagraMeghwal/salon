@@ -20,6 +20,9 @@ import { dateKey, fmt12Str, inr } from '../../core/utils/time';
       </main>
     } @else {
       <main class="max-w-screen-md w-full mx-auto px-space-md pt-space-md space-y-space-lg flex-1">
+        @if (!store.bookable()) {
+          <div class="rounded-xl border border-outline-variant bg-secondary-fixed/40 p-space-md text-body-md text-on-surface flex gap-2" role="status"><span class="material-symbols-outlined text-secondary">info</span><span>{{ "This salon is not taking online bookings right now. You can still call them." | translate }}</span></div>
+        }
         <section class="relative rounded-2xl overflow-hidden elevation-1 bg-surface-container-lowest border border-outline-variant">
           <div class="relative h-56 sm:h-72 w-full overflow-hidden bg-surface-container">
             <div class="w-full h-full bg-linear-to-br from-primary via-primary-container to-primary-fixed-dim flex items-center justify-center">
@@ -118,11 +121,15 @@ export class CustomerHome {
   protected readonly inr = inr;
   protected readonly icon = serviceIcon;
 
-  protected readonly found = computed(() => this.route.snapshot.paramMap.get('slug') === this.store.profile().slug);
+  protected readonly found = computed(() => !!this.store.salonId());
   protected readonly popular = computed(() => this.store.selectedServices().slice(0, 4));
   protected readonly phoneDigits = computed(() => this.store.profile().phone.replace(/\D/g, '').slice(-10));
   protected readonly area = computed(() => [this.store.profile().landmark.split(',').pop()?.trim(), this.store.profile().city].filter(Boolean).join(', '));
-  protected readonly mapsUrl = computed(() => `https://www.google.com/maps/search/?api=1&query=${this.store.profile().lat},${this.store.profile().lng}`);
+  protected readonly mapsUrl = computed(() => {
+    const p = this.store.profile();
+    const q = p.lat && p.lng ? `${p.lat},${p.lng}` : [p.name, p.street, p.city].filter(Boolean).join(', ');
+    return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+  });
   private readonly today = dateKey(new Date());
 
   protected readonly status = computed(() => {
@@ -141,6 +148,7 @@ export class CustomerHome {
   });
 
   book() {
+    if (!this.store.bookable()) return this.toast.info('This salon is not taking online bookings right now.');
     this.router.navigate(['/s', this.store.profile().slug, 'services']);
   }
 

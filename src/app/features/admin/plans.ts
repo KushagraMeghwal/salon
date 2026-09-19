@@ -65,11 +65,15 @@ export class AdminPlans {
     this.editing.set(p);
   }
 
-  save() {
+  async save() {
     const p = this.editing();
     if (!p || this.price == null || this.price < 0) return;
-    this.store.setPrice(p.id, Math.round(this.price));
-    this.toast.success('{{p1}} is now {{p2}} / month', { p1: p.name, p2: inr(this.price) });
+    try {
+      await this.store.setPrice(p.id, Math.round(this.price));
+      this.toast.success('{{p1}} is now {{p2}} / month', { p1: p.name, p2: inr(this.price) });
+    } catch {
+      this.toast.error('Could not save the price. Please try again.');
+    }
     this.editing.set(null);
   }
 }

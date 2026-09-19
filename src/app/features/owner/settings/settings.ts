@@ -2,7 +2,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { BankAccount, BreakSettings, Holiday, SalonSettings } from '../../../core/models';
+import { BreakSettings, Holiday, SalonSettings } from '../../../core/models';
 import { AdminStore } from '../../../core/services/admin.store';
 import { LangService } from '../../../core/services/lang.service';
 import { PaymentConnectService } from '../../../core/services/payment-connect.service';
@@ -65,7 +65,7 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
             <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-xl bg-primary-fixed/30 border border-primary/20 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[28px]">workspace_premium</span></div>
-                <div><div class="flex items-center gap-2 flex-wrap"><h2 class="text-headline-sm font-headline-sm text-on-surface">{{ "{{p1}} Tier" | translate: { p1: (draft().settings.plan) } }}</h2><span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold">{{ "Active Plan" | translate }}</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">{{ "Automated booking, billing and reminders for your whole team" | translate }}</p></div>
+                <div><div class="flex items-center gap-2 flex-wrap"><h2 class="text-headline-sm font-headline-sm text-on-surface">{{ "{{p1}} Tier" | translate: { p1: (draft().settings.plan) } }}</h2><span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-primary/10 text-primary font-semibold">{{ planBadge() | translate }}</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">{{ "Automated booking, billing and reminders for your whole team" | translate }}</p></div>
               </div>
               @if (trialDays() > 0) { <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm border border-secondary/20"><span class="material-symbols-outlined text-[16px]">timelapse</span><span>{{ "{{p1}} days left in free trial" | translate: { p1: (trialDays()) } }}</span></div> }
               @else { <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm"><span class="material-symbols-outlined text-[16px]">verified</span><span>{{ "Trial completed" | translate }}</span></div> }
@@ -73,13 +73,13 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 p-4 rounded-xl bg-surface-container-low/60 border border-outline-variant/30">
               <div><span class="font-body-sm text-body-sm text-on-surface-variant">{{ "Team Members" | translate }}</span><div class="flex items-baseline gap-2 mt-1"><span class="text-numeric-stat font-numeric-stat text-on-surface">{{ store.staff().length }}</span><span class="font-body-sm text-body-sm text-outline">{{ "Stylists" | translate }}</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-2">{{ "Unlimited on this plan" | translate }}</p></div>
               <div><span class="font-body-sm text-body-sm text-on-surface-variant">{{ "Services Live" | translate }}</span><div class="flex items-baseline gap-2 mt-1"><span class="text-numeric-stat font-numeric-stat text-primary">{{ store.selectedServices().length }}</span><span class="font-label-sm text-label-sm text-tertiary">{{ "Bookable online" | translate }}</span></div></div>
-              <div><span class="font-body-sm text-body-sm text-on-surface-variant">{{ "Next Auto-Renewal" | translate }}</span><div class="flex items-baseline gap-2 mt-1"><span class="text-headline-md font-headline-md text-on-surface">{{ renewal() }}</span></div><p class="font-body-sm text-body-sm text-outline">{{ "Billed {{p1}}/mo after trial" | translate: { p1: (inr(planPrice())) } }}</p></div>
+              <div><span class="font-body-sm text-body-sm text-on-surface-variant">{{ "Trial ends on" | translate }}</span><div class="flex items-baseline gap-2 mt-1"><span class="text-headline-md font-headline-md text-on-surface">{{ renewal() }}</span></div><p class="font-body-sm text-body-sm text-outline">{{ "Billed {{p1}}/mo after trial" | translate: { p1: (inr(planPrice())) } }}</p></div>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-outline-variant/20">
               <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[16px] text-primary">lock</span><span>{{ "Encrypted billing lifecycle" | translate }}</span></div>
               <div class="flex items-center gap-3">
                 <button type="button" (click)="toast.info('No invoices yet — your first invoice is issued when the trial ends.')" class="px-4 py-2 rounded-xl text-on-surface hover:bg-surface-container-high font-label-md text-label-md transition-colors">{{ "View Invoice Archive" | translate }}</button>
-                <button type="button" (click)="toast.success('Pro plan locked in. You will be billed {{p1}} on {{p2}}.', { p1: inr(planPrice()), p2: renewal() })" class="px-5 py-2.5 rounded-xl bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary font-label-lg text-label-lg shadow-sm transition-all active:scale-[0.98]">{{ "Upgrade & Lock In Pro" | translate }}</button>
+                <button type="button" (click)="toast.info('Online plan upgrades are opening soon. We will contact you before your trial ends.')" class="px-5 py-2.5 rounded-xl bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary font-label-lg text-label-lg shadow-sm transition-all active:scale-[0.98]">{{ "Upgrade plan" | translate }}</button>
               </div>
             </div>
           </div>
@@ -197,9 +197,6 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
         }
 
         @if (tab() === 'payments') {
-          <!-- TODO(remove with the real Firestore/auth wiring): the mock "Payout Accounts & Banking Settlement" bank card below
-               is replaced by the Razorpay connection (bank + KYC live on Razorpay). Delete the card, openBank()/removeBank(),
-               the bank modal and SalonSettings.bank when the mock stores are replaced. Tracked in docs/LAUNCH-CHECKLIST.md. -->
           <div [class]="card + ' lg:p-7 space-y-5'" data-testid="razorpay-card">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
               <div>
@@ -246,28 +243,13 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
             @if (rzp.error()) { <p class="text-error font-body-sm text-body-sm">{{ rzp.error() | translate }}</p> }
           </div>
 
-          <div [class]="card + ' lg:p-7 space-y-6'">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-outline-variant/20">
-              <div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[24px] text-primary">account_balance_wallet</span><h2 class="text-headline-md font-headline-md text-on-surface">{{ "Payout Accounts & Banking Settlement" | translate }}</h2></div><p class="font-body-md text-body-md text-on-surface-variant mt-0.5">{{ "Customer payments go straight to your own bank account. Chairly never holds your money." | translate }}</p></div>
-              <button type="button" (click)="openBank()" class="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-outline-variant text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-colors self-start sm:self-auto"><span class="material-symbols-outlined text-[18px]">add_card</span><span>{{ draft().settings.bank ? ('Change Bank Account' | translate) : ('Add Bank Account' | translate) }}</span></button>
-            </div>
-            <div class="grid grid-cols-1 gap-6">
-              <div class="p-5 rounded-2xl bg-surface-bright border border-outline-variant/50 flex flex-col justify-between space-y-4">
-                @if (draft().settings.bank; as bank) {
-                  <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div class="flex items-center gap-3.5"><div class="w-12 h-12 rounded-xl bg-tertiary-fixed/30 border border-tertiary/20 flex items-center justify-center text-tertiary"><span class="material-symbols-outlined text-[28px]">verified_user</span></div><div><div class="flex items-center gap-2 flex-wrap"><span class="font-label-lg text-label-lg text-on-surface font-bold">{{ bank.bankName }}</span><span class="px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary/10 text-tertiary font-semibold">{{ "Connected" | translate }}</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">{{ "Razorpay direct routing — activates when payments go live" | translate }}</p></div></div>
-                    <div class="text-right"><span class="font-body-sm text-body-sm text-outline block">{{ "Frequency" | translate }}</span><span class="font-label-md text-label-md text-on-surface font-semibold">{{ "Daily Auto-Settlement" | translate }}</span></div>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-surface-container-lowest border border-outline-variant/30 text-body-sm">
-                    <div><span class="text-outline block text-[11px] uppercase tracking-wider font-semibold">{{ "Account Number" | translate }}</span><span class="font-headline-sm text-headline-sm text-on-surface font-mono mt-0.5 block">•••• {{ bank.accountLast4 }}</span></div>
-                    <div><span class="text-outline block text-[11px] uppercase tracking-wider font-semibold">{{ "IFSC Code" | translate }}</span><span class="font-label-md text-label-md text-on-surface font-mono mt-1 block">{{ bank.ifsc }}</span></div>
-                    <div><span class="text-outline block text-[11px] uppercase tracking-wider font-semibold">{{ "Beneficiary Name" | translate }}</span><span class="font-label-md text-label-md text-on-surface mt-1 block truncate">{{ bank.beneficiary }}</span></div>
-                  </div>
-                  <div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant pt-2 border-t border-outline-variant/20"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span>{{ "Next payout: {{p1}} tomorrow at 06:00 AM IST" | translate: { p1: (inr(nextPayout())) } }}</span></div><button type="button" (click)="removeBank()" class="text-error font-semibold hover:underline">{{ "Remove" | translate }}</button></div>
-                } @else {
-                  <div class="text-center py-8 text-on-surface-variant"><span class="material-symbols-outlined text-4xl text-primary/40">account_balance</span><p class="mt-2 font-label-lg text-label-lg text-on-surface">{{ "No bank account connected" | translate }}</p><p class="text-body-sm">{{ "Add one to receive online payments from customers." | translate }}</p></div>
-                }
-              </div>
+          <div [class]="card + ' lg:p-7 space-y-4'">
+            <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[24px] text-primary">qr_code_2</span><h2 class="text-headline-md font-headline-md text-on-surface">{{ "UPI ID for counter payments" | translate }}</h2></div>
+            <p class="font-body-md text-body-md text-on-surface-variant">{{ "Shown as a QR code on Quick Bill when a customer pays by UPI at your counter. Money goes straight to this UPI ID." | translate }}</p>
+            <div class="max-w-md">
+              <label [class]="label" for="upi-id">{{ "Your UPI ID" | translate }}</label>
+              <input id="upi-id" type="text" inputmode="email" autocapitalize="none" autocomplete="off" [class]="input + (upiOk() ? '' : ' border-error!')" placeholder="yourshop@okbank" [ngModel]="draft().settings.upiId ?? ''" (ngModelChange)="patch({ upiId: $event.trim() })" />
+              @if (!upiOk()) { <p class="text-body-sm text-error mt-1">{{ "Enter a valid UPI ID like name@bank." | translate }}</p> }
             </div>
           </div>
         }
@@ -287,18 +269,7 @@ const CARD = 'bg-surface-container-lowest border border-outline-variant/40 round
       </form>
     </app-modal>
 
-    <app-modal [open]="bankOpen()" [title]="'Bank account' | translate" (closed)="bankOpen.set(false)">
-      <form class="space-y-4" (ngSubmit)="saveBank()" #bf="ngForm">
-        <div><label [class]="label" for="b-name">{{ "Bank name" | translate }}</label><input id="b-name" name="bank" [class]="input" [(ngModel)]="bBank" required [placeholder]="'e.g., HDFC Bank' | translate" /></div>
-        <div><label [class]="label" for="b-ben">{{ "Beneficiary name" | translate }}</label><input id="b-ben" name="ben" [class]="input" [(ngModel)]="bBen" required /></div>
-        <div class="grid grid-cols-2 gap-4">
-          <div><label [class]="label" for="b-acc">{{ "Account number" | translate }}</label><input id="b-acc" name="acc" inputmode="numeric" [class]="input" [(ngModel)]="bAcc" required minlength="9" maxlength="18" /></div>
-          <div><label [class]="label" for="b-ifsc">{{ "IFSC code" | translate }}</label><input id="b-ifsc" name="ifsc" [class]="input + ' uppercase'" [(ngModel)]="bIfsc" required pattern="[A-Za-z]{4}0[A-Za-z0-9]{6}" [placeholder]="'HDFC0000240' | translate" /></div>
-        </div>
-        <p class="text-body-sm text-outline">{{ "Only the last 4 digits are stored on Chairly. The full number is held by the payment provider." | translate }}</p>
-        <div class="flex justify-end gap-3 pt-4 border-t border-outline-variant/20"><button type="button" [class]="ghost" (click)="bankOpen.set(false)">{{ "Cancel" | translate }}</button><button type="submit" [class]="primary" [disabled]="bf.invalid">{{ "Save account" | translate }}</button></div>
-      </form>
-    </app-modal>
+
   `,
 })
 export class OwnerSettings {
@@ -327,29 +298,29 @@ export class OwnerSettings {
   protected readonly tab = signal<Tab>('general');
 
   constructor() {
+    void this.admin.loadPlans();
     const flag = this.route.snapshot.queryParamMap.get('razorpay');
     if (flag) this.tab.set('payments');
     void this.rzp.load().then(() => this.rzp.handleReturn(flag));
   }
   protected readonly draft = signal<Draft>(this.snapshot());
   protected readonly holidayOpen = signal(false);
-  protected readonly bankOpen = signal(false);
   protected hName = '';
   protected hDate = '';
   protected hType: 'full' | 'half' = 'full';
   protected hClose = '13:00';
-  protected bBank = '';
-  protected bBen = '';
-  protected bAcc = '';
-  protected bIfsc = '';
 
   protected readonly dirty = computed(() => JSON.stringify(this.draft()) !== JSON.stringify(this.snapshot()));
   protected readonly gstinOk = computed(() => !this.draft().settings.gstRegistered || GSTIN_PATTERN.test(this.draft().settings.gstin));
   protected readonly breakMins = computed(() => toMin(this.draft().brk.end) - toMin(this.draft().brk.start));
+  protected readonly upiOk = computed(() => !(this.draft().settings.upiId ?? '').trim() || /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z][a-zA-Z0-9.-]{1,32}$/.test(this.draft().settings.upiId!));
+  protected readonly planBadge = computed(() => {
+    const st = this.draft().settings.billingStatus;
+    return st === 'active' ? 'Active Plan' : st === 'expired' ? 'Trial ended' : st === 'suspended' ? 'Suspended' : 'Free trial';
+  });
   protected readonly trialDays = computed(() => this.admin.daysLeft(this.draft().settings.trialEndsAt));
   protected readonly planPrice = computed(() => this.admin.plans().find((p) => p.id === 'pro')?.price ?? 1999);
   protected readonly renewal = computed(() => new Date(this.draft().settings.trialEndsAt + 'T00:00').toLocaleDateString(LOCALE(), { day: 'numeric', month: 'short', year: 'numeric' }));
-  protected readonly nextPayout = computed(() => this.store.base.upi + this.store.queue().filter((q) => q.stage === 'done' && (q.payMethod === 'UPI' || q.payMethod === 'Card')).reduce((a, q) => a + q.price, 0));
 
   private snapshot(): Draft {
     return { settings: structuredClone(this.store.settings()), brk: { ...this.store.brk() }, buffer: this.store.buffer() };
@@ -407,36 +378,20 @@ export class OwnerSettings {
     this.patchBuffer(10);
   }
 
-  openBank() {
-    const b = this.draft().settings.bank;
-    this.bBank = b?.bankName ?? '';
-    this.bBen = b?.beneficiary ?? this.store.profile().name;
-    this.bAcc = '';
-    this.bIfsc = b?.ifsc ?? '';
-    this.bankOpen.set(true);
-  }
-  saveBank() {
-    const bank: BankAccount = { bankName: this.bBank.trim(), beneficiary: this.bBen.trim(), accountLast4: this.bAcc.replace(/\D/g, '').slice(-4), ifsc: this.bIfsc.trim().toUpperCase() };
-    this.patch({ bank });
-    this.bankOpen.set(false);
-  }
-  removeBank() {
-    this.patch({ bank: null });
-  }
-
   previewHindi() {
     this.lang.set('hi');
     this.toast.info('Language switched to Hindi. Toggle it again on any customer page.');
   }
 
-  save() {
+  async save() {
+    if (!this.upiOk()) return this.toast.error('Enter a valid UPI ID like name@bank.');
     if (!this.gstinOk()) return this.toast.error('Enter a valid GSTIN or turn off GST registered.');
     if (this.draft().brk.enabled && this.breakMins() <= 0) return this.toast.error('Break end must be after the break start.');
     const d = this.draft();
     this.store.settings.set(structuredClone(d.settings));
     this.store.brk.set({ ...d.brk });
     this.store.buffer.set(d.buffer);
-    this.store.markSaved();
+    await this.store.flush();
     this.toast.success('Settings saved');
   }
 

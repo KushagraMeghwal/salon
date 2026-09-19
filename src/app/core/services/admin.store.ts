@@ -1,41 +1,31 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { collection, doc, getCountFromServer, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { FirebaseService } from '../firebase/firebase.service';
 import { AdminSalon, Plan, SubscriptionStatus } from '../models';
+import { dateKey } from '../utils/time';
+import { callableMessage } from './salon.store';
 
-const day = (offset: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
-};
-
-const SEED_PLANS: Plan[] = [
+/** Default plan catalogue, used until the platform admin saves their own prices in `plans/`. */
+const DEFAULT_PLANS: Plan[] = [
   { id: 'starter', name: 'Starter', price: 499, tagline: 'For single-chair salons getting started', features: ['Up to 3 staff', 'Online booking page + QR', 'Quick Bill with GST invoices', 'Basic daily reports'] },
   { id: 'growth', name: 'Growth', price: 999, tagline: 'For busy salons that need more control', highlight: true, features: ['Up to 10 staff', 'Everything in Starter', 'Staff commissions & payouts', 'WhatsApp reminders', 'Advanced analytics'] },
   { id: 'pro', name: 'Pro', price: 1999, tagline: 'For premium studios and larger teams', features: ['Unlimited staff', 'Everything in Growth', 'Priority support', 'Custom branding', 'Data export API'] },
 ];
 
-const s = (id: string, name: string, owner: string, city: string, plan: AdminSalon['plan'], status: SubscriptionStatus, trialOffset: number, joinedOffset: number, staff: number): AdminSalon => ({
-  id, name, owner, city, plan, status, trialEndsAt: day(trialOffset), joinedAt: day(joinedOffset), staff, mrr: 0,
-});
+const WEEKS = 8;
 
-const SEED_SALONS: AdminSalon[] = [
-  s('a1', 'Luxe Grooming Studio & Spa', 'Ananya Sen', 'Bengaluru', 'Growth', 'active', -10, -40, 4),
-  s('a2', 'The Cut Lounge', 'Rohit Mehra', 'Mumbai', 'Pro', 'active', -20, -62, 12),
-  s('a3', 'Glow & Go Beauty', 'Kavya Nair', 'Kochi', 'Starter', 'active', -5, -35, 3),
-  s('a4', 'Barber Bros', 'Imran Qureshi', 'Hyderabad', 'Trial', 'trial', 9, -5, 2),
-  s('a5', 'Velvet Salon', 'Neha Kapoor', 'Delhi', 'Trial', 'trial', 3, -11, 5),
-  s('a6', 'Urban Tresses', 'Sameer Joshi', 'Pune', 'Growth', 'active', -12, -48, 7),
-  s('a7', 'Zen Spa Studio', 'Pooja Iyer', 'Chennai', 'Starter', 'suspended', -30, -75, 2),
-  s('a8', 'Style Junction', 'Arjun Reddy', 'Hyderabad', 'Trial', 'expired', -3, -17, 3),
-  s('a9', 'Crown & Comb', 'Vikram Rathore', 'Jaipur', 'Trial', 'trial', 12, -2, 2),
-  s('a10', 'Bliss Beauty Bar', 'Ritu Malhotra', 'Chandigarh', 'Growth', 'active', -8, -31, 6),
-  s('a11', 'Mane Attraction', 'Divya Shah', 'Ahmedabad', 'Starter', 'active', -2, -22, 3),
-  s('a12', 'Shear Genius', 'Tarun Bansal', 'Lucknow', 'Trial', 'trial', 1, -13, 2),
-];
-
+/** Platform admin view over every salon (super admin only; the security rules enforce that). */
 @Injectable({ providedIn: 'root' })
 export class AdminStore {
-  readonly plans = signal<Plan[]>(structuredClone(SEED_PLANS));
-  readonly salons = signal<AdminSalon[]>(SEED_SALONS);
+  private readonly fb = inject(FirebaseService);
+
+  readonly plans = signal<Plan[]>(structuredClone(DEFAULT_PLANS));
+  readonly salons = signal<AdminSalon[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal('');
+  /** New salons per week for the last 8 weeks, oldest first. */
+  readonly signups = signal<number[]>(Array(WEEKS).fill(0));
 
   /** Salons with mrr filled in from their plan's current price. */
   readonly rows = computed(() =>
@@ -60,27 +50,87 @@ export class AdminStore {
     this.plans().map((p) => ({ plan: p, count: this.rows().filter((x) => x.status === 'active' && x.plan === p.name).length })),
   );
 
-  readonly signups = [3, 5, 4, 7, 6, 9, 8, 12];
-
   daysLeft(iso: string) {
     return Math.ceil((new Date(iso).getTime() - new Date(new Date().toDateString()).getTime()) / 86400000);
   }
 
-  setStatus(id: string, status: SubscriptionStatus) {
-    this.salons.update((l) => l.map((x) => (x.id === id ? { ...x, status } : x)));
+  /** Plan prices only (public read); the owner Settings screen uses this. */
+  async loadPlans() {
+    try {
+      const snap = await getDocs(collection(this.fb.db, 'plans'));
+      if (snap.empty) return;
+      const saved = new Map(snap.docs.map((d) => [d.id, d.data() as Partial<Plan>]));
+      this.plans.set(DEFAULT_PLANS.map((p) => ({ ...p, ...(saved.get(p.id) ?? {}), id: p.id })));
+    } catch {
+      /* defaults stay */
+    }
   }
 
+  /** Loads every salon with its owner, billing and team size. */
+  async load() {
+    this.loading.set(true);
+    this.error.set('');
+    try {
+      const db = this.fb.db;
+      const [salonSnap, planSnap] = await Promise.all([getDocs(collection(db, 'salons')), getDocs(collection(db, 'plans'))]);
+      if (!planSnap.empty) {
+        const saved = new Map(planSnap.docs.map((d) => [d.id, d.data() as Partial<Plan>]));
+        this.plans.set(DEFAULT_PLANS.map((p) => ({ ...p, ...(saved.get(p.id) ?? {}), id: p.id })));
+      }
+      const rows = await Promise.all(
+        salonSnap.docs.map(async (s): Promise<AdminSalon & { created: Date }> => {
+          const d = s.data();
+          const [billing, owner, staff] = await Promise.all([
+            getDoc(doc(db, `salons/${s.id}/private/billing`)),
+            getDoc(doc(db, `users/${d['ownerId']}`)),
+            getCountFromServer(collection(db, `salons/${s.id}/staff`)),
+          ]);
+          const b = billing.data();
+          const created: Date = d['createdAt']?.toDate?.() ?? new Date();
+          const status: SubscriptionStatus = d['status'] === 'suspended' ? 'suspended' : (b?.['status'] as SubscriptionStatus) ?? 'trial';
+          return {
+            id: s.id, name: d['profile']?.name ?? 'Untitled salon', owner: owner.data()?.['name'] || owner.data()?.['email'] || 'Owner', city: d['profile']?.city || '—',
+            plan: (b?.['plan'] as AdminSalon['plan']) ?? 'Trial', trialEndsAt: dateKey(b?.['trialEndsAt']?.toDate?.() ?? created), status, joinedAt: dateKey(created), staff: staff.data().count, mrr: 0, created,
+          };
+        }),
+      );
+      this.salons.set(rows.map(({ created: _created, ...r }) => r));
+      const weeks = Array<number>(WEEKS).fill(0);
+      for (const r of rows) {
+        const ago = Math.floor((Date.now() - r.created.getTime()) / (7 * 86400000));
+        if (ago >= 0 && ago < WEEKS) weeks[WEEKS - 1 - ago]++;
+      }
+      this.signups.set(weeks);
+    } catch {
+      this.error.set('Could not load salons. Check that you are signed in as a platform admin.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async act(salonId: string, action: 'suspend' | 'reactivate' | 'extendTrial', days?: number): Promise<string | null> {
+    try {
+      await httpsCallable(this.fb.functions, 'adminAction')({ salonId, action, days });
+      await this.load();
+      return null;
+    } catch (e) {
+      return callableMessage(e);
+    }
+  }
+
+  suspend(id: string) {
+    return this.act(id, 'suspend');
+  }
+  reactivate(id: string) {
+    return this.act(id, 'reactivate');
+  }
   extendTrial(id: string, days: number) {
-    this.salons.update((l) =>
-      l.map((x) => {
-        if (x.id !== id) return x;
-        const base = Math.max(new Date(x.trialEndsAt).getTime(), Date.now());
-        return { ...x, trialEndsAt: new Date(base + days * 86400000).toISOString().slice(0, 10), status: 'trial' as const };
-      }),
-    );
+    return this.act(id, 'extendTrial', days);
   }
 
-  setPrice(planId: Plan['id'], price: number) {
+  async setPrice(planId: Plan['id'], price: number) {
     this.plans.update((l) => l.map((p) => (p.id === planId ? { ...p, price } : p)));
+    const p = this.plans().find((x) => x.id === planId)!;
+    await setDoc(doc(this.fb.db, `plans/${planId}`), { name: p.name, price: p.price, tagline: p.tagline, features: p.features, highlight: !!p.highlight });
   }
 }

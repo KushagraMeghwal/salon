@@ -14,14 +14,14 @@ import { Modal } from '../ui/modal';
   template: `
     <app-modal [open]="ui.bookingModal() !== null" [title]="'New Appointment' | translate" (closed)="ui.closeBooking()">
       <form class="space-y-4" (ngSubmit)="submit()" #f="ngForm">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label [class]="label" for="bk-client">{{ "Client name" | translate }}</label>
             <input id="bk-client" name="client" [class]="input" [(ngModel)]="client" required [placeholder]="'e.g., Ananya Roy' | translate" />
           </div>
           <div>
             <label [class]="label" for="bk-phone">{{ "Mobile number" | translate }}</label>
-            <input id="bk-phone" name="phone" [class]="input" [(ngModel)]="phone" placeholder="+91 98765 43210" />
+            <input id="bk-phone" name="phone" [class]="input" [(ngModel)]="phone" placeholder="98765 43210" inputmode="tel" autocomplete="off" />
           </div>
         </div>
         <div>
@@ -32,7 +32,7 @@ import { Modal } from '../ui/modal';
             }
           </select>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label [class]="label" for="bk-staff">{{ "Stylist" | translate }}</label>
             <select id="bk-staff" name="staff" [class]="input" [(ngModel)]="staffId" required>
@@ -46,7 +46,7 @@ import { Modal } from '../ui/modal';
             <input id="bk-date" name="date" type="date" [class]="input" [(ngModel)]="date" required />
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label [class]="label" for="bk-time">{{ "Start time" | translate }}</label>
             <input id="bk-time" name="time" type="time" step="900" [class]="input" [(ngModel)]="time" required />
@@ -60,7 +60,7 @@ import { Modal } from '../ui/modal';
           <span class="font-headline-sm text-headline-sm text-on-surface">₹{{ price() }}</span>
           <div class="flex items-center gap-3">
             <button type="button" [class]="ghost" (click)="ui.closeBooking()">{{ "Cancel" | translate }}</button>
-            <button type="submit" [class]="primary" [disabled]="f.invalid">{{ "Book appointment" | translate }}</button>
+            <button type="submit" [class]="primary" [disabled]="f.invalid || saving()">{{ "Book appointment" | translate }}</button>
           </div>
         </div>
       </form>
@@ -84,6 +84,7 @@ export class BookingModal {
   duration = 45;
   readonly serviceId = signal('');
   readonly price = signal(0);
+  protected readonly saving = signal(false);
 
   constructor() {
     effect(() => {
@@ -110,13 +111,17 @@ export class BookingModal {
     }
   }
 
-  submit() {
+  async submit() {
     const s = this.store.serviceById(this.serviceId());
-    if (!s) return;
-    const res = this.store.addBooking({
-      date: this.date, staffId: this.staffId, client: this.client.trim(), phone: this.phone.trim() || '—',
-      serviceName: s.name, start: toMin(this.time), duration: Number(this.duration), price: s.price, status: 'confirmed',
+    if (!s || this.saving()) return;
+    const digits = this.phone.replace(/\D/g, '').slice(-10);
+    if (this.phone.trim() && digits.length !== 10) return this.toast.error('Enter a valid 10-digit mobile number.');
+    this.saving.set(true);
+    const res = await this.store.addOwnerBooking({
+      date: this.date, staffId: this.staffId, serviceIds: [s.id], start: toMin(this.time), client: this.client.trim(), phone: digits,
+      duration: Number(this.duration) !== s.duration ? Number(this.duration) : undefined,
     });
+    this.saving.set(false);
     if (!res.ok) {
       this.toast.error(res.error ?? 'Could not create booking');
       return;

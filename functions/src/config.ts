@@ -44,3 +44,8 @@ export const RECEIPT_PREFIX = 'CHAIRLY_';
 
 /** All salon-facing times are IST. */
 export const SALON_UTC_OFFSET_MIN = 330;
+
+/** 'true' once Razorpay is live: online bookings are then held until the webhook confirms payment. Until then checkout is simulated. */
+export const PAYMENTS_LIVE = defineString('PAYMENTS_LIVE', { default: 'false' });
+/** Comma-separated verified emails that become platform super admins on sign-in. */
+export const SUPERADMIN_EMAILS = defineString('SUPERADMIN_EMAILS', { default: '' });

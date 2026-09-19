@@ -58,9 +58,11 @@ export interface StaffMember {
   commission: number;
   photo: string | null;
   status: 'on-duty' | 'off';
+  /** false once the owner removes the stylist (kept so old bookings still show a name). */
+  active?: boolean;
 }
 
-export type BookingStatus = 'confirmed' | 'in-progress' | 'completed' | 'vip' | 'cancelled' | 'no-show';
+export type BookingStatus = 'held' | 'expired' | 'confirmed' | 'in-progress' | 'completed' | 'vip' | 'cancelled' | 'no-show';
 
 export interface Booking {
   id: string;
@@ -75,13 +77,21 @@ export interface Booking {
   status: BookingStatus;
   notes?: string;
   /** Line items when several services are booked together. */
-  services?: { name: string; price: number; duration: number }[];
+  services?: { serviceId?: string; name: string; price: number; duration: number }[];
   payment?: 'online' | 'salon';
   paid?: boolean;
   bookingNo?: string;
   customerPhone?: string;
   vip?: boolean;
   source?: 'online' | 'owner';
+  /** Set once a bill covers this booking, so its revenue is counted only once. */
+  billed?: boolean;
+  /** Denormalised onto the booking so 'My bookings' can list several salons without loading each. */
+  salonId?: string;
+  salonName?: string;
+  salonSlug?: string;
+  salonAddress?: string;
+  staffName?: string;
 }
 
 export type QueueStage = 'waiting' | 'in-chair' | 'done';
@@ -132,6 +142,9 @@ export interface Bill {
   total: number;
   method: PayMethod;
   createdAt: string;
+  /** Salon-local YYYY-MM-DD the bill was issued on. */
+  date?: string;
+  bookingId?: string;
 }
 
 export interface StaffStats {
@@ -195,6 +208,9 @@ export interface SalonSettings {
   bank: BankAccount | null;
   plan: string;
   trialEndsAt: string; // ISO date
+  /** The salon's own UPI id for the Quick Bill payment QR. */
+  upiId?: string;
+  billingStatus?: 'trial' | 'active' | 'suspended' | 'expired';
 }
 
 export interface CustomerSession {

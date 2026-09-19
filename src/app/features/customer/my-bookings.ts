@@ -5,6 +5,7 @@ import { toDataURL } from 'qrcode';
 import { Booking } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
 import { BookingFlowStore } from '../../core/services/booking-flow.store';
+import { CustomerBookingsService } from '../../core/services/customer-bookings.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
 import { dateKey, fmt12, initials, inr, LOCALE } from '../../core/utils/time';
@@ -28,6 +29,11 @@ import { RescheduleSheet } from './reschedule-sheet';
     </div>
 
     <main class="px-space-md py-space-sm flex flex-col gap-space-md flex-1 w-full max-w-screen-md mx-auto">
+      @if (loading()) {
+        <div class="flex flex-col gap-space-md" aria-busy="true">@for (i of [1, 2]; track i) { <div class="h-56 rounded-2xl bg-surface-container animate-pulse"></div> }</div>
+      } @else if (failed()) {
+        <div class="text-center py-space-xl text-on-surface-variant flex flex-col items-center gap-2"><span class="material-symbols-outlined text-5xl text-error/50">cloud_off</span><p class="text-body-md">{{ "We could not load your bookings. Check your connection and refresh." | translate }}</p></div>
+      }
       @for (b of shown(); track b.id) {
         <section class="bg-surface-container-lowest rounded-2xl border border-[#E2ECE9] p-space-md elevation-level-1 hover:elevation-level-2 transition-all duration-200" [class.opacity-80]="b.status === 'cancelled'">
           <div class="flex items-start justify-between pb-space-sm border-b border-surface-container gap-3">
@@ -36,8 +42,8 @@ import { RescheduleSheet } from './reschedule-sheet';
                 <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm font-semibold" [class]="statusClass(b)"><span class="w-1.5 h-1.5 rounded-full bg-current"></span>{{ statusLabel(b) }}</span>
                 <span class="text-body-sm text-outline">•</span><span class="text-label-sm font-label-sm text-on-surface-variant font-medium">{{ whenLabel(b) }}</span>
               </div>
-              <h2 class="text-headline-sm font-headline-sm text-on-surface font-semibold">{{ store.profile().name }}</h2>
-              <p class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-sm text-outline">location_on</span> {{ store.profile().street }}, {{ store.profile().city }}</p>
+              <h2 class="text-headline-sm font-headline-sm text-on-surface font-semibold">{{ b.salonName }}</h2>
+              <p class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5"><span class="material-symbols-outlined text-sm text-outline">location_on</span> {{ b.salonAddress }}</p>
             </div>
             <span class="text-xs font-medium px-2 py-0.5 rounded-md whitespace-nowrap" [class]="b.paid ? 'bg-[#22A06B]/10 text-[#22A06B]' : 'bg-surface-container-high text-on-surface-variant'">{{ b.paid ? ('Paid' | translate) : ('Pay at Salon' | translate) }}</span>
           </div>
@@ -50,7 +56,7 @@ import { RescheduleSheet } from './reschedule-sheet';
           <div class="mt-space-sm flex items-center justify-between py-space-xs gap-3">
             <div class="flex items-center gap-space-sm min-w-0">
               <div class="w-11 h-11 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-headline-sm border-2 border-surface-container-lowest shadow-sm shrink-0">{{ initials(stylistName(b)) }}</div>
-              <div class="min-w-0"><div class="text-headline-sm font-headline-sm text-on-surface leading-tight truncate">{{ stylistName(b) }}</div><div class="text-label-sm font-label-sm text-on-surface-variant truncate">{{ (store.staffById(b.staffId)?.title) | translate }}</div></div>
+              <div class="min-w-0"><div class="text-headline-sm font-headline-sm text-on-surface leading-tight truncate">{{ stylistName(b) }}</div></div>
             </div>
           </div>
 
@@ -69,8 +75,8 @@ import { RescheduleSheet } from './reschedule-sheet';
             <div class="mt-space-md pt-space-xs flex flex-col gap-2">
               <button type="button" (click)="showPass(b)" class="w-full py-2.5 px-space-md rounded-xl bg-primary text-on-primary text-label-lg font-label-lg font-semibold flex items-center justify-center gap-2 shadow-sm hover:bg-primary-container transition-colors active:scale-[0.99]"><span class="material-symbols-outlined text-lg">qr_code_2</span><span>{{ 'bookings.viewPass' | translate }}</span></button>
               <div class="grid grid-cols-2 gap-2 mt-0.5">
-                <button type="button" (click)="reschedule.set(b)" class="w-full py-2 px-space-sm rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface text-label-md font-label-md font-semibold flex items-center justify-center gap-1.5 hover:bg-surface-container-low hover:border-primary transition-all active:scale-[0.98]"><span class="material-symbols-outlined text-base text-primary">calendar_month</span><span>{{ 'bookings.reschedule' | translate }}</span></button>
-                <button type="button" (click)="cancelTarget.set(b)" class="w-full py-2 px-space-sm rounded-xl border border-outline-variant/60 bg-transparent text-secondary hover:bg-secondary-fixed/30 hover:border-secondary transition-all text-label-md font-label-md font-semibold flex items-center justify-center gap-1 active:scale-[0.98]"><span class="material-symbols-outlined text-base">close</span><span>{{ 'bookings.cancel' | translate }}</span></button>
+                <button type="button" (click)="openReschedule(b)" class="w-full py-2 px-space-sm rounded-xl border border-outline-variant bg-surface-container-lowest text-on-surface text-label-md font-label-md font-semibold flex items-center justify-center gap-1.5 hover:bg-surface-container-low hover:border-primary transition-all active:scale-[0.98]"><span class="material-symbols-outlined text-base text-primary">calendar_month</span><span>{{ 'bookings.reschedule' | translate }}</span></button>
+                <button type="button" (click)="openCancel(b)" class="w-full py-2 px-space-sm rounded-xl border border-outline-variant/60 bg-transparent text-secondary hover:bg-secondary-fixed/30 hover:border-secondary transition-all text-label-md font-label-md font-semibold flex items-center justify-center gap-1 active:scale-[0.98]"><span class="material-symbols-outlined text-base">close</span><span>{{ 'bookings.cancel' | translate }}</span></button>
               </div>
             </div>
           } @else if (b.status === 'completed') {
@@ -78,12 +84,14 @@ import { RescheduleSheet } from './reschedule-sheet';
           }
         </section>
       } @empty {
+        @if (!loading() && !failed()) {
         <div class="text-center py-space-2xl text-on-surface-variant flex flex-col items-center gap-2"><span class="material-symbols-outlined text-5xl text-primary/30">event_busy</span><p class="text-body-md">{{ 'bookings.empty' | translate }}</p><button type="button" (click)="bookNew()" class="mt-2 px-5 py-2.5 rounded-xl bg-secondary-container text-on-secondary-container font-label-lg font-bold">{{ 'common.bookNow' | translate }}</button></div>
+        }
       }
 
       <div class="bg-surface-container-low rounded-xl p-space-md border border-outline-variant/30 flex items-start gap-space-sm">
         <span class="material-symbols-outlined text-primary text-xl mt-0.5">info</span>
-        <div><h3 class="text-label-md font-label-md text-on-surface font-semibold">{{ "Need to reschedule?" | translate }}</h3><p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">{{ "Free cancellation & rescheduling are available up to {{p1}} hours before the appointment slot." | translate: { p1: (store.settings().cancelWindowHrs) } }}</p></div>
+        <div><h3 class="text-label-md font-label-md text-on-surface font-semibold">{{ "Need to reschedule?" | translate }}</h3><p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">{{ "Each salon sets its own cancellation and rescheduling policy. Any fee is shown before you confirm." | translate }}</p></div>
       </div>
     </main>
 
@@ -119,6 +127,7 @@ import { RescheduleSheet } from './reschedule-sheet';
 export class MyBookings implements OnInit {
   protected readonly store = inject(SalonStore);
   private readonly auth = inject(AuthService);
+  private readonly svc = inject(CustomerBookingsService);
   private readonly flow = inject(BookingFlowStore);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -132,16 +141,36 @@ export class MyBookings implements OnInit {
   protected readonly passFor = signal<Booking | null>(null);
   protected readonly qr = signal('');
 
-  private readonly mine = computed(() => {
-    const c = this.auth.customer();
-    return c ? this.store.bookingsOfCustomer(c.phone) : [];
-  });
+  protected readonly loading = this.svc.loading;
+  protected readonly failed = this.svc.failed;
+  private readonly mine = this.svc.bookings;
   protected readonly upcoming = computed(() => this.mine().filter((b) => this.isUpcoming(b)).sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start));
   protected readonly past = computed(() => this.mine().filter((b) => !this.isUpcoming(b)).sort((a, b) => b.date.localeCompare(a.date) || b.start - a.start));
   protected readonly shown = computed(() => (this.tab() === 'upcoming' ? this.upcoming() : this.past()));
 
-  ngOnInit() {
-    if (!this.auth.customer()) this.router.navigate(['/login'], { queryParams: { returnUrl: '/my/bookings' }, replaceUrl: true });
+  async ngOnInit() {
+    await this.auth.ready;
+    if (!this.auth.customer()) return void this.router.navigate(['/login'], { queryParams: { returnUrl: '/my/bookings' }, replaceUrl: true });
+    this.svc.start();
+  }
+
+  /** The cancellation fee and the reschedule slots depend on that salon's own settings, so load it first. */
+  private async withSalon(b: Booking): Promise<boolean> {
+    try {
+      if (b.salonSlug && (await this.store.loadPublic(b.salonSlug))) return true;
+    } catch {
+      /* falls through */
+    }
+    this.toast.error('Could not load this salon. Please try again.');
+    return false;
+  }
+
+  async openCancel(b: Booking) {
+    if (await this.withSalon(b)) this.cancelTarget.set(b);
+  }
+
+  async openReschedule(b: Booking) {
+    if (await this.withSalon(b)) this.reschedule.set(b);
   }
 
   isUpcoming(b: Booking) {
@@ -162,7 +191,7 @@ export class MyBookings implements OnInit {
     return new Date(b.date + 'T00:00').toLocaleDateString(LOCALE(), { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
   }
   stylistName(b: Booking) {
-    return this.store.staffById(b.staffId)?.name ?? 'Stylist';
+    return b.staffName || 'Stylist';
   }
   lines(b: Booking) {
     return b.services?.length ? b.services : [{ name: b.serviceName, price: b.price, duration: b.duration }];
@@ -173,24 +202,24 @@ export class MyBookings implements OnInit {
     this.qr.set(await toDataURL(b.bookingNo ?? b.id, { margin: 1, width: 300, color: { dark: '#121d21', light: '#ffffff' } }));
   }
 
-  doCancel(b: Booking) {
+  async doCancel(b: Booking) {
     const fee = this.store.cancellationFee(b);
-    this.store.cancelBooking(b.id);
+    const err = await this.store.cancelBooking(b.id, b.salonId);
     this.cancelTarget.set(null);
+    if (err) return this.toast.error(err);
     if (fee) this.toast.info('Booking cancelled. A {{p1}} fee applies.', { p1: this.inr(fee) });
     else this.toast.info('Booking cancelled');
   }
 
   rebook(b: Booking) {
-    const ids = this.lines(b)
-      .map((l) => this.store.selectedServices().find((s) => s.name === l.name)?.id)
-      .filter((x): x is string => !!x);
+    const ids = this.lines(b).map((l) => l.serviceId).filter((x): x is string => !!x);
     this.flow.reset();
     ids.forEach((id) => this.flow.toggle(id));
-    this.router.navigate(['/s', this.store.profile().slug, ids.length ? 'slot' : 'services']);
+    this.router.navigate(['/s', b.salonSlug, ids.length ? 'slot' : 'services']);
   }
 
   bookNew() {
-    this.router.navigate(['/s', this.store.profile().slug]);
+    const slug = this.store.lastSlug();
+    if (slug) this.router.navigate(['/s', slug]);
   }
 }

@@ -75,6 +75,24 @@ export class AvailabilityService {
     return out;
   }
 
+  /**
+   * "Best time for you". With booking history it is the free slot closest to the hour the customer usually comes at
+   * (median start of their past visits). New customers get the free slot with the most stylists available, i.e. the
+   * quietest time, earliest first. Null when there is nothing to choose between.
+   */
+  bestSlot(slots: SlotOption[], pastStarts: number[]): { slot: SlotOption; pref: number | null; reason: string } | null {
+    const open = slots.filter((s) => s.staffIds.length);
+    if (open.length < 2) return null;
+    const past = [...pastStarts].sort((a, b) => a - b);
+    if (past.length) {
+      const pref = past[Math.floor(past.length / 2)];
+      const slot = [...open].sort((a, b) => Math.abs(a.start - pref) - Math.abs(b.start - pref) || b.staffIds.length - a.staffIds.length || a.start - b.start)[0];
+      return { slot, pref, reason: 'You usually book around {{p1}}' };
+    }
+    const slot = [...open].sort((a, b) => b.staffIds.length - a.staffIds.length || a.start - b.start)[0];
+    return { slot, pref: null, reason: 'Quietest time: the most stylists are free' };
+  }
+
   /** Eligible stylists who are busy at `start`, with the next time they could take the booking. */
   busyStaff(date: string, serviceIds: string[], start: number, duration: number) {
     const close = toMin(this.store.dayTiming(date).end);

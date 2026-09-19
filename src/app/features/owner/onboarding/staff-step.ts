@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StaffMember } from '../../../core/models';
 import { CloudinaryService } from '../../../core/services/cloudinary.service';
-import { SalonStore } from '../../../core/services/salon.store';
+import { SalonStore, callableMessage } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { initials } from '../../../core/utils/time';
 import { WizardHeader } from '../../../shared/layout/wizard-header';
@@ -356,9 +356,19 @@ export class StaffStep {
     this.router.navigateByUrl('/owner/onboarding/timings');
   }
 
-  finish() {
+  protected readonly launching = signal(false);
+
+  async finish() {
     if (!this.store.staff().length) return this.toast.error('Add at least one team member to launch your salon.');
-    this.store.completeSetup();
-    this.router.navigateByUrl('/owner/onboarding/done');
+    if (this.launching()) return;
+    this.launching.set(true);
+    try {
+      await this.store.completeSetup();
+      await this.router.navigateByUrl('/owner/onboarding/done');
+    } catch (e) {
+      this.toast.error(callableMessage(e));
+    } finally {
+      this.launching.set(false);
+    }
   }
 }

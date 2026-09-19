@@ -1,8 +1,10 @@
-import { Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AvailabilityService } from '../../core/services/availability.service';
+import { AuthService } from '../../core/services/auth.service';
 import { BookingFlowStore } from '../../core/services/booking-flow.store';
+import { CustomerBookingsService } from '../../core/services/customer-bookings.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
 import { fmt12, inr, LOCALE } from '../../core/utils/time';
@@ -56,6 +58,18 @@ import { StepBar } from '../../shared/customer/step-bar';
           <div class="rounded-xl border border-outline-variant bg-surface-container-low p-space-md text-body-md text-on-surface-variant flex gap-2"><span class="material-symbols-outlined text-primary">event_busy</span><span>{{ holidayNote() }}</span></div>
         }
 
+        @if (best(); as b) {
+          <button type="button" (click)="flow.start.set(b.slot.start)" class="w-full text-left rounded-xl border-[1.5px] border-[#FF7A59]/50 bg-[#FFF4F0] p-space-md flex items-center gap-space-sm active:scale-[0.99] transition-transform">
+            <div class="w-10 h-10 rounded-full bg-[#FF7A59] text-white flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-[22px]">auto_awesome</span></div>
+            <div class="min-w-0 flex-1">
+              <p class="text-label-sm font-label-sm text-[#C2492B] font-bold uppercase tracking-wide">{{ "Best time for you" | translate }}</p>
+              <p class="text-headline-sm font-headline-sm text-on-surface font-bold">{{ fmt(b.slot.start) }}</p>
+              <p class="text-body-sm font-body-sm text-on-surface-variant">{{ b.reason | translate: { p1: fmt(b.pref ?? 0) } }}</p>
+            </div>
+            <span class="material-symbols-outlined text-[#C2492B]">{{ flow.start() === b.slot.start ? 'check_circle' : 'chevron_right' }}</span>
+          </button>
+        }
+
         @for (g of groups(); track g.key) {
           @if (g.slots.length) {
             <div class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant elevation-1">
@@ -66,11 +80,11 @@ import { StepBar } from '../../shared/customer/step-bar';
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm">
                 @for (s of g.slots; track s.start) {
                   @if (!s.staffIds.length) {
-                    <button type="button" disabled class="py-space-sm px-space-sm rounded-lg bg-[#E5EBEB] border border-dashed border-[#8A9A9E] text-[#8A9A9E] text-center font-label-lg cursor-not-allowed opacity-70"><span class="line-through">{{ fmt(s.start) }}</span></button>
+                    <button type="button" disabled class="py-space-sm px-space-sm rounded-lg bg-[#E5EBEB] border border-dashed border-[#8A9A9E] text-[#8A9A9E] text-center font-label-lg cursor-not-allowed opacity-70"><span class="line-through block">{{ fmt(s.start) }}</span><span class="block text-[10px] font-semibold uppercase tracking-wide no-underline">{{ "Booked" | translate }}</span></button>
                   } @else if (flow.start() === s.start) {
                     <button type="button" (click)="flow.start.set(null)" class="py-space-sm px-space-sm rounded-lg border-[1.5px] border-[#0F9D8A] bg-[#0F9D8A] text-white text-center font-label-lg font-semibold elevation-1 flex items-center justify-center gap-1.5 shadow-sm active:scale-95 ring-2 ring-[#0F9D8A] ring-offset-1"><span class="material-symbols-outlined text-[18px]">check_circle</span><span>{{ fmt(s.start) }}</span></button>
                   } @else {
-                    <button type="button" (click)="flow.start.set(s.start)" class="py-space-sm px-space-sm rounded-lg border-[1.5px] border-[#0F9D8A] text-[#0F9D8A] bg-surface-container-lowest hover:bg-[#0F9D8A]/10 transition-colors duration-150 text-center font-label-lg font-semibold active:scale-95">{{ fmt(s.start) }}</button>
+                    <button type="button" (click)="flow.start.set(s.start)" class="relative py-space-sm px-space-sm rounded-lg border-[1.5px] border-[#0F9D8A] text-[#0F9D8A] bg-surface-container-lowest hover:bg-[#0F9D8A]/10 transition-colors duration-150 text-center font-label-lg font-semibold active:scale-95">{{ fmt(s.start) }}@if (best()?.slot?.start === s.start) { <span class="absolute -top-2 -right-1 bg-[#FF7A59] text-white text-[9px] font-bold px-1.5 rounded-full uppercase tracking-tight">{{ "Best" | translate }}</span> }</button>
                   }
                 }
               </div>
@@ -99,12 +113,15 @@ import { StepBar } from '../../shared/customer/step-bar';
     </aside>
   `,
 })
-export class SlotPage implements OnInit {
+export class SlotPage implements OnInit, OnDestroy {
   protected readonly flow = inject(BookingFlowStore);
   private readonly store = inject(SalonStore);
   private readonly avail = inject(AvailabilityService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
+  private readonly history = inject(CustomerBookingsService);
+  private poll?: ReturnType<typeof setInterval>;
   protected readonly fmt = fmt12;
   protected readonly inr = inr;
   protected readonly days = this.avail.days(14);
@@ -130,6 +147,14 @@ export class SlotPage implements OnInit {
     return `${d.toLocaleDateString(LOCALE(), { weekday: 'short', day: 'numeric', month: 'short' })} @ ${fmt12(s)}`;
   });
 
+  /** Highlights the best slot for this customer (see AvailabilityService.bestSlot). */
+  protected readonly best = computed(() =>
+    this.avail.bestSlot(
+      this.slots(),
+      this.history.bookings().filter((b) => b.status === 'completed' || b.status === 'confirmed').map((b) => b.start),
+    ),
+  );
+
   /** First day that still has at least one free slot (today may already be over). */
   private firstBookableDay() {
     const ids = this.flow.serviceIds();
@@ -139,6 +164,10 @@ export class SlotPage implements OnInit {
   }
 
   ngOnInit() {
+    // Slots other people book while this page is open must turn to "Booked" without a reload.
+    void this.store.refreshBusy();
+    this.poll = setInterval(() => void this.store.refreshBusy(), 30_000);
+    void this.auth.ready.then(() => this.history.start());
     if (!this.flow.serviceIds().length) {
       this.router.navigate(['/s', this.store.profile().slug, 'services'], { replaceUrl: true });
       return;
@@ -147,6 +176,10 @@ export class SlotPage implements OnInit {
     // A previous slot may no longer be free (e.g. the services changed).
     const s = this.flow.start();
     if (s !== null && !this.slots().some((x) => x.start === s && x.staffIds.length)) this.flow.start.set(null);
+  }
+
+  ngOnDestroy() {
+    clearInterval(this.poll);
   }
 
   pickDate(key: string) {

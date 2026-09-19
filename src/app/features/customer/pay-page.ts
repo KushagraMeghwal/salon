@@ -58,10 +58,17 @@ import { StepBar } from '../../shared/customer/step-bar';
         </div>
       </section>
 
-      @if (needsName()) {
-        <section class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant elevation-1">
-          <label class="block font-label-md text-label-md text-on-surface mb-1.5" for="cust-name">{{ "Your name" | translate }}</label>
-          <input id="cust-name" type="text" class="w-full h-11 px-3.5 rounded-xl border border-[#E2ECE9] bg-white text-on-surface font-body-md focus:ring-2 focus:ring-primary focus:border-primary" [placeholder]="'e.g., Ananya Roy' | translate" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+      @if (needsName() || needsPhone()) {
+        <section class="bg-surface-container-lowest rounded-xl p-space-md border border-outline-variant elevation-1 flex flex-col gap-space-sm">
+         @if (needsName()) {
+          <div><label class="block font-label-md text-label-md text-on-surface mb-1.5" for="cust-name">{{ "Your name" | translate }}</label>
+          <input id="cust-name" type="text" class="w-full h-11 px-3.5 rounded-xl border border-[#E2ECE9] bg-white text-on-surface font-body-md focus:ring-2 focus:ring-primary focus:border-primary" [placeholder]="'e.g., Ananya Roy' | translate" [ngModel]="name()" (ngModelChange)="name.set($event)" /></div>
+         }
+         @if (needsPhone()) {
+          <div><label class="block font-label-md text-label-md text-on-surface mb-1.5" for="cust-phone">{{ "Mobile Number" | translate }}</label>
+          <input id="cust-phone" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="11" class="w-full h-11 px-3.5 rounded-xl border border-[#E2ECE9] bg-white text-on-surface font-body-md focus:ring-2 focus:ring-primary focus:border-primary" placeholder="98765 43210" [ngModel]="phone()" (ngModelChange)="phone.set($event)" />
+          <p class="text-body-sm text-on-surface-variant mt-1">{{ "The salon uses this to reach you about your booking." | translate }}</p></div>
+         }
         </section>
       }
 
@@ -140,6 +147,7 @@ export class PayPage implements OnInit {
   private readonly checkout = inject(PaymentCheckoutService);
   protected readonly rzp = inject(PaymentConnectService);
   private requestId = crypto.randomUUID();
+  protected readonly phone = signal('');
   protected readonly inr = inr;
   protected readonly fmt = fmt12;
   protected readonly badges = [
@@ -157,6 +165,7 @@ export class PayPage implements OnInit {
   protected readonly qr = signal('');
 
   protected readonly needsName = computed(() => !this.auth.customer()?.name);
+  protected readonly needsPhone = computed(() => (this.auth.customer()?.phone ?? '').length !== 10);
   protected readonly stylistName = computed(() => (this.flow.staffId() === 'any' ? 'Any available specialist' : this.store.staffById(this.flow.staffId())?.name ?? ''));
   protected readonly stylistRole = computed(() => (this.flow.staffId() === 'any' ? 'Assigned when you confirm' : this.store.staffById(this.flow.staffId())?.title ?? ''));
   protected readonly when = computed(() => {
@@ -171,7 +180,8 @@ export class PayPage implements OnInit {
     return '';
   });
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.auth.ready;
     if (!this.flow.serviceIds().length || !this.flow.date() || this.flow.start() === null) {
       this.router.navigate(['/s', this.store.profile().slug, 'services'], { replaceUrl: true });
       return;
@@ -180,6 +190,8 @@ export class PayPage implements OnInit {
       this.router.navigate(['/login'], { queryParams: { returnUrl: `/s/${this.store.profile().slug}/pay` }, replaceUrl: true });
       return;
     }
+    void this.store.loadMyRecord(this.auth.customer()?.phone ?? '');
+    void this.store.refreshBusy();
     if (this.checkout.live) void this.rzp.load();
     if (this.salonBlocked() || !this.rzp.onlineAvailable()) this.flow.payment.set(this.rzp.onlineAvailable() ? 'online' : 'salon');
   }
@@ -189,15 +201,18 @@ export class PayPage implements OnInit {
     if (!customer || this.processing()) return;
     const nm = (customer.name || this.name()).trim();
     if (!nm) return this.toast.error('Please enter your name.');
-    if (!customer.name) this.auth.setCustomerName(nm);
+    const ph = (customer.phone || this.phone()).replace(/\D/g, '').slice(-10);
+    if (ph.length !== 10) return this.toast.error('Enter a valid 10-digit mobile number.');
+    if (!customer.name) void this.auth.setCustomerName(nm);
+    if (customer.phone !== ph) void this.auth.setCustomerPhone(ph);
     if (this.flow.payment() === 'online' && !this.rzp.onlineAvailable()) return this.toast.error('Online payment is not available for this salon right now.');
-    if (this.flow.payment() === 'online' && this.checkout.live) return this.confirmLive(nm, customer.phone);
+    if (this.flow.payment() === 'online' && this.checkout.live) return this.confirmLive(nm, ph);
     this.processing.set(true);
-    // Mock mode: stand-in for the Razorpay order + webhook round trip.
+    // Simulated checkout until Razorpay goes live: the booking itself is created (and race-checked) on the server.
     if (this.flow.payment() === 'online') await new Promise((r) => setTimeout(r, 900));
-    const res = this.store.createOnlineBooking({
+    const res = await this.store.createOnlineBooking({
       date: this.flow.date()!, staffId: this.flow.staffId(), serviceIds: this.flow.serviceIds(), start: this.flow.start()!,
-      client: nm, phone: customer.phone, payment: this.flow.payment(),
+      client: nm, phone: ph, payment: this.flow.payment(), requestId: this.requestId,
     });
     this.processing.set(false);
     if (!res.ok) {
@@ -208,11 +223,12 @@ export class PayPage implements OnInit {
     this.booking.set(res.booking);
     this.qr.set(await toDataURL(res.booking.bookingNo ?? res.booking.id, { margin: 1, width: 240, color: { dark: '#121d21', light: '#ffffff' } }));
     this.flow.reset();
+    this.requestId = crypto.randomUUID();
   }
 
   /** Live online payment: hold + server-priced order + Checkout, then wait for the webhook-driven confirmation. */
   private async confirmLive(name: string, phone: string) {
-    const salonId = this.store.profile().slug; // TODO(Phase 4b): the real Firestore salon id
+    const salonId = this.store.salonId()!;
     this.processing.set(true);
     this.stage.set('idle');
     try {

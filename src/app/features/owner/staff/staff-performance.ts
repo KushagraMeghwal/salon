@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { StaffMember, StaffStats } from '../../../core/models';
+import { AnalyticsService } from '../../../core/services/analytics.service';
 import { SalonStore } from '../../../core/services/salon.store';
 import { ToastService } from '../../../core/services/toast.service';
 import { UiService } from '../../../core/services/ui.service';
@@ -74,7 +75,7 @@ interface Row {
                 <button type="button" (click)="exportCsv()" class="px-3 py-1 text-label-sm font-label-sm font-medium rounded-lg border border-outline-variant/40 hover:bg-surface-container transition-colors flex items-center gap-1 text-muted"><span class="material-symbols-outlined text-[16px]">download</span><span>{{ "Export" | translate }}</span></button>
               </div>
               <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse min-w-[640px]">
+                <table class="w-full text-left border-collapse min-w-[520px]">
                   <thead>
                     <tr class="bg-surface-container-low/70 border-b border-outline-variant/20 font-label-md text-label-md text-muted uppercase tracking-wider">
                       <th class="py-3 px-4 font-semibold">{{ "Stylist" | translate }}</th><th class="py-3 px-3 font-semibold">{{ "Clients" | translate }}</th><th class="py-3 px-3 font-semibold">{{ "Total Revenue" | translate }}</th><th class="py-3 px-3 font-semibold">{{ "Commission" | translate }}</th><th class="py-3 px-4 font-semibold">{{ "Status" | translate }}</th>
@@ -225,6 +226,7 @@ interface Row {
 })
 export class StaffPerformance {
   protected readonly store = inject(SalonStore);
+  private readonly analytics = inject(AnalyticsService);
   protected readonly toast = inject(ToastService);
   protected readonly ui = inject(UiService);
   protected readonly inr = inr;
@@ -253,7 +255,7 @@ export class StaffPerformance {
 
   private readonly all = computed<Row[]>(() =>
     this.store.staff().map((staff) => {
-      const stats = this.store.stats().find((s) => s.staffId === staff.id) ?? { staffId: staff.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, week: [0, 0, 0, 0, 0, 0, 0] };
+      const stats = this.analytics.staffStats().find((s) => s.staffId === staff.id) ?? { staffId: staff.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, week: [0, 0, 0, 0, 0, 0, 0] };
       const delta = stats.prevRevenue ? Math.round(((stats.revenue - stats.prevRevenue) / stats.prevRevenue) * 100) : 0;
       return { staff, stats, commission: Math.round((stats.revenue * staff.commission) / 100), delta };
     }),

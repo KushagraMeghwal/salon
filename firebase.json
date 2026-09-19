@@ -42,8 +42,8 @@
                  "providers":  {
                                    "emailPassword":  true,
                                    "googleSignIn":  {
-                                                        "oAuthBrandDisplayName":  "My App",
-                                                        "supportEmail":  "support@undefined.firebaseapp.com"
+                                                        "oAuthBrandDisplayName":  "Chairly",
+                                                        "supportEmail":  "h9785095253@gmail.com"
                                                     }
                                }
              },

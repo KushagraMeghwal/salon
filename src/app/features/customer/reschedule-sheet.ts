@@ -74,7 +74,7 @@ import { fmt12, inr, LOCALE } from '../../core/utils/time';
           </div>
 
           <div class="space-y-2 pt-2">
-            <button type="button" (click)="confirm()" [disabled]="start() === null" class="w-full h-12 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary active:scale-[0.98] font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"><span class="material-symbols-outlined text-xl">check</span><span>{{ "Confirm Reschedule" | translate }}</span></button>
+            <button type="button" (click)="confirm()" [disabled]="start() === null || saving()" class="w-full h-12 bg-secondary-container hover:bg-secondary text-on-secondary-container hover:text-on-secondary active:scale-[0.98] font-label-lg text-label-lg rounded-xl flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50"><span class="material-symbols-outlined text-xl">check</span><span>{{ "Confirm Reschedule" | translate }}</span></button>
             <button type="button" (click)="closed.emit()" class="w-full h-10 bg-transparent hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md rounded-xl transition-colors">{{ "Keep Original Time" | translate }}</button>
           </div>
           <p class="pt-2 text-center text-label-sm font-label-sm text-on-surface-variant opacity-75">{{ "Powered by Chairly" | translate }}</p>
@@ -120,10 +120,14 @@ export class RescheduleSheet implements OnInit {
     return new Date(date + 'T00:00').toLocaleDateString(LOCALE(), { weekday: 'short', day: 'numeric', month: 'short' });
   }
 
-  confirm() {
+  protected readonly saving = signal(false);
+
+  async confirm() {
     const s = this.start();
-    if (s === null) return;
-    const err = this.store.rescheduleBooking(this.booking().id, this.date(), s);
+    if (s === null || this.saving()) return;
+    this.saving.set(true);
+    const err = await this.store.rescheduleBooking(this.booking().id, this.date(), s, this.booking().salonId);
+    this.saving.set(false);
     if (err) return this.toast.error(err);
     this.toast.success('Rescheduled to {{p1}}, {{p2}}', { p1: this.label(this.date()), p2: fmt12(s) });
     this.done.emit();

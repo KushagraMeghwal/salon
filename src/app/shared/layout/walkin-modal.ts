@@ -13,7 +13,7 @@ import { Modal } from '../ui/modal';
   template: `
     <app-modal [open]="ui.walkInModal()" [title]="'Add Walk-in' | translate" (closed)="ui.walkInModal.set(false)">
       <form class="space-y-4" (ngSubmit)="submit()" #f="ngForm">
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label [class]="label" for="wi-name">{{ "Client name" | translate }}</label>
             <input id="wi-name" name="name" [class]="input" [(ngModel)]="name" required [placeholder]="'e.g., Amit Saxena' | translate" />

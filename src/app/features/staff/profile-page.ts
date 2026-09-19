@@ -15,7 +15,8 @@ export class StaffProfile {
   private readonly router = inject(Router);
   protected readonly me = computed(() => this.store.staffById(this.auth.staffId()));
 
-  logout() {
-    this.router.navigate(['/splash']);
+  async logout() {
+    await this.auth.signOut();
+    this.router.navigateByUrl('/staff/login');
   }
 }

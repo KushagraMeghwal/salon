@@ -1,6 +1,6 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { LangToggle } from '../../shared/customer/lang-toggle';
 
@@ -29,9 +29,12 @@ const NAV = [
           }
         </nav>
       </div>
-      <div class="pt-4 border-t border-outline-variant/30 flex items-center gap-3 px-3 py-2">
-        <div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-lg text-label-lg shrink-0">CA</div>
-        <div class="flex flex-col overflow-hidden"><span class="font-label-lg text-label-lg truncate text-on-surface">{{ "Chairly Admin" | translate }}</span><span class="font-label-sm text-label-sm text-outline truncate">{{ auth.user().email }}</span></div>
+      <div class="pt-4 border-t border-outline-variant/30 flex flex-col gap-2">
+        <div class="flex items-center gap-3 px-3 py-2">
+          <div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-lg text-label-lg shrink-0">{{ auth.profile().name.slice(0, 2).toUpperCase() }}</div>
+          <div class="flex flex-col overflow-hidden"><span class="font-label-lg text-label-lg truncate text-on-surface">{{ auth.profile().name }}</span><span class="font-label-sm text-label-sm text-outline truncate">{{ auth.profile().email }}</span></div>
+        </div>
+        <button type="button" (click)="logout()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-label-lg text-label-lg text-error hover:bg-error-container/40 transition-colors"><span class="material-symbols-outlined">logout</span><span>{{ 'Log out' | translate }}</span></button>
       </div>
     </aside>
 
@@ -49,4 +52,10 @@ export class AdminShell {
   protected readonly auth = inject(AuthService);
   protected readonly nav = NAV;
   protected readonly open = signal(false);
+  private readonly router = inject(Router);
+
+  async logout() {
+    await this.auth.signOut();
+    await this.router.navigateByUrl('/');
+  }
 }

@@ -1,9 +1,12 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from './core/guards/role.guard';
+import { salonGuard } from './core/guards/salon.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'splash' },
+  // First screen: owner / platform-admin sign-in. Customers arrive through a salon's own link (/s/:slug).
+  { path: '', pathMatch: 'full', loadComponent: () => import('./features/auth/owner-login').then((m) => m.OwnerLogin) },
   { path: 'splash', loadComponent: () => import('./features/splash/splash').then((m) => m.Splash) },
+  { path: 'not-found', loadComponent: () => import('./features/customer/not-found').then((m) => m.NotFound) },
   {
     path: 'owner',
     canActivate: [roleGuard('owner')],
@@ -36,9 +39,9 @@ export const routes: Routes = [
     ],
   },
   {
+    // Platform admin only (the Firebase token must carry the superadmin claim).
     path: 'admin',
-    // Mock phase: owners may open the admin panel to review it. Real guard = superadmin only.
-    canActivate: [roleGuard('superadmin', 'owner')],
+    canActivate: [roleGuard('superadmin')],
     loadComponent: () => import('./features/admin/admin-shell').then((m) => m.AdminShell),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'overview' },
@@ -47,10 +50,10 @@ export const routes: Routes = [
       { path: 'plans', loadComponent: () => import('./features/admin/plans').then((m) => m.AdminPlans) },
     ],
   },
+  { path: 'staff/login', loadComponent: () => import('./features/auth/staff-login').then((m) => m.StaffLogin) },
   {
-    // Mock phase: owners may open the stylist app to review it.
     path: 'staff',
-    canActivate: [roleGuard('staff', 'owner')],
+    canActivate: [roleGuard('staff')],
     loadComponent: () => import('./features/staff/staff-shell').then((m) => m.StaffShell),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'today' },
@@ -65,6 +68,7 @@ export const routes: Routes = [
     children: [
       {
         path: 's/:slug',
+        canActivate: [salonGuard],
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./features/customer/home').then((m) => m.CustomerHome) },
           { path: 'services', loadComponent: () => import('./features/customer/services-page').then((m) => m.ServicesPage) },
@@ -78,5 +82,5 @@ export const routes: Routes = [
       { path: 'my/profile', loadComponent: () => import('./features/customer/profile-page').then((m) => m.CustomerProfile) },
     ],
   },
-  { path: '**', redirectTo: 'splash' },
+  { path: '**', redirectTo: 'not-found' },
 ];

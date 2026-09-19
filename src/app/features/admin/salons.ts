@@ -1,5 +1,5 @@
 import { TranslatePipe } from '@ngx-translate/core';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminSalon, SubscriptionStatus } from '../../core/models';
 import { AdminStore } from '../../core/services/admin.store';
@@ -75,7 +75,7 @@ const BADGE: Record<SubscriptionStatus, string> = {
     </app-modal>
   `,
 })
-export class AdminSalons {
+export class AdminSalons implements OnInit {
   protected readonly store = inject(AdminStore);
   private readonly toast = inject(ToastService);
   protected readonly inr = inr;
@@ -85,21 +85,28 @@ export class AdminSalons {
   protected readonly status = signal('all');
   protected readonly view = signal<(AdminSalon & { mrr: number }) | null>(null);
 
+  ngOnInit() {
+    void this.store.load();
+  }
+
   protected readonly list = computed(() => {
     const q = this.search().trim().toLowerCase();
     return this.store.rows().filter((s) => (this.status() === 'all' || s.status === this.status()) && (!q || [s.name, s.owner, s.city].some((x) => x.toLowerCase().includes(q))));
   });
 
-  suspend(s: AdminSalon) {
-    this.store.setStatus(s.id, 'suspended');
+  async suspend(s: AdminSalon) {
+    const err = await this.store.suspend(s.id);
+    if (err) return this.toast.error(err);
     this.toast.info('{{p1}} suspended', { p1: s.name });
   }
-  reactivate(s: AdminSalon) {
-    this.store.setStatus(s.id, s.plan === 'Trial' ? 'trial' : 'active');
+  async reactivate(s: AdminSalon) {
+    const err = await this.store.reactivate(s.id);
+    if (err) return this.toast.error(err);
     this.toast.success('{{p1}} reactivated', { p1: s.name });
   }
-  extend(s: AdminSalon) {
-    this.store.extendTrial(s.id, 7);
+  async extend(s: AdminSalon) {
+    const err = await this.store.extendTrial(s.id, 7);
+    if (err) return this.toast.error(err);
     this.view.set(this.store.rows().find((x) => x.id === s.id) ?? null);
     this.toast.success('Trial extended by 7 days');
   }

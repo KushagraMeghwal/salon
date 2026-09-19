@@ -1,162 +1,406 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  DocumentData, QuerySnapshot, QueryDocumentSnapshot, Unsubscribe, addDoc, collection, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch, Query,
+} from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import {
   Bill, BillLine, Booking, Holiday, BreakSettings, CatalogService, DayTiming, PayMethod,
-  CustomerRecord, QueueItem, SalonProfile, SalonSettings, StaffMember, StaffStats,
+  CustomerRecord, QueueItem, SalonProfile, SalonSettings, StaffMember,
 } from '../models';
-import { cancellationFee, checkSalonRules, customerKey, clampDiscount, effectiveTiming, overlaps, phoneKey, splitGst, weekdayIndex } from '@chairly/shared';
-import { dateKey, slugify, toMin } from '../utils/time';
+import {
+  DEFAULT_BREAK, DEFAULT_SETTINGS, DEFAULT_TIMINGS, GSTIN_PATTERN, addDays, cancellationFee, checkSalonRules, clampDiscount, customerKey, effectiveTiming, overlaps, phoneKey, splitGst, weekdayIndex,
+} from '@chairly/shared';
+import { FirebaseService } from '../firebase/firebase.service';
+import { dateKey, toMin } from '../utils/time';
+import { mapBill, mapBooking, mapCustomer, mapQueue, mapService, mapStaff } from './mappers';
+import { ToastService } from './toast.service';
 
-const STORAGE_KEY = 'chairly.salon.v1';
+type Mode = 'none' | 'owner' | 'staff' | 'public';
+export type SalonStatus = 'draft' | 'active' | 'suspended';
 
-const SEED_PROFILE: SalonProfile = {
-  name: 'Luxe Grooming Studio & Spa',
-  category: 'Unisex',
-  phone: '98234 56789',
-  email: 'owner@studio.com',
-  street: 'Shop 14-16, Ground Floor, The Grand Pavilion',
-  landmark: 'Opposite Central City Mall, Indiranagar',
-  city: 'Bengaluru',
-  pin: '560038',
-  state: 'KA',
-  lat: 12.9716,
-  lng: 77.6412,
-  logo: null,
-  slug: 'luxe-grooming-studio-and-spa',
+const EMPTY_PROFILE: SalonProfile = {
+  name: '', category: 'Unisex', phone: '', email: '', street: '', landmark: '', city: '', pin: '', state: '', lat: 0, lng: 0, logo: null, slug: '',
 };
 
-const svc = (
-  id: string, name: string, category: string, description: string,
-  suggestedPrice: number, suggestedDuration: number, durationOptions: number[], selected = false,
-): CatalogService => ({
-  id, name, category, description, suggestedPrice, suggestedDuration, durationOptions,
-  selected, price: suggestedPrice, duration: suggestedDuration,
-});
-
-const SEED_SERVICES: CatalogService[] = [
-  svc('s1', 'Signature Haircut & Styling', 'Hair', 'Consultation, luxury hair wash, bespoke precision cut, and salon blowdry styling.', 450, 45, [30, 45, 60], true),
-  svc('s2', 'Beard Trim & Shape', 'Beard & Shave', 'Precision edge styling, trimming, softening beard butter, and warm towel freshener.', 250, 25, [15, 25, 30], true),
-  svc('s3', 'Keratin Hair Treatment', 'Hair', 'Intense anti-frizz formula smoothing protein treatment for long-lasting silky shine.', 2800, 90, [90, 120], true),
-  svc('s4', 'Hydra-Glow Facial', 'Facial & Skin', 'Deep cellular hydration, botanical scrub exfoliation, and brightening LED therapy mask.', 1500, 60, [45, 60, 75], true),
-  svc('s5', 'Head Massage & Aromatherapy', 'Spa & Massage', 'Stimulating herbal oil massage focusing on temples, neck pressure points, and shoulder relief.', 600, 30, [20, 30, 45], true),
-  svc('s6', 'Classic Charcoal Detan', 'Facial & Skin', 'Active charcoal peel to remove stubborn sun-tan, dirt, and pollution impurities.', 350, 20, [20, 30]),
-  svc('s7', 'Beard Spa & Hot Towel', 'Beard & Shave', 'Deep conditioning treatment with essential oils and dual steam towel wraps.', 400, 30, [30, 45]),
-  svc('s8', 'Hair Root Touchup', 'Coloring', 'Ammonia-free targeted grey coverage blend along the natural hairline and parting.', 950, 45, [30, 45, 60]),
-];
-
-
-const SEED_STAFF: StaffMember[] = [
-  { id: 'st1', name: 'Vikram Singh', role: 'Master Barber', title: 'Master Hair Director', phone: '+91 98201 44521', email: 'vikram.s@studio.com', serviceIds: ['s1', 's2', 's7'], days: [true, true, true, true, true, true, false], commission: 15, photo: null, status: 'on-duty' },
-  { id: 'st2', name: 'Aarav Sharma', role: 'Senior Stylist', title: 'Color & Balayage Lead', phone: '+91 98765 43210', email: 'aarav.s@studio.com', serviceIds: ['s1', 's2', 's3', 's8'], days: [true, true, true, true, true, true, false], commission: 15, photo: null, status: 'on-duty' },
-  { id: 'st3', name: 'Priya Patel', role: 'Colorist & Spa', title: 'Skin & Bridal Hair', phone: '+91 98234 56789', email: 'priya.p@studio.com', serviceIds: ['s4', 's5', 's6'], days: [false, false, true, true, true, true, true], commission: 12, photo: null, status: 'on-duty' },
-  { id: 'st4', name: 'Sneha Rao', role: 'Nail & Skincare', title: 'Texture & Keratin Expert', phone: '+91 97120 54109', email: 'sneha.r@studio.com', serviceIds: ['s3', 's4', 's5'], days: [true, true, true, true, true, false, false], commission: 12, photo: null, status: 'on-duty' },
-];
-
-const SEED_STATS: StaffStats[] = [
-  { staffId: 'st1', clients: 142, workDays: 24, revenue: 142800, prevRevenue: 121000, week: [21000, 18500, 23000, 27500, 24800, 31200, 26400] },
-  { staffId: 'st2', clients: 118, workDays: 22, revenue: 118500, prevRevenue: 105800, week: [17200, 15800, 19400, 20100, 21600, 26800, 22300] },
-  { staffId: 'st3', clients: 96, workDays: 20, revenue: 98400, prevRevenue: 92800, week: [0, 0, 14800, 17900, 18400, 22200, 19700] },
-  { staffId: 'st4', clients: 88, workDays: 18, revenue: 84200, prevRevenue: 84200, week: [13400, 12100, 15200, 14800, 13900, 0, 0] },
-];
-
-const SEED_TIMINGS: DayTiming[] = [
-  { open: true, start: '09:00', end: '21:00' },
-  { open: true, start: '09:00', end: '21:00' },
-  { open: true, start: '09:00', end: '21:00' },
-  { open: true, start: '09:00', end: '21:00' },
-  { open: true, start: '09:00', end: '22:00' },
-  { open: true, start: '08:30', end: '22:00' },
-  { open: true, start: '08:30', end: '22:00' },
-];
-
-const SEED_BREAK: BreakSettings = { enabled: true, start: '13:00', end: '14:00', blockSlots: true };
-
-const plusDays = (n: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return dateKey(d);
-};
-
-const SEED_SETTINGS: SalonSettings = {
-  allowPayAtSalon: true,
-  requireOnlineAfterNoShows: true,
-  noShowThreshold: 2,
-  cancelWindowHrs: 2,
-  latePenaltyPct: 15,
-  hindiSupport: true,
-  holidays: [
-    { id: 'h1', date: plusDays(20), name: 'Diwali Festival (Deepavali)', type: 'full' },
-    { id: 'h2', date: plusDays(35), name: 'Guru Nanak Jayanti', type: 'full' },
-    { id: 'h3', date: plusDays(60), name: 'Christmas Day', type: 'half', closeAt: '13:00' },
-  ],
-  gstRegistered: false,
-  gstin: '',
-  bank: { bankName: 'HDFC Commercial Bank', accountLast4: '4912', ifsc: 'HDFC0000240', beneficiary: 'Luxe Grooming LLP' },
-  plan: 'Chairly Pro',
-  trialEndsAt: plusDays(14),
-};
+const freshSettings = (): SalonSettings => ({ ...DEFAULT_SETTINGS, holidays: [], bank: null, plan: 'Trial', trialEndsAt: '' });
 
 const COUPONS: Record<string, { type: 'percent' | 'flat'; value: number; label: string }> = {
   WELCOME10: { type: 'percent', value: 10, label: '10% off' },
   FLAT100: { type: 'flat', value: 100, label: '₹100 off' },
 };
 
-const SEED_CUSTOMERS: CustomerRecord[] = [
-  { id: 'p_9876543210', name: 'Ananya Roy', phone: '+91 98765 43210', visits: 6, totalSpent: 7250, lastVisit: plusDays(-6), noShowCount: 0 },
-  { id: 'p_9820144521', name: 'Rohan Kapoor', phone: '+91 98201 44521', visits: 11, totalSpent: 14980, lastVisit: plusDays(-2), noShowCount: 0 },
-  { id: 'p_9765211984', name: 'Kavita Deshmukh', phone: '+91 97652 11984', visits: 9, totalSpent: 32400, lastVisit: plusDays(-9), noShowCount: 1 },
-  { id: 'p_9900122334', name: 'Tanya Varma', phone: '+91 99001 22334', visits: 4, totalSpent: 5900, lastVisit: plusDays(-14), noShowCount: 0 },
-  { id: 'p_9871033410', name: 'Simran Kaur', phone: '+91 98710 33410', visits: 7, totalSpent: 21300, lastVisit: plusDays(-4), noShowCount: 0 },
-  { id: 'p_9833011223', name: 'Gaurav Sethi', phone: '+91 98330 11223', visits: 3, totalSpent: 3300, lastVisit: plusDays(-31), noShowCount: 2 },
-  { id: 'p_9988211094', name: 'Zayn Merchant', phone: '+91 99882 11094', visits: 5, totalSpent: 9400, lastVisit: plusDays(-11), noShowCount: 0 },
-  { id: 'p_9845077332', name: 'Pooja Nambiar', phone: '+91 98450 77332', visits: 8, totalSpent: 18650, lastVisit: plusDays(-1), noShowCount: 0 },
-  { id: 'p_9712054109', name: 'Meera Sen', phone: '+91 97120 54109', visits: 2, totalSpent: 7600, lastVisit: plusDays(-45), noShowCount: 3 },
-  { id: 'p_9811122334', name: 'Devraj Roy', phone: '+91 98111 22334', visits: 12, totalSpent: 11400, lastVisit: plusDays(-3), noShowCount: 0 },
-];
-
 export interface FreeSlot { staffId: string; start: number; end: number }
 
+/** Callable errors already carry a user-safe message; anything else becomes a generic line. */
+export function callableMessage(e: unknown): string {
+  const code = (e as { code?: string })?.code ?? '';
+  const msg = (e as { message?: string })?.message ?? '';
+  if (code === 'functions/unauthenticated') return 'Please sign in to continue.';
+  return code.startsWith('functions/') && msg && !/^internal$/i.test(msg) ? msg : 'Something went wrong. Please try again.';
+}
+
+/**
+ * The one place the UI reads and writes salon data. One salon is loaded at a time, in one of three modes:
+ *  - owner:  full read/write of that salon (its setup, live bookings, queue, bills, customers)
+ *  - staff:  the stylist's own bookings and the salon's public data
+ *  - public: what a customer sees at /s/:slug (setup + which slots are already taken)
+ * Setup edits (profile, hours, services, staff) save straight to Firestore under the security rules. Everything that
+ * must be race-free or tamper-proof (bookings, bills, invoice numbers) goes through Cloud Functions.
+ */
 @Injectable({ providedIn: 'root' })
 export class SalonStore {
-  readonly profile = signal<SalonProfile>({ ...SEED_PROFILE });
-  readonly services = signal<CatalogService[]>(structuredClone(SEED_SERVICES));
-  readonly timings = signal<DayTiming[]>(structuredClone(SEED_TIMINGS));
-  readonly brk = signal<BreakSettings>({ ...SEED_BREAK });
-  readonly settings = signal<SalonSettings>(structuredClone(SEED_SETTINGS));
+  private readonly fb = inject(FirebaseService);
+  private readonly toast = inject(ToastService);
+
+  readonly mode = signal<Mode>('none');
+  readonly salonId = signal<string | null>(null);
+  readonly status = signal<SalonStatus | null>(null);
+  readonly bookable = signal(false);
+  readonly notFound = signal(false);
+  readonly loading = signal(false);
+
+  readonly profile = signal<SalonProfile>({ ...EMPTY_PROFILE });
+  readonly services = signal<CatalogService[]>([]);
+  readonly timings = signal<DayTiming[]>(structuredClone(DEFAULT_TIMINGS));
+  readonly brk = signal<BreakSettings>({ ...DEFAULT_BREAK });
+  readonly settings = signal<SalonSettings>(freshSettings());
   readonly slotMode = signal<'auto' | 'custom'>('auto');
   readonly buffer = signal(10);
   readonly customIntervals = signal<number[]>([30, 45, 60]);
   readonly customInterval = signal(30);
-  readonly staff = signal<StaffMember[]>(structuredClone(SEED_STAFF));
-  readonly stats = signal<StaffStats[]>(structuredClone(SEED_STATS));
+  /** Every stylist ever added (kept so old bookings can still show a name); `staff` is the active team. */
+  readonly staffAll = signal<StaffMember[]>([]);
+  readonly staff = computed(() => this.staffAll().filter((s) => s.active !== false));
   readonly bookings = signal<Booking[]>([]);
+  /** Customer mode: stretches of each stylist's day that are already taken, as anonymous placeholders. */
+  private readonly busy = signal<Booking[]>([]);
   readonly queue = signal<QueueItem[]>([]);
   readonly bills = signal<Bill[]>([]);
-  readonly customers = signal<CustomerRecord[]>(structuredClone(SEED_CUSTOMERS));
-  readonly onboarded = signal(false);
+  readonly customers = signal<CustomerRecord[]>([]);
+  /** The signed-in customer's own no-show count at this salon (public mode). */
+  private readonly myNoShows = signal(0);
+  readonly onboarded = computed(() => this.status() === 'active');
+  /** Last salon page this device opened; the customer's bottom bar links back to it from pages that have no salon (My bookings). */
+  readonly lastSlug = signal(this.readLastSlug());
   readonly lastSaved = signal<Date | null>(null);
   readonly nowMin = signal(this.currentMinute());
-  private invoiceSeq = 8831;
 
   readonly selectedServices = computed(() => this.services().filter((s) => s.selected));
   readonly categories = computed(() => [...new Set(this.selectedServices().map((s) => s.category))]);
 
-  /** Bases stand in for aggregates that Cloud Functions will maintain in Firestore. */
-  readonly base = { earnings: 23850, done: 25, upi: 15990, upcoming: 4, walkins: 15, online: 14 };
+  private unsubs: Unsubscribe[] = [];
+  private loadPromise: Promise<void> | null = null;
+  private loadedKey = '';
+  private hydrated = false;
+  private savedJson = '';
+  private persistTimer?: ReturnType<typeof setTimeout>;
+  private readonly serviceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private queueDay = dateKey(new Date());
+  private saveFailedShown = false;
 
   constructor() {
-    this.hydrate();
-    this.seedToday();
-    setInterval(() => this.nowMin.set(this.currentMinute()), 30_000);
+    setInterval(() => {
+      this.nowMin.set(this.currentMinute());
+      // The queue is per day: roll it over at midnight without a reload.
+      if (this.mode() === 'owner' && this.queueDay !== dateKey(new Date())) this.watchQueue();
+    }, 30_000);
     effect(() => {
-      const snapshot = {
-        profile: this.profile(), services: this.services(), timings: this.timings(), brk: this.brk(),
-        slotMode: this.slotMode(), buffer: this.buffer(), customIntervals: this.customIntervals(),
-        staff: this.staff(), onboarded: this.onboarded(), settings: this.settings(),
-      };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-      } catch { /* storage unavailable */ }
+      const snapshot = { profile: this.profile(), timings: this.timings(), brk: this.brk(), settings: this.settings(), slotMode: this.slotMode(), buffer: this.buffer(), customIntervals: this.customIntervals() };
+      untracked(() => this.schedulePersist(snapshot));
     });
+  }
+
+  // ---------- loading ----------
+  /** Forgets everything (sign-out, or switching to another salon). */
+  reset() {
+    this.unsubs.forEach((u) => u());
+    this.unsubs = [];
+    this.loadPromise = null;
+    this.loadedKey = '';
+    this.hydrated = false;
+    this.savedJson = '';
+    clearTimeout(this.persistTimer);
+    this.mode.set('none');
+    this.salonId.set(null);
+    this.status.set(null);
+    this.bookable.set(false);
+    this.notFound.set(false);
+    this.profile.set({ ...EMPTY_PROFILE });
+    this.services.set([]);
+    this.timings.set(structuredClone(DEFAULT_TIMINGS));
+    this.brk.set({ ...DEFAULT_BREAK });
+    this.settings.set(freshSettings());
+    this.slotMode.set('auto');
+    this.buffer.set(10);
+    this.customIntervals.set([30, 45, 60]);
+    this.staffAll.set([]);
+    this.bookings.set([]);
+    this.busy.set([]);
+    this.queue.set([]);
+    this.bills.set([]);
+    this.customers.set([]);
+    this.myNoShows.set(0);
+  }
+
+  /** Owner: loads that salon's setup and starts live listeners for bookings, queue, bills and customers. */
+  loadOwner(salonId: string): Promise<void> {
+    return this.load('owner', salonId, () => this.doLoadOwner(salonId));
+  }
+
+  /** Stylist: the salon's public setup plus this stylist's own bookings. */
+  loadStaff(salonId: string, staffId: string): Promise<void> {
+    return this.load('staff', salonId + '/' + staffId, () => this.doLoadStaff(salonId, staffId));
+  }
+
+  /** Customer: resolves /s/:slug to a salon and loads what a customer may see. Returns false when there is no such salon. */
+  async loadPublic(slug: string): Promise<boolean> {
+    const key = 'public:' + slug;
+    if (this.loadedKey === key && this.loadPromise) {
+      await this.loadPromise;
+      return !this.notFound();
+    }
+    this.reset();
+    this.loadedKey = key;
+    this.loadPromise = this.doLoadPublic(slug);
+    try {
+      await this.loadPromise;
+    } catch {
+      this.loadedKey = '';
+      this.loadPromise = null;
+      throw new Error('load-failed');
+    }
+    if (!this.notFound()) this.rememberSlug(slug);
+    return !this.notFound();
+  }
+
+  private readLastSlug(): string {
+    try {
+      return localStorage.getItem('chairly.lastSlug') ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  private rememberSlug(slug: string) {
+    this.lastSlug.set(slug);
+    try {
+      localStorage.setItem('chairly.lastSlug', slug);
+    } catch {
+      /* storage unavailable */
+    }
+  }
+
+  private load(mode: Mode, id: string, run: () => Promise<void>): Promise<void> {
+    const key = mode + ':' + id;
+    if (this.loadedKey === key && this.loadPromise) return this.loadPromise;
+    this.reset();
+    this.loadedKey = key;
+    this.mode.set(mode);
+    this.loadPromise = run().catch((e) => {
+      this.loadedKey = '';
+      this.loadPromise = null;
+      throw e;
+    });
+    return this.loadPromise;
+  }
+
+  private col(path: string) {
+    return collection(this.fb.db, `salons/${this.salonId()}/${path}`);
+  }
+
+  private async fetchSetup(salonId: string, opts: { onlyActive: boolean }) {
+    const db = this.fb.db;
+    const [salon, services, staff] = await Promise.all([
+      getDoc(doc(db, `salons/${salonId}`)),
+      getDocs(collection(db, `salons/${salonId}/services`)),
+      getDocs(collection(db, `salons/${salonId}/staff`)),
+    ]);
+    if (!salon.exists()) throw new Error('salon-missing');
+    this.salonId.set(salonId);
+    this.applySalon(salon.data());
+    const bySort = (a: DocumentData, b: DocumentData) => (a['sortOrder'] ?? 0) - (b['sortOrder'] ?? 0);
+    const svc = services.docs.map((d) => d.data()).length ? [...services.docs].sort((a, b) => bySort(a.data(), b.data())).map((d) => mapService(d.id, d.data())) : [];
+    this.services.set(opts.onlyActive ? svc.filter((s) => s.selected) : svc);
+    return staff;
+  }
+
+  private async doLoadOwner(salonId: string) {
+    const db = this.fb.db;
+    this.loading.set(true);
+    try {
+      const staffSnap = await this.fetchSetup(salonId, { onlyActive: false });
+      const priv = await getDocs(collection(db, `salons/${salonId}/staffPrivate`));
+      const privById = new Map(priv.docs.map((d) => [d.id, d.data()]));
+      this.staffAll.set(this.sortedStaff(staffSnap, (d) => privById.get(d.id)));
+      const billing = await getDoc(doc(db, `salons/${salonId}/private/billing`));
+      if (billing.exists()) {
+        const b = billing.data();
+        const ends = b['trialEndsAt']?.toDate?.() as Date | undefined;
+        this.settings.update((s) => ({ ...s, plan: b['plan'] ?? s.plan, trialEndsAt: ends ? dateKey(ends) : s.trialEndsAt, billingStatus: b['status'] }));
+      }
+      this.savedJson = JSON.stringify(this.configSnapshot());
+      this.hydrated = true;
+
+      const from = addDays(dateKey(new Date()), -70);
+      await Promise.all([
+        this.listen(query(this.col('bookings'), where('date', '>=', from)), (s) => this.bookings.set(s.docs.map((d) => mapBooking(d.id, d.data())).filter((b) => b.status !== 'expired'))),
+        this.listen(query(this.col('bills'), where('date', '>=', from)), (s) => this.bills.set(s.docs.map((d) => mapBill(d.id, d.data())).sort((a, b) => b.createdAt.localeCompare(a.createdAt)))),
+        this.listen(this.col('customers'), (s) => this.customers.set(s.docs.map((d) => mapCustomer(d.id, d.data())))),
+        this.watchQueue(),
+      ]);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async doLoadStaff(salonId: string, staffId: string) {
+    const db = this.fb.db;
+    this.loading.set(true);
+    try {
+      const staffSnap = await this.fetchSetup(salonId, { onlyActive: true });
+      const priv = await getDoc(doc(db, `salons/${salonId}/staffPrivate/${staffId}`));
+      this.staffAll.set(this.sortedStaff(staffSnap, (d) => (d.id === staffId ? priv.data() : undefined)));
+      this.mode.set('staff');
+      const from = addDays(dateKey(new Date()), -70);
+      await this.listen(
+        query(this.col('bookings'), where('staffId', '==', staffId), where('date', '>=', from)),
+        (s) => this.bookings.set(s.docs.map((d) => mapBooking(d.id, d.data())).filter((b) => b.status !== 'expired')),
+      );
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async doLoadPublic(slug: string) {
+    this.loading.set(true);
+    try {
+      const s = await getDoc(doc(this.fb.db, `slugs/${slug}`));
+      if (!s.exists()) return this.notFound.set(true);
+      const salonId = s.get('salonId') as string;
+      const staffSnap = await this.fetchSetup(salonId, { onlyActive: true });
+      if (this.status() !== 'active') return this.notFound.set(true);
+      this.staffAll.set(this.sortedStaff(staffSnap, () => undefined).filter((m) => m.active !== false));
+      this.mode.set('public');
+      void this.refreshBusy(); // slot screens refresh it too; the salon page must not wait on it
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /** Stylists in the order the owner arranged them, with the private part (phone, commission) joined in when it is readable. */
+  private sortedStaff(snap: QuerySnapshot<DocumentData>, priv: (d: QueryDocumentSnapshot<DocumentData>) => DocumentData | undefined): StaffMember[] {
+    return [...snap.docs]
+      .sort((a, b) => (a.get('order') ?? 0) - (b.get('order') ?? 0))
+      .map((d) => ({ ...mapStaff(d.id, d.data(), priv(d)), active: d.get('active') !== false }));
+  }
+
+  /** Subscribes and resolves after the first snapshot (or a failure), so pages start with data instead of empty lists. */
+  private listen(q: Query<DocumentData> | ReturnType<typeof collection>, onData: (s: QuerySnapshot<DocumentData>) => void): Promise<void> {
+    return new Promise((resolve) => {
+      let first = true;
+      const done = () => {
+        if (first) {
+          first = false;
+          resolve();
+        }
+      };
+      this.unsubs.push(
+        onSnapshot(
+          q as Query<DocumentData>,
+          (s) => {
+            onData(s);
+            done();
+          },
+          () => done(),
+        ),
+      );
+    });
+  }
+
+  private watchQueue(): Promise<void> {
+    this.queueDay = dateKey(new Date());
+    return this.listen(query(this.col('queue'), where('date', '==', this.queueDay)), (s) => this.queue.set(s.docs.map((d) => mapQueue(d.id, d.data()))));
+  }
+
+  private applySalon(d: DocumentData) {
+    const p = d['profile'] ?? {};
+    this.profile.set({
+      name: p.name ?? '', category: p.category ?? 'Unisex', phone: p.phone ?? '', email: p.email ?? '', street: p.street ?? '', landmark: p.landmark ?? '',
+      city: p.city ?? '', pin: p.pin ?? '', state: p.state ?? '', lat: p.lat ?? 0, lng: p.lng ?? 0, logo: d['logoUrl'] ?? null, slug: d['slug'] ?? '',
+    });
+    this.status.set(d['status'] ?? 'draft');
+    this.bookable.set(!!d['bookable']);
+    if (d['timings']?.length === 7) this.timings.set(d['timings']);
+    if (d['breaks']) this.brk.set({ ...DEFAULT_BREAK, ...d['breaks'] });
+    this.slotMode.set(d['slotMode'] === 'custom' ? 'custom' : 'auto');
+    this.buffer.set(d['buffer'] ?? 10);
+    this.customIntervals.set(d['customSlots']?.length ? d['customSlots'] : [30, 45, 60]);
+    this.settings.set({ ...freshSettings(), ...(d['settings'] ?? {}), holidays: d['holidays'] ?? [] });
+  }
+
+  // ---------- persistence of the salon's setup ----------
+  private configSnapshot() {
+    return { profile: this.profile(), timings: this.timings(), brk: this.brk(), settings: this.settings(), slotMode: this.slotMode(), buffer: this.buffer(), customIntervals: this.customIntervals() };
+  }
+
+  private schedulePersist(snapshot: ReturnType<SalonStore['configSnapshot']>) {
+    if (this.mode() !== 'owner' || !this.hydrated) return;
+    if (JSON.stringify(snapshot) === this.savedJson) return;
+    clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => void this.persist(), 700);
+  }
+
+  /** Writes the salon document. Skips states the security rules would reject (e.g. a half-typed name or GSTIN). */
+  private async persist() {
+    const id = this.salonId();
+    if (!id || this.mode() !== 'owner') return;
+    const snap = this.configSnapshot();
+    const json = JSON.stringify(snap);
+    const { profile: p, settings: s } = snap;
+    if (p.name.trim().length < 2) return;
+    if (s.gstRegistered && !GSTIN_PATTERN.test(s.gstin)) return;
+    try {
+      await updateDoc(doc(this.fb.db, `salons/${id}`), {
+        profile: { name: p.name.trim(), category: p.category, phone: p.phone, email: p.email, street: p.street, landmark: p.landmark, city: p.city, pin: p.pin, state: p.state, lat: p.lat, lng: p.lng },
+        logoUrl: p.logo,
+        timings: snap.timings,
+        breaks: snap.brk,
+        holidays: s.holidays,
+        slotMode: snap.slotMode,
+        customSlots: snap.customIntervals,
+        buffer: snap.buffer,
+        settings: {
+          allowPayAtSalon: s.allowPayAtSalon, requireOnlineAfterNoShows: s.requireOnlineAfterNoShows, noShowThreshold: s.noShowThreshold, cancelWindowHrs: s.cancelWindowHrs,
+          latePenaltyPct: s.latePenaltyPct, hindiSupport: s.hindiSupport, gstRegistered: s.gstRegistered, gstin: s.gstRegistered ? s.gstin : '', upiId: s.upiId ?? '',
+        },
+        updatedAt: serverTimestamp(),
+      });
+      this.savedJson = json;
+      this.lastSaved.set(new Date());
+      this.saveFailedShown = false;
+    } catch {
+      if (!this.saveFailedShown) this.toast.error('Could not save your changes. Check your connection.');
+      this.saveFailedShown = true;
+    }
+  }
+
+  markSaved() {
+    this.lastSaved.set(new Date());
+  }
+
+  /** Saves any pending setup edit right away (used before leaving a screen). */
+  async flush() {
+    clearTimeout(this.persistTimer);
+    if (this.hydrated && JSON.stringify(this.configSnapshot()) !== this.savedJson) await this.persist();
+  }
+
+  private async write<T>(job: Promise<T>, failure = 'Could not save your changes. Check your connection.'): Promise<T | undefined> {
+    try {
+      return await job;
+    } catch {
+      this.toast.error(failure);
+      return undefined;
+    }
   }
 
   // ---------- helpers ----------
@@ -166,33 +410,11 @@ export class SalonStore {
   }
 
   staffById(id: string | null | undefined) {
-    return this.staff().find((s) => s.id === id);
+    return this.staffAll().find((s) => s.id === id);
   }
 
   serviceById(id: string) {
     return this.services().find((s) => s.id === id);
-  }
-
-  private hydrate() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      if (d.profile) this.profile.set(d.profile);
-      if (d.services) this.services.set(d.services);
-      if (d.timings) this.timings.set(d.timings);
-      if (d.brk) this.brk.set(d.brk);
-      if (d.slotMode) this.slotMode.set(d.slotMode);
-      if (d.buffer != null) this.buffer.set(d.buffer);
-      if (d.customIntervals) this.customIntervals.set(d.customIntervals);
-      if (d.staff) this.staff.set(d.staff);
-      if (d.settings) this.settings.set({ ...structuredClone(SEED_SETTINGS), ...d.settings });
-      if (d.onboarded) this.onboarded.set(true);
-    } catch { /* ignore corrupt storage */ }
-  }
-
-  markSaved() {
-    this.lastSaved.set(new Date());
   }
 
   // ---------- profile / services / staff ----------
@@ -201,37 +423,71 @@ export class SalonStore {
     this.markSaved();
   }
 
+  private serviceDoc(s: CatalogService, order: number) {
+    return {
+      name: s.name, category: s.category, description: s.description, price: s.price, duration: Math.round(s.duration), active: s.selected, custom: !!s.custom,
+      sortOrder: order, updatedAt: serverTimestamp(),
+    };
+  }
+
+  private saveService(id: string, immediate = true) {
+    if (this.mode() !== 'owner') return;
+    const run = () => {
+      const list = this.services();
+      const i = list.findIndex((x) => x.id === id);
+      const s = list[i];
+      if (!s || s.name.trim().length < 2 || !(s.price >= 0)) return;
+      void this.write(setDoc(doc(this.fb.db, `salons/${this.salonId()}/services/${id}`), this.serviceDoc(s, i), { merge: true }));
+      this.lastSaved.set(new Date());
+    };
+    clearTimeout(this.serviceTimers.get(id));
+    if (immediate) run();
+    else this.serviceTimers.set(id, setTimeout(run, 600));
+  }
+
   toggleService(id: string) {
     this.services.update((l) => l.map((s) => (s.id === id ? { ...s, selected: !s.selected } : s)));
-    this.markSaved();
+    this.saveService(id);
   }
 
   patchService(id: string, p: Partial<CatalogService>) {
     this.services.update((l) => l.map((s) => (s.id === id ? { ...s, ...p } : s)));
-    this.markSaved();
+    this.saveService(id, false);
   }
 
   addCustomService(name: string, category: string, price: number, duration: number, description: string) {
+    const id = 'c' + Date.now().toString(36);
     const s: CatalogService = {
-      id: 'c' + Date.now().toString(36), name, category, description: description || 'Custom service',
-      suggestedPrice: price, suggestedDuration: duration,
-      durationOptions: [...new Set([15, 30, 45, 60, 90, 120, duration])].sort((a, b) => a - b),
-      selected: true, price, duration, custom: true,
+      id, name, category, description: description || 'Custom service', suggestedPrice: price, suggestedDuration: duration,
+      durationOptions: [...new Set([15, 30, 45, 60, 90, 120, duration])].sort((a, b) => a - b), selected: true, price, duration, custom: true,
     };
     this.services.update((l) => [...l, s]);
-    this.markSaved();
+    this.saveService(id);
   }
 
   upsertStaff(m: StaffMember) {
-    this.staff.update((l) => (l.some((x) => x.id === m.id) ? l.map((x) => (x.id === m.id ? m : x)) : [...l, m]));
-    if (!this.stats().some((s) => s.staffId === m.id)) {
-      this.stats.update((l) => [...l, { staffId: m.id, clients: 0, workDays: 0, revenue: 0, prevRevenue: 0, week: [0, 0, 0, 0, 0, 0, 0] }]);
-    }
+    const exists = this.staffAll().some((x) => x.id === m.id);
+    const next = { ...m, active: true };
+    this.staffAll.update((l) => (exists ? l.map((x) => (x.id === m.id ? next : x)) : [...l, next]));
+    if (this.mode() !== 'owner') return;
+    const id = this.salonId();
+    const order = this.staffAll().findIndex((x) => x.id === m.id);
+    const batch = writeBatch(this.fb.db);
+    batch.set(doc(this.fb.db, `salons/${id}/staff/${m.id}`), {
+      name: m.name.trim(), role: m.role, title: m.title || m.role, serviceIds: m.serviceIds, days: m.days, photoUrl: m.photo, active: true, status: m.status, order,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    batch.set(doc(this.fb.db, `salons/${id}/staffPrivate/${m.id}`), {
+      phone: m.phone, phoneKey: phoneKey(m.phone), email: m.email, commission: Math.min(100, Math.max(0, m.commission)), updatedAt: serverTimestamp(),
+    }, { merge: true });
+    void this.write(batch.commit());
     this.markSaved();
   }
 
+  /** Stylists are switched off, not deleted, so past bookings keep their names. */
   removeStaff(id: string) {
-    this.staff.update((l) => l.filter((x) => x.id !== id));
+    this.staffAll.update((l) => l.map((x) => (x.id === id ? { ...x, active: false } : x)));
+    if (this.mode() === 'owner') void this.write(updateDoc(doc(this.fb.db, `salons/${this.salonId()}/staff/${id}`), { active: false, status: 'off', updatedAt: serverTimestamp() }));
     this.markSaved();
   }
 
@@ -246,15 +502,20 @@ export class SalonStore {
     this.markSaved();
   }
 
-  completeSetup() {
-    this.patchProfile({ slug: slugify(this.profile().name) });
-    this.onboarded.set(true);
+  /** Finishes onboarding: the server validates the setup, reserves the public link and opens for bookings. */
+  async completeSetup(): Promise<string> {
+    await this.flush();
+    const res = await httpsCallable<{ salonId: string }, { slug: string }>(this.fb.functions, 'completeOnboarding')({ salonId: this.salonId()! });
+    this.patchProfile({ slug: res.data.slug });
+    this.status.set('active');
+    return res.data.slug;
   }
 
   // ---------- bookings ----------
-  /** Active (non-cancelled) bookings of a day. */
+  /** Active bookings of a day (cancelled and expired holds are gone; no-shows stay visible on the calendar). */
   bookingsFor(date: string) {
-    return this.bookings().filter((b) => b.date === date && b.status !== 'cancelled');
+    const list = this.mode() === 'public' ? this.busy() : this.bookings();
+    return list.filter((b) => b.date === date && b.status !== 'cancelled' && b.status !== 'expired');
   }
 
   holidayOn(date: string) {
@@ -278,12 +539,6 @@ export class SalonStore {
     return this.staff().filter((s) => this.staffWorks(s.id, date) && serviceIds.every((id) => s.serviceIds.includes(id)));
   }
 
-  // ---------- customer bookings ----------
-  bookingsOfCustomer(phone: string) {
-    const digits = phone.replace(/\D/g, '').slice(-10);
-    return this.bookings().filter((b) => (b.customerPhone ?? '').slice(-10) === digits);
-  }
-
   private startMs(b: Booking) {
     const [y, m, d] = b.date.split('-').map(Number);
     return new Date(y, m - 1, d, 0, b.start).getTime();
@@ -299,98 +554,115 @@ export class SalonStore {
     return cancellationFee({ price: b.price, hoursUntil: this.hoursUntil(b), cancelWindowHrs: s.cancelWindowHrs, latePenaltyPct: s.latePenaltyPct });
   }
 
-  cancelBooking(id: string) {
-    this.updateBooking(id, { status: 'cancelled' });
-  }
-
-  rescheduleBooking(id: string, date: string, start: number): string | null {
-    const b = this.bookings().find((x) => x.id === id);
-    if (!b) return 'Booking not found.';
-    const err = this.checkBooking(date, b.staffId, start, b.duration, id);
-    if (err) return err;
-    this.updateBooking(id, { date, start });
-    return null;
-  }
-
-  createOnlineBooking(input: {
-    date: string; staffId: string; serviceIds: string[]; start: number; client: string; phone: string; payment: 'online' | 'salon';
-  }): { ok: true; booking: Booking } | { ok: false; error: string } {
-    const svcs = input.serviceIds.map((id) => this.serviceById(id)).filter((s): s is CatalogService => !!s);
-    if (!svcs.length) return { ok: false, error: 'Select at least one service.' };
-    const duration = svcs.reduce((a, s) => a + s.duration, 0);
-    const price = svcs.reduce((a, s) => a + s.price, 0);
-    const staffId =
-      input.staffId === 'any'
-        ? this.eligibleStaff(input.date, input.serviceIds).find((s) => !this.checkBooking(input.date, s.id, input.start, duration))?.id
-        : input.staffId;
-    if (!staffId) return { ok: false, error: 'No stylist is free at that time. Please pick another slot.' };
-    const error = this.checkBooking(input.date, staffId, input.start, duration);
-    if (error) return { ok: false, error };
-    const booking: Booking = {
-      id: 'bk' + Date.now().toString(36),
-      date: input.date, staffId, client: input.client, phone: input.phone, customerPhone: input.phone.replace(/\D/g, '').slice(-10),
-      serviceName: svcs.map((s) => s.name).join(' + '), start: input.start, duration, price, status: 'confirmed',
-      services: svcs.map((s) => ({ name: s.name, price: s.price, duration: s.duration })),
-      payment: input.payment, paid: input.payment === 'online', source: 'online',
-      bookingNo: 'CH-' + this.profile().slug.replace(/[^a-z]/g, '').slice(0, 5).toUpperCase() + '-' + String(Math.floor(10000 + Math.random() * 89999)),
-    };
-    this.bookings.update((l) => [...l, booking]);
-    return { ok: true, booking };
-  }
-
   staffWorks(staffId: string, date: string) {
     const s = this.staffById(staffId);
     return !!s && s.days[weekdayIndex(date)] && this.dayTiming(date).open;
   }
 
+  /** Quick client-side check for instant feedback; the server repeats it inside a transaction and is the authority. */
   checkBooking(date: string, staffId: string, start: number, duration: number, ignoreId?: string): string | null {
-    // Salon rules come from the shared module (identical on the server); staff and clash checks need local data.
     const rule = checkSalonRules(this.dayTiming(date), this.brk(), start, duration);
     if (rule === 'closed') return 'The salon is closed on this day.';
     if (!this.staffWorks(staffId, date)) return 'This stylist is not working on the selected day.';
     if (rule === 'hours') return 'Outside salon working hours.';
     if (rule === 'break') return 'Overlaps the daily break.';
     const clash = this.bookingsFor(date).some(
-      (x) => x.staffId === staffId && x.id !== ignoreId && overlaps(start, start + duration, x.start, x.start + x.duration),
+      (x) => x.staffId === staffId && x.id !== ignoreId && x.status !== 'no-show' && overlaps(start, start + duration, x.start, x.start + x.duration),
     );
     return clash ? 'This stylist already has a booking in that time.' : null;
   }
 
-  addBooking(b: Omit<Booking, 'id'>): { ok: boolean; error?: string } {
-    const error = this.checkBooking(b.date, b.staffId, b.start, b.duration);
+  private fns() {
+    return this.fb.functions;
+  }
+
+  /** Refreshes which slots are taken (customer mode). Cheap: one call for the next three weeks. */
+  async refreshBusy() {
+    const id = this.salonId();
+    if (!id || this.mode() !== 'public') return;
+    try {
+      const res = await httpsCallable<{ salonId: string; from: string; days: number }, { busy: { bookingId: string; staffId: string; date: string; start: number; end: number }[] }>(this.fns(), 'getBusy')({
+        salonId: id, from: dateKey(new Date()), days: 21,
+      });
+      this.busy.set(res.data.busy.map((r) => ({ id: r.bookingId, date: r.date, staffId: r.staffId, client: '', phone: '', serviceName: '', start: r.start, duration: r.end - r.start, price: 0, status: 'confirmed' as const })));
+    } catch {
+      /* the booking call re-checks everything, so a stale grid is safe */
+    }
+  }
+
+  /** A signed-in customer books online. Pay-at-salon confirms at once; simulated online payment is recorded as paid. */
+  async createOnlineBooking(input: {
+    date: string; staffId: string; serviceIds: string[]; start: number; client: string; phone: string; payment: 'online' | 'salon'; requestId: string;
+  }): Promise<{ ok: true; booking: Booking } | { ok: false; error: string }> {
+    const svcs = input.serviceIds.map((id) => this.serviceById(id)).filter((s): s is CatalogService => !!s);
+    if (!svcs.length) return { ok: false, error: 'Select at least one service.' };
+    try {
+      const res = await httpsCallable<Record<string, unknown>, { bookingId: string; staffId: string; bookingNo: string; price: number }>(this.fns(), 'createBooking')({
+        salonId: this.salonId(), requestId: input.requestId, serviceIds: input.serviceIds, staffId: input.staffId, date: input.date, start: input.start,
+        customerName: input.client, customerPhone: input.phone.replace(/\D/g, '').slice(-10), paymentMode: input.payment,
+      });
+      void this.refreshBusy();
+      const booking: Booking = {
+        id: res.data.bookingId, date: input.date, staffId: res.data.staffId, client: input.client, phone: input.phone, customerPhone: input.phone.replace(/\D/g, '').slice(-10),
+        serviceName: svcs.map((s) => s.name).join(' + '), start: input.start, duration: svcs.reduce((a, s) => a + s.duration, 0), price: res.data.price, status: 'confirmed',
+        services: svcs.map((s) => ({ serviceId: s.id, name: s.name, price: s.price, duration: s.duration })), payment: input.payment, paid: input.payment === 'online', source: 'online',
+        bookingNo: res.data.bookingNo,
+      };
+      return { ok: true, booking };
+    } catch (e) {
+      void this.refreshBusy();
+      return { ok: false, error: callableMessage(e) };
+    }
+  }
+
+  /** Owner adds an appointment from the calendar. */
+  async addOwnerBooking(b: {
+    date: string; staffId: string; serviceIds: string[]; start: number; client: string; phone: string; notes?: string; duration?: number;
+  }): Promise<{ ok: boolean; error?: string }> {
+    const error = this.checkBooking(b.date, b.staffId, b.start, b.duration ?? b.serviceIds.reduce((a, id) => a + (this.serviceById(id)?.duration ?? 0), 0));
     if (error) return { ok: false, error };
-    this.bookings.update((l) => [...l, { ...b, id: 'bk' + Date.now().toString(36) + l.length }]);
-    return { ok: true };
+    try {
+      await httpsCallable(this.fns(), 'createOwnerBooking')({
+        salonId: this.salonId(), requestId: crypto.randomUUID(), serviceIds: b.serviceIds, staffId: b.staffId, date: b.date, start: b.start,
+        customerName: b.client, customerPhone: b.phone.replace(/\D/g, '').slice(-10), notes: b.notes, duration: b.duration,
+      });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: callableMessage(e) };
+    }
   }
 
-  /** Adds a service to an existing booking if the stylist is free for the extra time. */
-  addOnService(bookingId: string, serviceId: string): string | null {
-    const b = this.bookings().find((x) => x.id === bookingId);
-    const svc = this.serviceById(serviceId);
-    if (!b || !svc) return 'Booking or service not found.';
-    const err = this.checkBooking(b.date, b.staffId, b.start, b.duration + svc.duration, bookingId);
-    if (err) return err;
-    const lines = [...(b.services ?? [{ name: b.serviceName, price: b.price, duration: b.duration }]), { name: svc.name, price: svc.price, duration: svc.duration }];
-    this.updateBooking(bookingId, { services: lines, serviceName: lines.map((l) => l.name).join(' + '), price: b.price + svc.price, duration: b.duration + svc.duration });
-    return null;
+  /** Runs a booking change on the server. Returns the error text, or null on success. */
+  async changeBooking(id: string, action: 'cancel' | 'reschedule' | 'start' | 'complete' | 'no-show' | 'delay' | 'addon', extra: Record<string, unknown> = {}, salonId = this.salonId()): Promise<string | null> {
+    try {
+      await httpsCallable(this.fns(), 'changeBooking')({ salonId, bookingId: id, action, ...extra });
+      if (this.mode() === 'public') void this.refreshBusy();
+      return null;
+    } catch (e) {
+      return callableMessage(e);
+    }
   }
 
-  /** Pushes a booking later (client running late) if the stylist stays free. */
-  delayBooking(bookingId: string, minutes: number): string | null {
-    const b = this.bookings().find((x) => x.id === bookingId);
-    if (!b) return 'Booking not found.';
-    const err = this.checkBooking(b.date, b.staffId, b.start + minutes, b.duration, bookingId);
-    if (err) return err;
-    this.updateBooking(bookingId, { start: b.start + minutes });
-    return null;
+  cancelBooking(id: string, salonId?: string) {
+    return this.changeBooking(id, 'cancel', {}, salonId);
   }
-
-  updateBooking(id: string, patch: Partial<Booking>) {
-    this.bookings.update((l) => l.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  rescheduleBooking(id: string, date: string, start: number, salonId?: string) {
+    return this.changeBooking(id, 'reschedule', { date, start }, salonId);
   }
-
-  removeBooking(id: string) {
-    this.bookings.update((l) => l.filter((b) => b.id !== id));
+  startBooking(id: string) {
+    return this.changeBooking(id, 'start');
+  }
+  completeBooking(id: string) {
+    return this.changeBooking(id, 'complete');
+  }
+  markNoShow(id: string) {
+    return this.changeBooking(id, 'no-show');
+  }
+  delayBooking(id: string, minutes: number) {
+    return this.changeBooking(id, 'delay', { minutes });
+  }
+  addOnService(id: string, serviceId: string) {
+    return this.changeBooking(id, 'addon', { serviceId });
   }
 
   freeSlots(date: string, minDuration = 45): FreeSlot[] {
@@ -405,7 +677,7 @@ export class SalonStore {
     for (const s of this.staff()) {
       if (!this.staffWorks(s.id, date)) continue;
       const busy = this.bookingsFor(date)
-        .filter((x) => x.staffId === s.id)
+        .filter((x) => x.staffId === s.id && x.status !== 'no-show')
         .map((x) => [x.start, x.start + x.duration] as [number, number]);
       if (b.enabled && b.blockSlots) busy.push([toMin(b.start), toMin(b.end)]);
       busy.sort((a, c) => a[0] - c[0]);
@@ -422,14 +694,15 @@ export class SalonStore {
   // ---------- queue ----------
   addWalkIn(client: string, phone: string, serviceId: string, staffId: string | null) {
     const s = this.serviceById(serviceId);
-    if (!s) return;
-    const item: QueueItem = {
-      id: 'q' + Date.now().toString(36), stage: 'waiting', client, phone: phone || 'Walk-in',
-      service: s.name, category: s.category, price: s.price, duration: s.duration,
-      requestedStaffId: staffId, staffId: null, station: null, source: 'walkin',
-      arrivedAt: this.nowMin(), startedAt: null,
-    };
-    this.queue.update((l) => [...l, item]);
+    if (!s || this.mode() !== 'owner') return;
+    void this.write(
+      addDoc(this.col('queue'), {
+        stage: 'waiting', client, phone: phone || 'Walk-in', service: s.name, category: s.category, price: s.price, duration: s.duration,
+        requestedStaffId: staffId, staffId: null, station: null, source: 'walkin', arrivedAt: this.nowMin(), startedAt: null,
+        date: dateKey(new Date()), createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      }),
+      'Could not add the client to the queue.',
+    );
   }
 
   /** Puts a waiting client in a chair. Returns error text if no stylist is free. */
@@ -442,57 +715,41 @@ export class SalonStore {
     if (!pick) return 'All stylists are currently with clients.';
     if (busy.has(pick.id)) return `${pick.name} is busy.`;
     const station = this.staff().findIndex((s) => s.id === pick.id) + 1;
-    this.queue.update((l) =>
-      l.map((q) => (q.id === id ? { ...q, stage: 'in-chair', staffId: pick.id, station, startedAt: this.nowMin() } : q)),
-    );
+    void this.write(updateDoc(doc(this.fb.db, `salons/${this.salonId()}/queue/${id}`), { stage: 'in-chair', staffId: pick.id, station, startedAt: this.nowMin(), updatedAt: serverTimestamp() }), 'Could not seat the client.');
     return null;
   }
 
   // ---------- billing ----------
+  /** Next invoice number to expect. Display only: the server issues the real one, race-free. */
   nextInvoiceNo() {
     const d = new Date();
     const fyStart = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
     const fy = `${String(fyStart).slice(2)}-${String(fyStart + 1).slice(2)}`;
-    return `CH/${fy}/${String(this.invoiceSeq + 1).padStart(5, '0')}`;
+    const prefix = `CH/${fy}/`;
+    const last = this.bills().reduce((m, b) => (b.no.startsWith(prefix) ? Math.max(m, Number(b.no.slice(prefix.length)) || 0) : m), 0);
+    return `${prefix}${String(last + 1).padStart(5, '0')}`;
   }
 
-  /** Prices are GST-inclusive. The discount comes off the inclusive total; tax is shown only if the salon is GST registered. */
-  createBill(input: {
-    client: string; phone: string; lines: BillLine[]; discount: number; couponCode?: string; method: PayMethod; queueId?: string | null;
-  }): Bill {
+  /** Prices are GST-inclusive. The server issues the invoice number and updates the queue, booking and customer record. */
+  async createBill(input: {
+    client: string; phone: string; lines: BillLine[]; discount: number; couponCode?: string; method: PayMethod; queueId?: string | null; bookingId?: string | null;
+  }): Promise<Bill> {
     const subtotal = input.lines.reduce((a, l) => a + l.price * l.qty, 0);
     const discount = clampDiscount(subtotal, input.discount);
-    const total = subtotal - discount;
+    const res = await httpsCallable<Record<string, unknown>, Record<string, unknown>>(this.fns(), 'createBill')({
+      salonId: this.salonId(), client: input.client, phone: input.phone, lines: input.lines, discount, couponCode: input.couponCode, method: input.method,
+      queueId: input.queueId ?? null, bookingId: input.bookingId ?? null,
+    });
+    const r = res.data;
     const { gstRegistered, gstin } = this.settings();
-    const tax = splitGst(total, gstRegistered);
-    const no = this.nextInvoiceNo();
-    this.invoiceSeq++;
-    const bill: Bill = {
-      no, client: input.client, phone: input.phone, lines: input.lines, subtotal, discount, couponCode: input.couponCode,
-      taxable: tax.taxable, cgst: tax.cgst, sgst: tax.sgst, gst: tax.gst, gstRegistered, gstin: gstRegistered ? gstin : undefined,
-      total, method: input.method, createdAt: new Date().toISOString(),
+    const tax = splitGst(subtotal - discount, gstRegistered);
+    return {
+      no: r['no'] as string, client: input.client, phone: input.phone, lines: input.lines, subtotal, discount, couponCode: input.couponCode, taxable: tax.taxable, cgst: tax.cgst,
+      sgst: tax.sgst, gst: tax.gst, gstRegistered, gstin: gstRegistered ? gstin : undefined, total: subtotal - discount, method: input.method, createdAt: r['createdAt'] as string,
     };
-    this.bills.update((l) => [bill, ...l]);
-    this.touchCustomer(input.client, input.phone, { visit: true, spent: total });
-    const primary = input.lines[0];
-    const stamp = { stage: 'done' as const, billNo: no, payMethod: input.method, price: total, billedAt: bill.createdAt };
-    if (input.queueId) {
-      this.queue.update((l) => l.map((q) => (q.id === input.queueId ? { ...q, ...stamp } : q)));
-    } else {
-      this.queue.update((l) => [
-        ...l,
-        {
-          id: 'q' + Date.now().toString(36), client: input.client, phone: input.phone || 'Walk-in',
-          service: input.lines.map((x) => x.name).join(', '), category: this.serviceById(primary?.serviceId)?.category ?? 'Hair',
-          duration: 0, requestedStaffId: null, staffId: primary?.staffId ?? null, station: null, source: 'walkin' as const,
-          arrivedAt: this.nowMin(), startedAt: null, ...stamp,
-        },
-      ]);
-    }
-    return bill;
   }
 
-  // ---------- coupons (mock catalogue until coupon management is built) ----------
+  // ---------- coupons (fixed codes until per-salon coupon management is built) ----------
   applyCoupon(code: string, subtotal: number): { ok: true; discount: number; label: string } | { ok: false } {
     const c = COUPONS[code.trim().toUpperCase()];
     if (!c) return { ok: false };
@@ -501,113 +758,23 @@ export class SalonStore {
   }
 
   // ---------- customers ----------
-  private phoneKey(phone: string) {
-    return phoneKey(phone);
-  }
-
+  /** Owner: this salon's record of the customer. Customer: their own count, loaded by `loadMyRecord`. */
   noShowsOf(phone: string) {
-    const k = this.phoneKey(phone);
+    if (this.mode() === 'public') return this.myNoShows();
+    const k = phoneKey(phone);
     return k ? this.customers().find((c) => c.id === `p_${k}`)?.noShowCount ?? 0 : 0;
   }
 
-  /** Creates or updates the per-salon customer record (a Cloud Function does this in Firestore later). */
-  touchCustomer(name: string, phone: string, change: { visit?: boolean; spent?: number; noShow?: boolean }, uid: string | null = null) {
-    // Same key the Firestore document will have: salons/{id}/customers/p_<last10digits> (n_<name> without a phone).
-    const id = customerKey(phone, name);
-    const today = dateKey(new Date());
-    this.customers.update((list) => {
-      const i = list.findIndex((c) => c.id === id);
-      const base: CustomerRecord = i >= 0 ? list[i] : { id, uid, name, phone: phone || '', visits: 0, totalSpent: 0, lastVisit: '', noShowCount: 0 };
-      const next: CustomerRecord = {
-        ...base,
-        uid: base.uid ?? uid,
-        name: base.name || name,
-        phone: base.phone || phone,
-        visits: base.visits + (change.visit ? 1 : 0),
-        totalSpent: base.totalSpent + (change.spent ?? 0),
-        lastVisit: change.visit ? today : base.lastVisit,
-        noShowCount: base.noShowCount + (change.noShow ? 1 : 0),
-      };
-      return i >= 0 ? list.map((c, idx) => (idx === i ? next : c)) : [...list, next];
-    });
+  /** Reads the signed-in customer's own record at this salon (the rules only allow that one). */
+  async loadMyRecord(phone: string) {
+    const id = this.salonId();
+    const key = customerKey(phone);
+    if (!id || !phoneKey(phone)) return;
+    try {
+      const snap = await getDoc(doc(this.fb.db, `salons/${id}/customers/${key}`));
+      this.myNoShows.set(snap.exists() ? snap.get('noShowCount') ?? 0 : 0);
+    } catch {
+      this.myNoShows.set(0); // no record yet, or not linked to this login
+    }
   }
-
-  /** Marks a booking as a no-show and counts it against the customer. */
-  markNoShow(id: string) {
-    const b = this.bookings().find((x) => x.id === id);
-    if (!b || b.status === 'no-show') return;
-    this.updateBooking(id, { status: 'no-show' });
-    this.touchCustomer(b.client, b.customerPhone ?? b.phone, { noShow: true });
-  }
-
-  /** Completing a booking counts a visit and the amount spent. */
-  completeBooking(id: string) {
-    const b = this.bookings().find((x) => x.id === id);
-    if (!b || b.status === 'completed') return;
-    this.updateBooking(id, { status: 'completed' });
-    this.touchCustomer(b.client, b.customerPhone ?? b.phone, { visit: true, spent: b.price });
-  }
-
-  private seedToday() {
-    const today = dateKey(new Date());
-    const b = (id: string, staffId: string, client: string, phone: string, serviceName: string, start: string, duration: number, price: number, status: Booking['status'], notes?: string): Booking =>
-      ({ id, date: today, staffId, client, phone, serviceName, start: toMin(start), duration, price, status, notes });
-    this.bookings.set([
-      b('b1', 'st2', 'Rohan Kapoor', '+91 98201 44521', 'Classic Layer Cut + Wash', '09:30', 90, 1450, 'in-progress'),
-      b('b2', 'st2', 'Kavita Deshmukh', '+91 97652 11984', 'Balayage + Keratin Express', '14:30', 120, 5200, 'vip', 'Prefers sulfate-free lavender wash.'),
-      b('b3', 'st2', 'Tanya Varma', '+91 99001 22334', 'Deep Conditioning Spa', '17:30', 60, 1800, 'confirmed'),
-      b('b4', 'st3', 'Ananya Mehta', '+91 99200 88219', 'Balayage + Blowdry Master', '09:00', 180, 6800, 'in-progress', 'Olaplex Step 1 + Wella 8/38 Honey Gold'),
-      b('b5', 'st3', 'Simran Kaur', '+91 98710 33410', 'Organic Root Touchup & Spa', '15:00', 120, 3400, 'confirmed'),
-      { ...b('b6', 'st1', 'Devraj Roy', '+91 98111 22334', 'Beard Sculpt & Fade', '09:00', 60, 950, 'completed'), paid: true, payment: 'online' as const },
-      { ...b('b7', 'st1', 'Harshvardhan Kapoor', '+91 98111 00293', 'Royal Shave + Charcoal Facial', '10:30', 90, 2800, 'in-progress'), vip: true },
-      b('b8', 'st1', 'Gaurav Sethi', '+91 98330 11223', 'Scissor Taper Cut', '14:30', 60, 1100, 'confirmed'),
-      b('b9', 'st1', 'Zayn Merchant', '+91 99882 11094', 'Signature Hair Tattoo + Fade', '16:00', 90, 2100, 'confirmed'),
-      b('b10', 'st4', 'Pooja Nambiar', '+91 98450 77332', 'Gel Extension + Chrome Art', '10:00', 90, 2650, 'confirmed'),
-      b('b11', 'st4', 'Meera Sen', '+91 97120 54109', 'Hydra Glow Facial Therapy', '14:00', 90, 3800, 'confirmed'),
-      ...this.seedCustomer(),
-    ]);
-
-    const now = this.nowMin();
-    const q = (id: string, stage: QueueItem['stage'], client: string, phone: string, service: string, category: string, price: number, duration: number,
-      p: Partial<QueueItem>): QueueItem => ({
-      id, stage, client, phone, service, category, price, duration, requestedStaffId: null, staffId: null, station: null,
-      source: 'app', arrivedAt: now - 10, startedAt: null, ...p,
-    });
-    this.queue.set([
-      q('q1', 'waiting', 'Rohan Verma', '+91 98451 ••••2', 'Fade Cut + Beard', 'Hair', 750, 60, { requestedStaffId: 'st1', arrivedAt: now - 12 }),
-      q('q2', 'waiting', 'Priya Kapur', '+91 99203 ••••8', 'Keratin Touchup', 'Hair', 2800, 90, { requestedStaffId: 'st2', arrivedAt: now - 5 }),
-      q('q3', 'waiting', 'Amit Saxena', 'Walk-in #4', 'Classic Shave', 'Grooming', 400, 30, { source: 'walkin', arrivedAt: now - 18 }),
-      q('q4', 'in-chair', 'Vikram Joshi', '+91 90000 11111', 'Balayage Tint', 'Hair', 3400, 60, { staffId: 'st1', station: 1, startedAt: now - 36 }),
-      q('q5', 'in-chair', 'Divya Mehra', '+91 90000 22222', 'Moroccan Head Spa', 'Spa', 1950, 60, { staffId: 'st3', station: 3, startedAt: now - 52 }),
-      q('q6', 'in-chair', 'Karan Chawla', '+91 90000 33333', 'Styling & Wash', 'Hair', 850, 40, { staffId: 'st2', station: 2, startedAt: now - 25 }),
-      q('q7', 'done', 'Manish Malhotra', '', 'Signature Haircut', 'Hair', 1600, 45, { staffId: 'st1', billNo: 'CH/25-26/08831', payMethod: 'UPI', billedAt: this.iso(now - 10) }),
-      q('q8', 'done', 'Neha Singhal', '', 'Keratin Treatment', 'Hair', 2100, 90, { staffId: 'st2', billNo: 'CH/25-26/08830', payMethod: 'Cash', billedAt: this.iso(now - 32) }),
-      q('q9', 'done', 'Arjun Nair', '', 'Beard Spa', 'Grooming', 900, 30, { staffId: 'st4', billNo: 'CH/25-26/08829', payMethod: 'UPI', billedAt: this.iso(now - 57) }),
-    ]);
-  }
-
-  /** Bookings of the demo customer (+91 98765 43210) across past and future dates. */
-  private seedCustomer(): Booking[] {
-    const phone = '+91 98765 43210';
-    const mk = (id: string, off: number, staffId: string, svcs: [string, number, number][], start: string, status: Booking['status'], payment: 'online' | 'salon'): Booking => ({
-      id, date: plusDays(off), staffId, client: 'Ananya Roy', phone, customerPhone: '9876543210',
-      serviceName: svcs.map((x) => x[0]).join(' + '), start: toMin(start), duration: svcs.reduce((a, x) => a + x[2], 0),
-      price: svcs.reduce((a, x) => a + x[1], 0), status, services: svcs.map(([name, price, duration]) => ({ name, price, duration })),
-      payment, paid: payment === 'online' || status === 'completed', bookingNo: 'CH-LUXE-' + (80000 + Math.abs(off) * 7 + id.length), source: 'online',
-    });
-    return [
-      mk('cb1', 1, 'st1', [['Signature Haircut & Styling', 450, 45], ['Beard Trim & Shape', 250, 25]], '10:15', 'confirmed', 'online'),
-      mk('cb2', 9, 'st3', [['Hydra-Glow Facial', 1500, 60]], '16:30', 'confirmed', 'salon'),
-      mk('cb3', -6, 'st2', [['Keratin Hair Treatment', 2800, 90]], '11:00', 'completed', 'online'),
-      mk('cb4', -21, 'st1', [['Signature Haircut & Styling', 450, 45]], '17:30', 'completed', 'salon'),
-      mk('cb5', -40, 'st3', [['Head Massage & Aromatherapy', 600, 30]], '12:00', 'completed', 'online'),
-    ];
-  }
-
-  private iso(min: number) {
-    const d = new Date();
-    d.setHours(0, min, 0, 0);
-    return d.toISOString();
-  }
-
 }

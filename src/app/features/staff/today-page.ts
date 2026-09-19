@@ -215,22 +215,30 @@ export class TodayPage {
     return d > 0 ? tr('Arriving in {{p1}} mins', { p1: d }) : d > -10 ? tr('Due now') : tr('{{p1}} mins late', { p1: -d });
   }
 
+  /** One server call at a time, so a double tap cannot start / finish a booking twice. */
+  protected readonly pending = signal(false);
+  private async act(job: () => Promise<string | null>, ok: () => void) {
+    if (this.pending()) return;
+    this.pending.set(true);
+    const err = await job();
+    this.pending.set(false);
+    if (err) return this.toast.error(err);
+    ok();
+  }
+
   start(b: Booking) {
-    this.store.updateBooking(b.id, { status: 'in-progress' });
-    this.toast.success('Started service for {{p1}}', { p1: b.client });
+    return this.act(() => this.store.startBooking(b.id), () => this.toast.success('Started service for {{p1}}', { p1: b.client }));
   }
   done(b: Booking) {
-    this.store.completeBooking(b.id);
-    this.toast.success('{{p1}} marked done. Send them to billing.', { p1: b.client });
+    return this.act(() => this.store.completeBooking(b.id), () => this.toast.success('{{p1}} marked done. Send them to billing.', { p1: b.client }));
   }
   delay(b: Booking) {
-    const err = this.store.delayBooking(b.id, 10);
-    this.toast[err ? 'error' : 'info'](err ?? `${b.client}'s slot moved 10 minutes later`);
+    return this.act(() => this.store.delayBooking(b.id, 10), () => this.toast.info("{{p1}}'s slot moved 10 minutes later", { p1: b.client }));
   }
   doAddOn(b: Booking, serviceId: string) {
-    const err = this.store.addOnService(b.id, serviceId);
-    if (err) return this.toast.error(err);
-    this.addOn.set(null);
-    this.toast.success('Add-on added to the booking');
+    return this.act(() => this.store.addOnService(b.id, serviceId), () => {
+      this.addOn.set(null);
+      this.toast.success('Add-on added to the booking');
+    });
   }
 }

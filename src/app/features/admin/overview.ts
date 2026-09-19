@@ -1,5 +1,5 @@
 import { TranslatePipe } from '@ngx-translate/core';
-import { Component, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AdminStore } from '../../core/services/admin.store';
 import { inr } from '../../core/utils/time';
@@ -33,8 +33,8 @@ const COLORS = ['#68777b', '#00685b', '#fd7958'];
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         <div class="lg:col-span-8 bg-surface-container-lowest p-5 md:p-6 rounded-2xl border border-outline-variant/20 shadow-level-1">
-          <div class="flex items-center justify-between mb-4"><div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">{{ "New Salon Signups" | translate }}</h2><p class="font-body-sm text-body-sm text-muted">{{ "Last 8 weeks" | translate }}</p></div><span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold">{{ "{{p1}} total" | translate: { p1: (signupTotal) } }}</span></div>
-          <div class="h-56 w-full pt-2"><app-line-chart [series]="[{ values: store.signups, color: '#00685b', area: true, marker: true }]" /></div>
+          <div class="flex items-center justify-between mb-4"><div><h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">{{ "New Salon Signups" | translate }}</h2><p class="font-body-sm text-body-sm text-muted">{{ "Last 8 weeks" | translate }}</p></div><span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold">{{ "{{p1}} total" | translate: { p1: (signupTotal()) } }}</span></div>
+          <div class="h-56 w-full pt-2"><app-line-chart [series]="[{ values: store.signups(), color: '#00685b', area: true, marker: true }]" /></div>
           <div class="flex justify-between text-muted font-label-sm text-label-sm pt-3 border-t border-outline-variant/20 mt-2">@for (w of weeks; track w) { <span>{{ w }}</span> }</div>
         </div>
 
@@ -75,10 +75,14 @@ const COLORS = ['#68777b', '#00685b', '#fd7958'];
     </div>
   `,
 })
-export class AdminOverview {
+export class AdminOverview implements OnInit {
   protected readonly store = inject(AdminStore);
   protected readonly weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
-  protected readonly signupTotal = this.store.signups.reduce((a, b) => a + b, 0);
+  ngOnInit() {
+    void this.store.load();
+  }
+
+  protected readonly signupTotal = computed(() => this.store.signups().reduce((a, b) => a + b, 0));
 
   protected readonly kpis = computed(() => {
     const t = this.store.totals();

@@ -1,8 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
+import { AnalyticsService } from '../../core/services/analytics.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { ToastService } from '../../core/services/toast.service';
+import { addDays } from '@chairly/shared';
 import { dateKey, downloadText, initials, inr, toCsv } from '../../core/utils/time';
 
 type Period = 'today' | 'week' | 'month';
@@ -69,6 +71,7 @@ type Period = 'today' | 'week' | 'month';
 })
 export class EarningsPage {
   private readonly store = inject(SalonStore);
+  private readonly analytics = inject(AnalyticsService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   protected readonly inr = inr;
@@ -81,26 +84,31 @@ export class EarningsPage {
 
   protected readonly me = computed(() => this.store.staffById(this.auth.staffId()));
   protected readonly chair = computed(() => this.store.staff().findIndex((s) => s.id === this.auth.staffId()) + 1);
-  private readonly stats = computed(() => this.store.stats().find((s) => s.staffId === this.auth.staffId()));
   private readonly pct = computed(() => this.me()?.commission ?? 0);
 
   protected readonly todayDone = computed(() => this.store.bookingsFor(this.today).filter((b) => b.staffId === this.auth.staffId() && b.status === 'completed'));
-  private readonly todayRevenue = computed(() => this.todayDone().reduce((a, b) => a + b.price, 0));
+
+  /** Revenue and clients from this stylist's completed bookings in the chosen period. */
+  private range(p: Period) {
+    const to = this.today;
+    return { from: p === 'today' ? to : p === 'week' ? addDays(to, -6) : to.slice(0, 8) + '01', to };
+  }
+  private readonly prevMonth = computed(() => {
+    const t = this.today;
+    const start = dateKey(new Date(Number(t.slice(0, 4)), Number(t.slice(5, 7)) - 2, 1));
+    return { from: start, to: addDays(t.slice(0, 8) + '01', -1) };
+  });
 
   protected readonly d = computed(() => {
-    const st = this.stats();
-    const p = this.period();
-    const today = { revenue: this.todayRevenue(), clients: this.todayDone().length };
-    if (p === 'today' || !st) return today;
-    return p === 'week'
-      ? { revenue: st.week.reduce((a, b) => a + b, 0) + today.revenue, clients: Math.round(st.clients / 4) + today.clients }
-      : { revenue: st.revenue + today.revenue, clients: st.clients + today.clients };
+    const r = this.range(this.period());
+    return this.analytics.staffEarnings(this.auth.staffId(), r.from, r.to);
   });
   protected readonly commission = computed(() => Math.round((this.d().revenue * this.pct()) / 100));
   protected readonly net = computed(() => this.commission());
   protected readonly growth = computed(() => {
-    const st = this.stats();
-    return this.period() === 'today' || !st?.prevRevenue ? null : Math.round(((st.revenue - st.prevRevenue) / st.prevRevenue) * 100);
+    if (this.period() !== 'month') return null;
+    const prev = this.analytics.staffEarnings(this.auth.staffId(), this.prevMonth().from, this.prevMonth().to).revenue;
+    return prev ? Math.round(((this.d().revenue - prev) / prev) * 100) : null;
   });
   protected readonly log = computed(() => {
     const done = this.store.bookings().filter((b) => b.staffId === this.auth.staffId() && b.status === 'completed');

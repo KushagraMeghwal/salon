@@ -45,3 +45,6 @@ Thumbs.db
 
 # Firebase emulator logs
 *-debug.log
+
+# Firebase CLI local cache (hosting deploy cache etc.)
+.firebase/

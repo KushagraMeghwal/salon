@@ -31,9 +31,10 @@ Customer: createBooking (holds the slot, status "held") -> createPaymentOrder (s
 
 ## Manual steps in the Razorpay dashboard
 
-1. Create the OAuth application (Partner dashboard). Set the **redirect URI** to the deployed `razorpayOAuthCallback` URL, for example `https://asia-south1-<project>.cloudfunctions.net/razorpayOAuthCallback`.
-2. Copy the client id and client secret.
-3. Register a webhook pointing at `https://asia-south1-<project>.cloudfunctions.net/razorpayWebhook` with the events `payment.captured`, `payment.failed`, `refund.processed`. Choose a webhook secret.
+0. **Apply to Razorpay's Technology Partner Program first** — the `RAZORPAY_OAUTH_CLIENT_ID` / `RAZORPAY_OAUTH_CLIENT_SECRET` are not self-serve like a normal API key. Contact Razorpay support (https://razorpay.com/support/) and ask to be enrolled as an OAuth/Technology Partner for a multi-vendor booking marketplace (Route). Only after they approve this can an OAuth application be created. This can take days; the two secrets below do not depend on it and can be set immediately.
+1. Once approved: create the OAuth application in the Partner Dashboard. Set the **redirect URI** to the deployed `razorpayOAuthCallback` URL, for example `https://asia-south1-<project>.cloudfunctions.net/razorpayOAuthCallback`.
+2. Copy the client id and client secret from that OAuth application.
+3. Register a webhook pointing at `https://asia-south1-<project>.cloudfunctions.net/razorpayWebhook` with the events `payment.captured`, `payment.failed`, `refund.processed`. Choose a webhook secret. This is a normal Dashboard → Settings → Webhooks action and needs no partner approval.
 4. Make sure payment auto-capture is enabled.
 
 ## Secrets (Firebase Secret Manager, never in Firestore or the frontend)

@@ -208,6 +208,12 @@ export class SalonStore {
     return collection(this.fb.db, `salons/${this.salonId()}/${path}`);
   }
 
+  private applyServiceDocs(docs: QueryDocumentSnapshot<DocumentData>[], onlyActive: boolean) {
+    const bySort = (a: DocumentData, b: DocumentData) => (a['sortOrder'] ?? 0) - (b['sortOrder'] ?? 0);
+    const svc = docs.length ? [...docs].sort((a, b) => bySort(a.data(), b.data())).map((d) => mapService(d.id, d.data())) : [];
+    this.services.set(onlyActive ? svc.filter((s) => s.selected) : svc);
+  }
+
   private async fetchSetup(salonId: string, opts: { onlyActive: boolean }) {
     const db = this.fb.db;
     const [salon, services, staff] = await Promise.all([
@@ -218,9 +224,7 @@ export class SalonStore {
     if (!salon.exists()) throw new Error('salon-missing');
     this.salonId.set(salonId);
     this.applySalon(salon.data());
-    const bySort = (a: DocumentData, b: DocumentData) => (a['sortOrder'] ?? 0) - (b['sortOrder'] ?? 0);
-    const svc = services.docs.map((d) => d.data()).length ? [...services.docs].sort((a, b) => bySort(a.data(), b.data())).map((d) => mapService(d.id, d.data())) : [];
-    this.services.set(opts.onlyActive ? svc.filter((s) => s.selected) : svc);
+    this.applyServiceDocs(services.docs, opts.onlyActive);
     return staff;
   }
 
@@ -271,16 +275,27 @@ export class SalonStore {
     }
   }
 
+  /**
+   * Customer view: services and staff are live (`onSnapshot`), not a one-time fetch, so an owner switching a
+   * service off or editing a stylist's days/services mid-session shows up on an already-open slot page without
+   * a reload — the booking flow must never offer a service or stylist that no longer exists.
+   */
   private async doLoadPublic(slug: string) {
     this.loading.set(true);
     try {
       const s = await getDoc(doc(this.fb.db, `slugs/${slug}`));
       if (!s.exists()) return this.notFound.set(true);
       const salonId = s.get('salonId') as string;
-      const staffSnap = await this.fetchSetup(salonId, { onlyActive: true });
+      const salon = await getDoc(doc(this.fb.db, `salons/${salonId}`));
+      if (!salon.exists()) return this.notFound.set(true);
+      this.salonId.set(salonId);
+      this.applySalon(salon.data());
       if (this.status() !== 'active') return this.notFound.set(true);
-      this.staffAll.set(this.sortedStaff(staffSnap, () => undefined).filter((m) => m.active !== false));
       this.mode.set('public');
+      await Promise.all([
+        this.listen(this.col('services'), (snap) => this.applyServiceDocs(snap.docs, true)),
+        this.listen(this.col('staff'), (snap) => this.staffAll.set(this.sortedStaff(snap, () => undefined).filter((m) => m.active !== false))),
+      ]);
       void this.refreshBusy(); // slot screens refresh it too; the salon page must not wait on it
     } finally {
       this.loading.set(false);

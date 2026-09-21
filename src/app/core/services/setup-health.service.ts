@@ -45,12 +45,13 @@ export class SetupHealthService {
     }
 
     // A stylist who is missing services or works only on days the salon is closed can never be booked.
+    // Link straight to that stylist's editor (matrix param) so "Edit stylist" opens them pre-filled, not just the roster list.
     for (const m of staff) {
       if (!m.serviceIds.length) {
-        out.push({ id: 'staff-no-services:' + m.id, level: 'error', title: `${m.name} has no services`, detail: 'Tick the services they perform, or customers can never pick them.', link: '/owner/staff', action: 'Edit stylist' });
+        out.push({ id: 'staff-no-services:' + m.id, level: 'error', title: `${m.name} has no services`, detail: 'Tick the services they perform, or customers can never pick them.', link: `/owner/staff;edit=${m.id}`, action: 'Edit stylist' });
       } else if (!m.days.some((d, i) => d && openDays[i])) {
         const why = m.days.some(Boolean) ? 'only works on days the salon is closed' : 'has no working days';
-        out.push({ id: 'staff-no-days:' + m.id, level: 'error', title: `${m.name} is never available`, detail: `${m.name} ${why}.`, link: '/owner/staff', action: 'Edit stylist' });
+        out.push({ id: 'staff-no-days:' + m.id, level: 'error', title: `${m.name} is never available`, detail: `${m.name} ${why}.`, link: `/owner/staff;edit=${m.id}`, action: 'Edit stylist' });
       }
     }
 

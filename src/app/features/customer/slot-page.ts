@@ -34,10 +34,11 @@ import { StepBar } from '../../shared/customer/step-bar';
           <span class="text-label-sm font-label-sm text-on-surface-variant font-medium">{{ monthLabel() }}</span>
         </div>
         <div class="flex gap-space-sm overflow-x-auto no-scrollbar py-space-xs -mx-space-md px-space-md">
-          @for (d of days; track d.key; let i = $index) {
+          @for (d of days(); track d.key; let i = $index) {
             <button type="button" [disabled]="d.closed" (click)="pickDate(d.key)" [attr.aria-pressed]="date() === d.key" class="shrink-0 w-[78px] py-space-md px-space-xs rounded-xl flex flex-col items-center justify-center transition-all duration-150 relative disabled:cursor-not-allowed"
-              [class]="date() === d.key ? 'bg-[#0F9D8A] text-white elevation-2 ring-2 ring-[#0F9D8A] ring-offset-2 active:scale-95' : d.closed ? 'bg-surface-container border border-dashed border-outline-variant text-outline opacity-70' : 'bg-surface-container-lowest border border-outline-variant hover:border-[#0F9D8A] hover:bg-surface-container-low elevation-1 active:scale-95'">
-              @if (d.weekend && date() !== d.key && !d.closed) { <span class="absolute -top-2 bg-secondary-fixed text-on-secondary-fixed text-[9px] font-bold px-1.5 rounded-full uppercase tracking-tighter">{{ "Weekend" | translate }}</span> }
+              [class]="date() === d.key ? 'bg-[#0F9D8A] text-white elevation-2 ring-2 ring-[#0F9D8A] ring-offset-2 active:scale-95' : d.closed ? 'bg-surface-container border border-dashed border-outline-variant text-outline opacity-70' : d.noStaff ? 'bg-surface-container-lowest border border-dashed border-outline-variant/70 text-on-surface-variant opacity-80 hover:border-[#0F9D8A] active:scale-95' : 'bg-surface-container-lowest border border-outline-variant hover:border-[#0F9D8A] hover:bg-surface-container-low elevation-1 active:scale-95'">
+              @if (d.weekend && date() !== d.key && !d.closed && !d.noStaff) { <span class="absolute -top-2 bg-secondary-fixed text-on-secondary-fixed text-[9px] font-bold px-1.5 rounded-full uppercase tracking-tighter">{{ "Weekend" | translate }}</span> }
+              @if (d.noStaff && date() !== d.key) { <span class="absolute -top-2 bg-surface-container-high text-on-surface-variant text-[9px] font-bold px-1.5 rounded-full uppercase tracking-tighter border border-outline-variant">{{ "No slots" | translate }}</span> }
               <span class="text-label-sm font-label-sm uppercase tracking-wider" [class]="date() === d.key ? 'opacity-90 font-bold' : 'text-on-surface-variant font-medium'">{{ i === 0 ? ('Today' | translate) : d.dow }}</span>
               <span class="text-headline-lg font-headline-lg my-0.5 font-bold leading-none" [class]="date() === d.key ? '' : 'text-on-surface'">{{ d.day }}</span>
               <span class="text-label-sm font-label-sm" [class]="date() === d.key ? 'opacity-90' : 'text-on-surface-variant'">{{ d.closed ? ('Closed' | translate) : d.month }}</span>
@@ -52,6 +53,9 @@ import { StepBar } from '../../shared/customer/step-bar';
           <span class="text-label-sm font-label-sm text-primary flex items-center gap-1 font-semibold"><span class="material-symbols-outlined text-[14px]">schedule</span> {{ "IST (+05:30)" | translate }}</span>
         </div>
 
+        @if (!store.bookable()) {
+          <div class="rounded-xl border border-outline-variant bg-secondary-fixed/40 p-space-md text-body-md text-on-surface flex gap-2" role="status"><span class="material-symbols-outlined text-secondary">info</span><span>{{ "This salon is not taking online bookings right now. You can still call them." | translate }}</span></div>
+        }
         @if (noStylist()) {
           <div class="rounded-xl border border-outline-variant bg-surface-container-low p-space-md text-body-md text-on-surface-variant flex gap-2"><span class="material-symbols-outlined text-primary">info</span><span>{{ "No single stylist offers all the selected services on this day. Try removing a service or pick another date." | translate }}</span></div>
         } @else if (!slots().length) {
@@ -115,7 +119,7 @@ import { StepBar } from '../../shared/customer/step-bar';
 })
 export class SlotPage implements OnInit, OnDestroy {
   protected readonly flow = inject(BookingFlowStore);
-  private readonly store = inject(SalonStore);
+  protected readonly store = inject(SalonStore);
   private readonly avail = inject(AvailabilityService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
@@ -124,13 +128,19 @@ export class SlotPage implements OnInit, OnDestroy {
   private poll?: ReturnType<typeof setInterval>;
   protected readonly fmt = fmt12;
   protected readonly inr = inr;
-  protected readonly days = this.avail.days(14);
+  /** Only services that still exist and are still switched on by the owner; a stale id (removed mid-session) must never block availability. */
+  protected readonly serviceIds = computed(() => this.flow.services().map((s) => s.id));
 
   protected readonly date = computed(() => this.flow.date() ?? this.firstBookableDay());
   protected readonly names = computed(() => this.flow.services().map((s) => s.name).join(' + '));
   protected readonly monthLabel = computed(() => new Date(this.date() + 'T00:00').toLocaleDateString(LOCALE(), { month: 'long', year: 'numeric' }));
-  protected readonly slots = computed(() => this.avail.slots(this.date(), { serviceIds: this.flow.serviceIds(), includeBusy: true }));
-  protected readonly noStylist = computed(() => this.store.dayTiming(this.date()).open && this.store.eligibleStaff(this.date(), this.flow.serviceIds()).length === 0);
+  protected readonly slots = computed(() => this.avail.slots(this.date(), { serviceIds: this.serviceIds(), includeBusy: true }));
+  protected readonly noStylist = computed(() => this.store.dayTiming(this.date()).open && this.store.eligibleStaff(this.date(), this.serviceIds()).length === 0);
+  /** Reactive so it follows live salon data (timings/holidays/staff) and the current service selection, not just its value when the page first mounted. */
+  protected readonly days = computed(() => {
+    const ids = this.serviceIds();
+    return this.avail.days(14).map((d) => ({ ...d, noStaff: !d.closed && ids.length > 0 && this.store.eligibleStaff(d.key, ids).length === 0 }));
+  });
   protected readonly holidayNote = computed(() => {
     const h = this.store.holidayOn(this.date());
     return h ? `The salon is closed for ${h.name}.` : 'No slots are open on this day. Please pick another date.';
@@ -157,9 +167,10 @@ export class SlotPage implements OnInit, OnDestroy {
 
   /** First day that still has at least one free slot (today may already be over). */
   private firstBookableDay() {
-    const ids = this.flow.serviceIds();
+    const ids = this.serviceIds();
+    const days = this.avail.days(14);
     return (
-      this.days.find((d) => !d.closed && this.avail.slots(d.key, { serviceIds: ids }).length)?.key ?? this.days.find((d) => !d.closed)?.key ?? this.days[0].key
+      days.find((d) => !d.closed && this.avail.slots(d.key, { serviceIds: ids }).length)?.key ?? days.find((d) => !d.closed)?.key ?? days[0].key
     );
   }
 
@@ -168,7 +179,7 @@ export class SlotPage implements OnInit, OnDestroy {
     void this.store.refreshBusy();
     this.poll = setInterval(() => void this.store.refreshBusy(), 30_000);
     void this.auth.ready.then(() => this.history.start());
-    if (!this.flow.serviceIds().length) {
+    if (!this.flow.services().length) {
       this.router.navigate(['/s', this.store.profile().slug, 'services'], { replaceUrl: true });
       return;
     }

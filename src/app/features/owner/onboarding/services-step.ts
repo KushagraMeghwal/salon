@@ -11,7 +11,7 @@ import { Modal } from '../../../shared/ui/modal';
 
 const CARD_INPUT =
   'w-full pr-3 py-1.5 text-body-md font-body-md bg-surface-container-lowest border border-outline-variant/40 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none';
-const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Facial & Skin', 'Spa & Massage', 'Coloring'];
+const DEFAULT_CATEGORIES = ['Hair', 'Beard & Shave', 'Waxing', 'Facial & Skin', 'Spa & Massage', 'Nails', 'Coloring'];
 
 @Component({
   selector: 'app-services-step',

@@ -107,7 +107,7 @@ async function subscriptionValid(db: Firestore, salonId: string, now: Date): Pro
 }
 
 /** Finishes onboarding: validates the setup, claims the public slug (unique across all salons) and opens for bookings. */
-export async function completeOnboarding(d: BaseDeps, salonId: string): Promise<{ slug: string }> {
+export async function completeOnboarding(d: BaseDeps, salonId: string): Promise<{ slug: string; bookable: boolean }> {
   const salonRef = d.db.doc(`salons/${salonId}`);
   const [services, staff] = await Promise.all([
     d.db.collection(`salons/${salonId}/services`).where('active', '==', true).limit(1).get(),
@@ -137,7 +137,7 @@ export async function completeOnboarding(d: BaseDeps, salonId: string): Promise<
       tx.set(d.db.doc(`slugs/${slug}`), { salonId });
     }
     tx.update(salonRef, { slug, status: 'active', bookable: valid, updatedAt: Timestamp.fromDate(d.now()) });
-    return { slug };
+    return { slug, bookable: valid };
   });
 }
 

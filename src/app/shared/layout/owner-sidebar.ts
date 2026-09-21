@@ -15,7 +15,7 @@ import { SalonMark } from './salon-mark';
       <div class="fixed inset-0 z-30 bg-inverse-surface/40 lg:hidden no-print" (click)="ui.navOpen.set(false)"></div>
     }
     <aside
-      class="w-64 max-w-[85vw] h-dvh overflow-y-auto fixed left-0 top-0 z-40 flex flex-col justify-between gap-4 p-4 bg-surface-container-lowest border-r border-outline-variant/30 shadow-sm transition-transform duration-200 lg:translate-x-0"
+      class="print:hidden w-64 max-w-[85vw] h-dvh overflow-y-auto fixed left-0 top-0 z-40 flex flex-col justify-between gap-4 p-4 bg-surface-container-lowest border-r border-outline-variant/30 shadow-sm transition-transform duration-200 lg:translate-x-0"
       [class.-translate-x-full]="!ui.navOpen()"
     >
       <div class="flex flex-col gap-6">
@@ -92,6 +92,7 @@ export class OwnerSidebar {
     { path: '/owner/quick-bill', label: 'Quick Bill', icon: 'point_of_sale' },
     { path: '/owner/customers', label: 'Customers', icon: 'groups' },
     { path: '/owner/staff', label: 'Staff', icon: 'badge' },
+    { path: '/owner/qr', label: 'QR & Share', icon: 'qr_code_2' },
     { path: '/owner/reports', label: 'Reports', icon: 'analytics' },
     { path: '/owner/settings', label: 'Settings', icon: 'settings' },
   ];

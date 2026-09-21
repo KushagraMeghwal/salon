@@ -32,6 +32,7 @@ export const routes: Routes = [
           { path: 'quick-bill', loadComponent: () => import('./features/owner/quick-bill/quick-bill').then((m) => m.QuickBill) },
           { path: 'customers', loadComponent: () => import('./features/owner/customers/customers').then((m) => m.OwnerCustomers) },
           { path: 'staff', loadComponent: () => import('./features/owner/staff/staff-performance').then((m) => m.StaffPerformance) },
+          { path: 'qr', loadComponent: () => import('./features/owner/qr/qr-page').then((m) => m.QrPage) },
           { path: 'reports', loadComponent: () => import('./features/owner/reports/reports').then((m) => m.Reports) },
           { path: 'settings', loadComponent: () => import('./features/owner/settings/settings').then((m) => m.OwnerSettings) },
         ],

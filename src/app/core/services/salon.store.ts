@@ -505,9 +505,10 @@ export class SalonStore {
   /** Finishes onboarding: the server validates the setup, reserves the public link and opens for bookings. */
   async completeSetup(): Promise<string> {
     await this.flush();
-    const res = await httpsCallable<{ salonId: string }, { slug: string }>(this.fb.functions, 'completeOnboarding')({ salonId: this.salonId()! });
+    const res = await httpsCallable<{ salonId: string }, { slug: string; bookable: boolean }>(this.fb.functions, 'completeOnboarding')({ salonId: this.salonId()! });
     this.patchProfile({ slug: res.data.slug });
     this.status.set('active');
+    this.bookable.set(res.data.bookable);
     return res.data.slug;
   }
 

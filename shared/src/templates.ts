@@ -1,5 +1,5 @@
 /**
- * Starter catalogue every new salon is seeded with (inactive until the owner switches a service on).
+ * Plain starter services (haircut, beard, waxing, massage, facial...) every new salon is seeded with (inactive until the owner switches a service on).
  * Ids are stable so the Angular onboarding screen can show the description and duration options.
  * This is a template, not tenant data: every salon gets its own copy under salons/{id}/services.
  */
@@ -14,14 +14,17 @@ export interface ServiceTemplate {
 }
 
 export const SERVICE_TEMPLATES: readonly ServiceTemplate[] = [
-  { id: 's1', name: 'Signature Haircut & Styling', category: 'Hair', description: 'Consultation, hair wash, precision cut and blow-dry styling.', price: 450, duration: 45, durationOptions: [30, 45, 60] },
-  { id: 's2', name: 'Beard Trim & Shape', category: 'Beard & Shave', description: 'Precision edge styling, trimming and a warm towel freshener.', price: 250, duration: 25, durationOptions: [15, 25, 30] },
-  { id: 's3', name: 'Keratin Hair Treatment', category: 'Hair', description: 'Anti-frizz smoothing protein treatment for long-lasting shine.', price: 2800, duration: 90, durationOptions: [90, 120] },
-  { id: 's4', name: 'Hydra-Glow Facial', category: 'Facial & Skin', description: 'Deep hydration, botanical scrub exfoliation and a brightening mask.', price: 1500, duration: 60, durationOptions: [45, 60, 75] },
-  { id: 's5', name: 'Head Massage & Aromatherapy', category: 'Spa & Massage', description: 'Herbal oil massage focusing on temples, neck and shoulder relief.', price: 600, duration: 30, durationOptions: [20, 30, 45] },
-  { id: 's6', name: 'Classic Charcoal Detan', category: 'Facial & Skin', description: 'Active charcoal peel to remove tan, dirt and pollution impurities.', price: 350, duration: 20, durationOptions: [20, 30] },
-  { id: 's7', name: 'Beard Spa & Hot Towel', category: 'Beard & Shave', description: 'Deep conditioning treatment with essential oils and steam towel wraps.', price: 400, duration: 30, durationOptions: [30, 45] },
-  { id: 's8', name: 'Hair Root Touchup', category: 'Coloring', description: 'Ammonia-free grey coverage along the hairline and parting.', price: 950, duration: 45, durationOptions: [30, 45, 60] },
+  { id: 's1', name: 'Haircut', category: 'Hair', description: 'Wash, cut and style.', price: 300, duration: 30, durationOptions: [20, 30, 45, 60] },
+  { id: 's2', name: 'Beard Trim', category: 'Beard & Shave', description: 'Trim and shape.', price: 150, duration: 20, durationOptions: [15, 20, 30] },
+  { id: 's3', name: 'Shave', category: 'Beard & Shave', description: 'Clean shave with a hot towel.', price: 120, duration: 20, durationOptions: [15, 20, 30] },
+  { id: 's4', name: 'Hair Colour', category: 'Coloring', description: 'Global or root colour.', price: 1200, duration: 60, durationOptions: [45, 60, 90, 120] },
+  { id: 's5', name: 'Waxing', category: 'Waxing', description: 'Arms, legs or full body waxing.', price: 500, duration: 30, durationOptions: [15, 30, 45, 60] },
+  { id: 's6', name: 'Threading', category: 'Waxing', description: 'Eyebrows, upper lip and face.', price: 60, duration: 15, durationOptions: [10, 15, 30] },
+  { id: 's7', name: 'Facial', category: 'Facial & Skin', description: 'Cleanup or deep facial.', price: 800, duration: 45, durationOptions: [30, 45, 60, 75] },
+  { id: 's8', name: 'Head Massage', category: 'Spa & Massage', description: 'Relaxing oil head massage.', price: 250, duration: 20, durationOptions: [15, 20, 30, 45] },
+  { id: 's9', name: 'Body Massage', category: 'Spa & Massage', description: 'Full body relaxation massage.', price: 1500, duration: 60, durationOptions: [30, 45, 60, 90] },
+  { id: 's10', name: 'Manicure', category: 'Nails', description: 'Nail shaping and care.', price: 400, duration: 30, durationOptions: [30, 45, 60] },
+  { id: 's11', name: 'Pedicure', category: 'Nails', description: 'Foot care and polish.', price: 500, duration: 45, durationOptions: [30, 45, 60] },
 ];
 
 export const DEFAULT_TIMINGS = Array.from({ length: 7 }, () => ({ open: true, start: '09:00', end: '21:00' }));

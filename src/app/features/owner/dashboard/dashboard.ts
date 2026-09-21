@@ -9,11 +9,13 @@ import { ToastService } from '../../../core/services/toast.service';
 import { UiService } from '../../../core/services/ui.service';
 import { fmt12, inr, LOCALE } from '../../../core/utils/time';
 import { tr } from '../../../core/utils/i18n';
+import { HealthBanner } from '../../../shared/layout/health-banner';
 import { Topbar } from '../../../shared/layout/topbar';
+import { SetupHealthService } from '../../../core/services/setup-health.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, RouterLink, Topbar, TranslatePipe],
+  imports: [FormsModule, RouterLink, Topbar, TranslatePipe, HealthBanner],
   template: `
     <app-topbar>
       <div left class="flex items-center gap-4 flex-1 max-w-lg">
@@ -25,7 +27,8 @@ import { Topbar } from '../../../shared/layout/topbar';
       <ng-container right>
         <button type="button" class="w-9 h-9 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors relative" [title]="'Notifications' | translate" (click)="notify()">
           <span class="material-symbols-outlined text-[22px]">notifications</span>
-          @if (waiting().length) { <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span> }
+          @if (health.errorCount()) { <span class="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-error text-on-error text-[10px] font-bold flex items-center justify-center ring-2 ring-surface-container-lowest">{{ health.errorCount() }}</span> }
+          @else if (health.issues().length || waiting().length) { <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-container-lowest"></span> }
         </button>
         <button type="button" class="hidden sm:flex w-9 h-9 rounded-xl items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" [title]="'Support & Help' | translate" (click)="toast.info('Partner support: support@chairly.app')">
           <span class="material-symbols-outlined text-[22px]">help</span>
@@ -42,6 +45,7 @@ import { Topbar } from '../../../shared/layout/topbar';
 
     <main class="lg:pl-64 pt-16 min-h-screen flex flex-col bg-background">
       <div class="p-4 md:p-8 flex flex-col gap-6 max-w-[1600px] w-full mx-auto">
+        <app-health-banner />
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface tracking-tight">{{ "Salon Owner Command Center" | translate }}</h1>
@@ -268,6 +272,7 @@ export class Dashboard {
   private readonly analytics = inject(AnalyticsService);
   protected readonly toast = inject(ToastService);
   protected readonly ui = inject(UiService);
+  protected readonly health = inject(SetupHealthService);
   protected readonly inr = inr;
   protected readonly fmt = fmt12;
   protected readonly today = computed(() => new Date().toLocaleDateString(LOCALE(), { day: 'numeric', month: 'short' }));
@@ -349,6 +354,12 @@ export class Dashboard {
   }
 
   notify() {
+    const issues = this.health.issues().length;
+    if (issues) {
+      this.toast.error(issues > 1 ? '{{p1}} setup issues need attention' : '{{p1}} setup issue needs attention', { p1: issues });
+      document.getElementById('setup-health')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const n = this.waiting().length;
     if (!n) this.toast.info('No new notifications');
     else this.toast.info(n > 1 ? '{{p1}} clients waiting for a chair' : '{{p1}} client waiting for a chair', { p1: n });

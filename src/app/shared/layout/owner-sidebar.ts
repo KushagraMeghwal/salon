@@ -6,10 +6,11 @@ import { SalonStore } from '../../core/services/salon.store';
 import { UiService } from '../../core/services/ui.service';
 import { initials } from '../../core/utils/time';
 import { SalonMark } from './salon-mark';
+import { InstallButton } from '../ui/install-button';
 
 @Component({
   selector: 'app-owner-sidebar',
-  imports: [RouterLink, RouterLinkActive, SalonMark, TranslatePipe],
+  imports: [RouterLink, RouterLinkActive, SalonMark, InstallButton, TranslatePipe],
   template: `
     @if (ui.navOpen()) {
       <div class="fixed inset-0 z-30 bg-inverse-surface/40 lg:hidden no-print" (click)="ui.navOpen.set(false)"></div>
@@ -58,13 +59,27 @@ import { SalonMark } from './salon-mark';
       </div>
 
       <div class="pt-4 border-t border-outline-variant/30 flex flex-col gap-2">
-        <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg">
-          <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-headline-sm text-label-lg shrink-0">{{ initials(auth.profile().name) }}</div>
-          <div class="flex flex-col text-left overflow-hidden">
+        <a
+          routerLink="/owner/profile"
+          routerLinkActive
+          #pla="routerLinkActive"
+          (click)="ui.navOpen.set(false)"
+          [attr.aria-label]="'Edit profile' | translate"
+          class="group flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors"
+          [class]="pla.isActive ? 'bg-primary/10' : 'hover:bg-surface-container'"
+        >
+          @if (auth.profile().photo; as photo) {
+            <img [src]="photo" alt="" referrerpolicy="no-referrer" class="w-9 h-9 rounded-full object-cover shrink-0 border border-outline-variant/40" />
+          } @else {
+            <div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-headline-sm text-label-lg shrink-0">{{ initials(auth.profile().name) }}</div>
+          }
+          <div class="flex flex-col text-left overflow-hidden flex-1">
             <span class="font-label-lg text-label-lg truncate text-on-surface">{{ auth.profile().name }}</span>
-            <span class="font-label-sm text-label-sm text-outline truncate">{{ (auth.profile().title) | translate }}</span>
+            <span class="font-label-sm text-label-sm text-outline truncate group-hover:text-primary transition-colors">{{ 'Edit profile' | translate }}</span>
           </div>
-        </div>
+          <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">edit</span>
+        </a>
+        <app-install-button variant="nav" />
         @if (store.profile().slug) {
           <a [routerLink]="['/s', store.profile().slug]" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors"><span class="material-symbols-outlined">open_in_new</span><span>{{ 'Open booking page' | translate }}</span></a>
         }

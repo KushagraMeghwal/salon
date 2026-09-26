@@ -1,10 +1,14 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from './core/guards/role.guard';
 import { salonGuard } from './core/guards/salon.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
+import { launchGuard } from './core/guards/launch.guard';
 
 export const routes: Routes = [
   // First screen: owner / platform-admin sign-in. Customers arrive through a salon's own link (/s/:slug).
   { path: '', pathMatch: 'full', loadComponent: () => import('./features/auth/owner-login').then((m) => m.OwnerLogin) },
+  // Installed-app start page (see public/manifest.webmanifest); the guard always redirects.
+  { path: 'app', canActivate: [launchGuard], children: [] },
   { path: 'splash', loadComponent: () => import('./features/splash/splash').then((m) => m.Splash) },
   { path: 'not-found', loadComponent: () => import('./features/customer/not-found').then((m) => m.NotFound) },
   {
@@ -34,7 +38,8 @@ export const routes: Routes = [
           { path: 'staff', loadComponent: () => import('./features/owner/staff/staff-performance').then((m) => m.StaffPerformance) },
           { path: 'qr', loadComponent: () => import('./features/owner/qr/qr-page').then((m) => m.QrPage) },
           { path: 'reports', loadComponent: () => import('./features/owner/reports/reports').then((m) => m.Reports) },
-          { path: 'settings', loadComponent: () => import('./features/owner/settings/settings').then((m) => m.OwnerSettings) },
+          { path: 'settings', loadComponent: () => import('./features/owner/settings/settings').then((m) => m.OwnerSettings), canDeactivate: [unsavedChangesGuard] },
+          { path: 'profile', loadComponent: () => import('./features/owner/profile/owner-profile').then((m) => m.OwnerProfile), canDeactivate: [unsavedChangesGuard] },
         ],
       },
     ],

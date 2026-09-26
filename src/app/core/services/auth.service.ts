@@ -222,6 +222,16 @@ export class AuthService {
     }
   }
 
+  /** Owner / admin display name (Firebase Auth profile). Throws so the caller can report a failed save. */
+  async updateDisplayName(name: string): Promise<void> {
+    const u = this.user();
+    const clean = name.trim();
+    if (!u || clean.length < 2) return;
+    await updateProfile(u, { displayName: clean });
+    // updateProfile mutates the same User object, so poke a signal the header's computed reads.
+    this.saved.update((s) => ({ ...s, name: clean }));
+  }
+
   async setCustomerName(name: string) {
     const u = this.user();
     if (!u || !name.trim()) return;

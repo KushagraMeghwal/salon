@@ -4,11 +4,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/services/auth.service';
 import { SalonStore } from '../../core/services/salon.store';
 import { LangToggle } from '../../shared/customer/lang-toggle';
+import { InstallBanner } from '../../shared/ui/install-banner';
 
 /** Mobile frame for the stylist's own app: salon header, two tabs, footer. */
 @Component({
   selector: 'app-staff-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LangToggle, TranslatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LangToggle, InstallBanner, TranslatePipe],
   template: `
     <div class="min-h-screen flex flex-col items-center bg-background text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
       <div class="w-full max-w-md bg-surface min-h-screen flex flex-col relative shadow-sm">
@@ -38,6 +39,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
             </a>
           }
         </nav>
+        <app-install-banner audience="staff" [lifted]="true" />
       </div>
     </div>
   `,

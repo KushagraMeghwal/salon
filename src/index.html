@@ -4,7 +4,19 @@
   <meta charset="utf-8">
   <title>Chairly - Smart Salon Booking &amp; Billing</title>
   <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Book salon appointments, run your chair calendar and bill clients in seconds.">
+  <meta name="theme-color" content="#00685b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Chairly">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script>
+    // Chrome can fire this before Angular boots; keep it for the install service (core/services/pwa.service.ts).
+    window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__chairlyInstallPrompt = e; });
+  </script>
   <link rel="icon" type="image/svg+xml" href="chairly-logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,5 +25,6 @@
 </head>
 <body>
   <app-root></app-root>
+  <noscript>Please enable JavaScript to use Chairly.</noscript>
 </body>
 </html>

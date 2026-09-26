@@ -7,11 +7,12 @@ import { filter, map, startWith } from 'rxjs';
 import { SalonStore } from '../../core/services/salon.store';
 import { CustomerNav } from '../../shared/customer/customer-nav';
 import { LangToggle } from '../../shared/customer/lang-toggle';
+import { InstallBanner } from '../../shared/ui/install-banner';
 
 /** Mobile-first frame for every customer page: salon header, footer, optional bottom nav. */
 @Component({
   selector: 'app-customer-shell',
-  imports: [RouterOutlet, CustomerNav, LangToggle, TranslatePipe],
+  imports: [RouterOutlet, CustomerNav, LangToggle, InstallBanner, TranslatePipe],
   template: `
     <div class="min-h-screen flex flex-col bg-background text-on-surface antialiased selection:bg-primary selection:text-on-primary">
       <header class="bg-surface border-b border-outline-variant shadow-sm w-full sticky top-0 z-40 no-print">
@@ -50,6 +51,7 @@ import { LangToggle } from '../../shared/customer/lang-toggle';
         </div>
       </footer>
       @if (showNav()) { <app-customer-nav /> }
+      @if (showInstall()) { <app-install-banner audience="customer" [lifted]="showNav()" /> }
     </div>
   `,
 })
@@ -65,5 +67,7 @@ export class CustomerShell {
   /** Pages under /s/:slug belong to one salon; My bookings and login span salons and show the platform name. */
   protected readonly inSalon = computed(() => this.url().startsWith('/s/') && this.store.mode() === 'public');
   protected readonly showBack = computed(() => /^\/s\/[^/]+\/(services|slot|stylist|pay)$/.test(this.url()) || this.url() === '/login');
+  /** Never interrupt checkout: the nudge only appears on browse pages. */
+  protected readonly showInstall = computed(() => !/\/(slot|stylist|pay)$/.test(this.url()) && this.url() !== '/login');
   protected readonly showNav = computed(() => /^\/s\/[^/]+$/.test(this.url()) || this.url() === '/my/bookings' || this.url() === '/my/profile');
 }

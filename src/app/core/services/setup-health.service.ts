@@ -35,10 +35,10 @@ export class SetupHealthService {
       out.push({ id: 'not-bookable', level: 'error', title: 'Online booking is off', detail: 'Customers see "not taking online bookings". Finish setup (services, timings and at least one stylist) to switch it on.', link: '/owner/settings', action: 'Open settings' });
     }
     if (!openDays.some(Boolean)) {
-      out.push({ id: 'all-closed', level: 'error', title: 'Salon is closed every day', detail: 'No weekday is marked open, so no date can be booked.', link: '/owner/settings', action: 'Set working hours' });
+      out.push({ id: 'all-closed', level: 'error', title: 'Salon is closed every day', detail: 'No weekday is marked open, so no date can be booked.', link: '/owner/settings;tab=hours', action: 'Set working hours' });
     }
     if (!services.length) {
-      out.push({ id: 'no-services', level: 'error', title: 'No services are switched on', detail: 'Customers have nothing to pick on the services page.', link: '/owner/settings', action: 'Add services' });
+      out.push({ id: 'no-services', level: 'error', title: 'No services are switched on', detail: 'Customers have nothing to pick on the services page.', link: '/owner/profile;tab=services', action: 'Add services' });
     }
     if (!staff.length) {
       out.push({ id: 'no-staff', level: 'error', title: 'No stylists added', detail: 'Every date shows "No slots" until at least one stylist is added.', link: '/owner/staff', action: 'Add a stylist' });
@@ -70,7 +70,7 @@ export class SetupHealthService {
     if (longest > 0) {
       const tooLong = services.filter((sv) => sv.duration > longest);
       if (tooLong.length) {
-        out.push({ id: 'too-long', level: 'error', title: `${tooLong[0].name} is longer than your opening hours`, detail: `It takes ${tooLong[0].duration} min but the longest day is ${longest} min, so it can never be booked.`, link: '/owner/settings', action: 'Fix duration or hours' });
+        out.push({ id: 'too-long', level: 'error', title: `${tooLong[0].name} is longer than your opening hours`, detail: `It takes ${tooLong[0].duration} min but the longest day is ${longest} min, so it can never be booked.`, link: '/owner/profile;tab=services', action: 'Fix duration or hours' });
       }
     }
 
@@ -83,7 +83,7 @@ export class SetupHealthService {
     }
 
     if (s.settings().latePenaltyPct > 0 && s.settings().cancelWindowHrs <= 0) {
-      out.push({ id: 'penalty-window', level: 'warning', title: 'Late-cancellation fee will never apply', detail: 'A penalty is set but the cancellation window is 0 hours.', link: '/owner/settings', action: 'Open settings' });
+      out.push({ id: 'penalty-window', level: 'warning', title: 'Late-cancellation fee will never apply', detail: 'A penalty is set but the cancellation window is 0 hours.', link: '/owner/settings;tab=policies', action: 'Open settings' });
     }
 
     return out.sort((a, b) => (a.level === b.level ? 0 : a.level === 'error' ? -1 : 1));

@@ -6,9 +6,9 @@ import { Component, HostListener, input, output } from '@angular/core';
   selector: 'app-modal',
   template: `
     @if (open()) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/40 backdrop-blur-sm p-4 no-print" (click)="closed.emit()">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-inverse-surface/40 backdrop-blur-sm sm:p-4 no-print" (click)="closed.emit()">
         <div
-          class="bg-surface-container-lowest rounded-2xl w-full p-6 shadow-xl border border-outline-variant/20 max-h-[90vh] overflow-y-auto"
+          class="bg-surface-container-lowest rounded-t-3xl sm:rounded-2xl w-full p-5 sm:p-6 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-6 shadow-xl border border-outline-variant/20 max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto"
           [class]="wide() ? 'max-w-2xl' : 'max-w-lg'"
           role="dialog"
           aria-modal="true"

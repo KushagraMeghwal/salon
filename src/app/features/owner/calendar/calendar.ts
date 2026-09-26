@@ -1,5 +1,6 @@
 import { TranslatePipe } from '@ngx-translate/core';
 import { Component, computed, inject, signal } from '@angular/core';
+import { prettyPhone, telHref, waHref } from '../../../core/utils/india';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Booking } from '../../../core/models';
@@ -11,6 +12,23 @@ import { tr } from '../../../core/utils/i18n';
 import { Topbar } from '../../../shared/layout/topbar';
 import { BTN_GHOST } from '../../../shared/ui/form-classes';
 import { Modal } from '../../../shared/ui/modal';
+
+type View = 'list' | 'grid';
+const VIEW_KEY = 'chairly.calendar.view';
+const VIEWS: { key: View; label: string; icon: string }[] = [
+  { key: 'list', label: 'Agenda', icon: 'view_agenda' },
+  { key: 'grid', label: 'Timeline', icon: 'view_week' },
+];
+/** Saved choice, else phones/tablets get the agenda and wide screens the chair timeline. */
+function readView(): View {
+  try {
+    const v = localStorage.getItem(VIEW_KEY);
+    if (v === 'list' || v === 'grid') return v;
+  } catch {
+    /* no storage */
+  }
+  return typeof matchMedia === 'function' && matchMedia('(min-width: 1024px)').matches ? 'grid' : 'list';
+}
 
 const PX_PER_MIN = 1.6; // 48px per 30-minute row
 const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Progress', completed: 'Completed', confirmed: 'Confirmed', vip: 'VIP Slot', cancelled: 'Cancelled', 'no-show': 'No-show', held: 'Awaiting payment', expired: 'Expired' };
@@ -27,8 +45,10 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
           <button type="button" [attr.aria-label]="'Next day' | translate" (click)="shift(1)" class="p-1 text-on-surface-variant hover:text-primary rounded hover:bg-surface-container-lowest transition-colors active:scale-95"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
         </div>
         @if (!isToday()) { <button type="button" (click)="goToday()" class="hidden sm:block text-label-md font-label-md text-primary hover:underline">{{ "Today" | translate }}</button> }
-        <div class="hidden md:flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant/30">
-          <button type="button" class="px-3 py-1 rounded bg-surface-container-lowest font-label-md text-label-md text-primary font-semibold shadow-xs">{{ "Day" | translate }}</button>
+        <div class="hidden sm:flex items-center bg-surface-container-low p-1 rounded-lg border border-outline-variant/30" role="radiogroup" [attr.aria-label]="'Calendar view' | translate">
+          @for (v of views; track v.key) {
+            <button type="button" role="radio" [attr.aria-checked]="view() === v.key" (click)="setView(v.key)" class="px-3 py-1 rounded font-label-md text-label-md flex items-center gap-1 transition-colors" [class]="view() === v.key ? 'bg-surface-container-lowest text-primary font-semibold shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"><span class="material-symbols-outlined text-[16px]">{{ v.icon }}</span>{{ v.label | translate }}</button>
+          }
         </div>
         <div class="hidden xl:flex items-center gap-2 px-2.5 py-1 bg-primary/10 rounded-full"><span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span><span class="font-label-sm text-label-sm text-primary">{{ "Live Floor Sync" | translate }}</span></div>
       </div>
@@ -44,6 +64,96 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
     </app-topbar>
 
     <main class="lg:pl-64 pt-16 min-h-screen flex flex-col xl:flex-row bg-surface">
+      @if (view() === 'list') {
+      <section class="flex-1 min-w-0 flex flex-col xl:border-r border-outline-variant/30 pb-6">
+        <!-- Week strip -->
+        <div class="bg-surface-container-lowest border-b border-outline-variant/30 px-3 pt-3 pb-2 sticky top-16 z-20">
+          <div class="flex items-center justify-between gap-2 mb-2 px-1">
+            <span class="font-label-lg text-label-lg text-on-surface font-semibold">{{ weekMonthLabel() }}</span>
+            <div class="flex items-center gap-1">
+              @if (!isToday()) { <button type="button" (click)="goToday()" class="px-3 py-1 rounded-full border border-primary/40 text-primary font-label-md text-label-md">{{ "Today" | translate }}</button> }
+              <button type="button" (click)="shift(-7)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container" [attr.aria-label]="'Previous week' | translate"><span class="material-symbols-outlined text-[20px]">chevron_left</span></button>
+              <button type="button" (click)="shift(7)" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container" [attr.aria-label]="'Next week' | translate"><span class="material-symbols-outlined text-[20px]">chevron_right</span></button>
+              <label class="relative p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container cursor-pointer" [title]="'Pick a date' | translate">
+                <span class="material-symbols-outlined text-[20px]">event</span>
+                <input type="date" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" [value]="dateStr()" (change)="pickKey($any($event.target).value)" [attr.aria-label]="'Pick a date' | translate" />
+              </label>
+              <button type="button" class="sm:hidden p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container" (click)="setView('grid')" [attr.aria-label]="'Timeline' | translate"><span class="material-symbols-outlined text-[20px]">view_week</span></button>
+            </div>
+          </div>
+          <div class="grid grid-cols-7 gap-1">
+            @for (d of week(); track d.key) {
+              <button type="button" (click)="pick(d.date)" class="flex flex-col items-center py-1.5 rounded-xl transition-colors" [class]="d.selected ? 'bg-primary text-on-primary shadow-sm' : d.today ? 'text-primary bg-primary/5' : 'text-on-surface hover:bg-surface-container'" [attr.aria-label]="d.aria" [attr.aria-pressed]="d.selected">
+                <span class="text-[11px] font-medium uppercase">{{ d.dow }}</span>
+                <span class="font-headline-sm text-headline-sm leading-tight">{{ d.date.getDate() }}</span>
+                <span class="h-1.5 mt-0.5 flex">@if (d.count) { <span class="w-1.5 h-1.5 rounded-full" [class]="d.selected ? 'bg-on-primary' : 'bg-primary'"></span> }</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="p-3 sm:p-4 space-y-3 max-w-3xl w-full mx-auto">
+          <div class="grid grid-cols-3 gap-2">
+            <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-3"><p class="text-[11px] text-outline font-medium">{{ "Bookings" | translate }}</p><p class="font-headline-sm text-headline-sm text-on-surface">{{ activeCount() }}</p></div>
+            <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-3"><p class="text-[11px] text-outline font-medium">{{ "Expected" | translate }}</p><p class="font-headline-sm text-headline-sm text-on-surface truncate">{{ inr(dayValue()) }}</p></div>
+            <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/30 p-3"><p class="text-[11px] text-outline font-medium">{{ "Occupancy" | translate }}</p><p class="font-headline-sm text-headline-sm text-primary">{{ occupancy() }}%</p></div>
+          </div>
+
+          @if (store.holidayOn(dateStr()); as h) {
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-secondary-fixed/40 text-on-secondary-fixed-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px]">celebration</span>{{ h.name }} · {{ (h.type === 'full' ? 'Full Day Salon Closure' : 'Half day') | translate }}</div>
+          } @else if (!store.dayTiming(dateStr()).open) {
+            <div class="flex items-center gap-2 p-3 rounded-xl bg-surface-container text-on-surface-variant font-body-sm text-body-sm"><span class="material-symbols-outlined text-[18px]">door_front</span>{{ "Salon is closed on this day" | translate }}</div>
+          }
+
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-outline">search</span>
+            <input type="search" class="w-full h-11 pl-10 pr-3 bg-surface-container-lowest border border-outline-variant/40 rounded-xl text-body-md font-body-md focus:ring-2 focus:ring-primary focus:border-primary outline-none" [placeholder]="'Search name, phone or service' | translate" [attr.aria-label]="'Search bookings' | translate" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+          </div>
+          @if (store.staff().length > 1) {
+            <div class="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
+              <button type="button" (click)="staffFilter.set('')" class="px-3.5 py-1.5 rounded-full whitespace-nowrap font-label-md text-label-md transition-colors" [class]="!staffFilter() ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest border border-outline-variant/50 text-on-surface'">{{ "All stylists" | translate }}</button>
+              @for (st of store.staff(); track st.id) {
+                <button type="button" (click)="staffFilter.set(st.id)" class="px-3.5 py-1.5 rounded-full whitespace-nowrap font-label-md text-label-md transition-colors" [class]="staffFilter() === st.id ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest border border-outline-variant/50 text-on-surface'">{{ st.name }} · {{ countFor(st.id) }}</button>
+              }
+            </div>
+          }
+
+          <ol class="space-y-2.5">
+            @for (bk of agenda(); track bk.id) {
+              <li class="flex gap-3" [class.opacity-60]="bk.status === 'no-show' || bk.status === 'completed'">
+                <div class="w-14 shrink-0 pt-3 text-right">
+                  <p class="font-label-md text-label-md text-on-surface font-semibold whitespace-nowrap">{{ fmt(bk.start) }}</p>
+                  <p class="text-[11px] text-outline">{{ bk.duration }}m</p>
+                </div>
+                <div class="flex-1 min-w-0 rounded-2xl bg-surface-container-lowest border shadow-xs flex items-stretch overflow-hidden" [class]="(bk.status === 'vip' || bk.vip) ? 'border-secondary-container' : 'border-outline-variant/40'">
+                  <button type="button" (click)="open(bk)" class="flex-1 min-w-0 text-left p-3 border-l-4 active:bg-surface-container-low transition-colors" [class]="statusBar(bk)">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">{{ bk.client }}</span>
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0" [class]="statusChip(bk)">{{ label(bk.status) | translate }}</span>
+                    </div>
+                    <p class="font-body-sm text-body-sm text-primary truncate mt-0.5">{{ bk.serviceName }}</p>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5 truncate"><span class="material-symbols-outlined text-[14px]">content_cut</span>{{ store.staffById(bk.staffId)?.name }} · {{ inr(bk.price) }}</p>
+                    @if (bk.phone) { <p class="font-body-sm text-body-sm text-outline mt-0.5 tabular-nums">{{ pretty(bk.phone) }}</p> }
+                  </button>
+                  @if (bk.phone) {
+                    <a [href]="tel(bk.phone)" class="w-16 shrink-0 flex flex-col items-center justify-center gap-0.5 bg-primary/5 hover:bg-primary/10 text-primary border-l border-outline-variant/30" [attr.aria-label]="'Call {{p1}}' | translate: { p1: bk.client }">
+                      <span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1">call</span>
+                      <span class="text-[10px] font-semibold">{{ "Call" | translate }}</span>
+                    </a>
+                  }
+                </div>
+              </li>
+            } @empty {
+              <li class="text-center py-10 px-4 rounded-2xl bg-surface-container-lowest border border-dashed border-outline-variant/60">
+                <span class="material-symbols-outlined text-[40px] text-outline">event_available</span>
+                <p class="font-body-md text-body-md text-on-surface-variant mt-2">{{ (search() || staffFilter() ? "No bookings match your filters." : "No bookings for this day yet.") | translate }}</p>
+                <button type="button" (click)="ui.openBooking({ date: dateStr() })" class="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md font-semibold"><span class="material-symbols-outlined text-[18px]">add</span>{{ "New Booking" | translate }}</button>
+              </li>
+            }
+          </ol>
+        </div>
+      </section>
+      } @else {
       <section class="flex-1 min-w-0 flex flex-col xl:border-r border-outline-variant/30 overflow-hidden">
         <div class="p-4 bg-surface-container-lowest border-b border-outline-variant/30 flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-3">
@@ -100,7 +210,7 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
                           <div class="min-w-0">
                             <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
                               <span class="font-headline-sm text-[14px] text-on-surface font-semibold group-hover:text-primary transition-colors">{{ bk.client }}</span>
-                              <span class="px-2 py-0.5 rounded-full font-label-sm text-[10px] font-bold shrink-0" [class]="(bk.status === 'vip' || bk.vip) ? 'bg-secondary-container text-on-secondary-container uppercase tracking-wider' : 'bg-primary/10 text-primary'">{{ label(bk.status) }}</span>
+                              <span class="px-2 py-0.5 rounded-full font-label-sm text-[10px] font-bold shrink-0" [class]="(bk.status === 'vip' || bk.vip) ? 'bg-secondary-container text-on-secondary-container uppercase tracking-wider' : 'bg-primary/10 text-primary'">{{ label(bk.status) | translate }}</span>
                             </div>
                             <p class="font-label-md text-label-md mt-0.5 truncate" [class]="(bk.status === 'vip' || bk.vip) ? 'text-secondary font-semibold' : 'text-primary'">{{ bk.serviceName }}</p>
                             @if (hgt(bk) >= 100) {
@@ -130,8 +240,9 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
           </div>
         </div>
       </section>
+      }
 
-      <aside class="w-full xl:w-80 bg-surface-container-lowest p-5 flex flex-col gap-6 xl:overflow-y-auto border-t xl:border-t-0 border-outline-variant/30">
+      <aside [class]="view() === 'list' ? 'max-xl:hidden' : ''" class="w-full xl:w-80 bg-surface-container-lowest p-5 flex flex-col gap-6 xl:overflow-y-auto border-t xl:border-t-0 border-outline-variant/30">
         <div class="bg-surface-container-low/60 p-4 rounded-xl border border-outline-variant/30">
           <div class="flex items-center justify-between mb-3">
             <span class="font-headline-sm text-headline-sm text-on-surface font-bold">{{ monthLabel() }}</span>
@@ -191,9 +302,22 @@ const STATUS_LABEL: Record<Booking['status'], string> = { 'in-progress': 'In Pro
       @if (selected(); as b) {
         <div class="space-y-3">
           <div class="flex items-start justify-between gap-3">
-            <div><h4 class="font-headline-md text-headline-md text-on-surface">{{ b.client }}</h4><p class="text-body-sm text-outline">{{ b.phone }}</p></div>
-            <span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold">{{ label(b.status) }}</span>
+            <div class="min-w-0"><h4 class="font-headline-md text-headline-md text-on-surface truncate">{{ b.client }}</h4>@if (b.bookingNo) { <p class="text-body-sm text-outline">#{{ b.bookingNo }}</p> }</div>
+            <span class="px-2.5 py-1 rounded-full font-label-sm text-label-sm font-bold shrink-0" [class]="statusChip(b)">{{ label(b.status) | translate }}</span>
           </div>
+          @if (b.phone) {
+            <div class="flex items-center gap-2 p-3 rounded-2xl bg-surface-container-low border border-outline-variant/30">
+              <span class="material-symbols-outlined text-primary">smartphone</span>
+              <a [href]="tel(b.phone)" class="flex-1 min-w-0 font-headline-sm text-headline-sm text-on-surface tabular-nums truncate hover:text-primary">{{ pretty(b.phone) }}</a>
+              <button type="button" (click)="copyPhone(b.phone)" class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container" [attr.aria-label]="'Copy number' | translate" [title]="'Copy number' | translate"><span class="material-symbols-outlined text-[20px]">content_copy</span></button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <a [href]="tel(b.phone)" class="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg font-semibold shadow-sm active:scale-[0.98] transition-all"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1">call</span>{{ "Call" | translate }}</a>
+              <a [href]="wa(b.phone)" target="_blank" rel="noopener" class="flex items-center justify-center gap-2 py-3 rounded-xl border border-primary text-primary font-label-lg text-label-lg font-semibold active:scale-[0.98] transition-all"><span class="material-symbols-outlined text-[20px]">chat</span>{{ "WhatsApp" | translate }}</a>
+            </div>
+          } @else {
+            <p class="text-body-sm text-outline flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px]">phone_disabled</span>{{ "No phone number on this booking" | translate }}</p>
+          }
           <dl class="grid grid-cols-2 gap-3 text-body-md">
             <div><dt class="text-label-sm text-outline">{{ "Service" | translate }}</dt><dd class="font-semibold text-on-surface">{{ b.serviceName }}</dd></div>
             <div><dt class="text-label-sm text-outline">{{ "Stylist" | translate }}</dt><dd class="font-semibold text-on-surface">{{ store.staffById(b.staffId)?.name }}</dd></div>
@@ -235,7 +359,13 @@ export class CalendarPage {
   protected readonly search = signal('');
   protected readonly selected = signal<Booking | null>(null);
   protected readonly busy = signal(false);
+  protected readonly staffFilter = signal('');
+  protected readonly views = VIEWS;
+  protected readonly view = signal<View>(readView());
   private readonly router = inject(Router);
+  protected readonly tel = telHref;
+  protected readonly wa = waHref;
+  protected readonly pretty = prettyPhone;
 
   protected readonly dateStr = computed(() => dateKey(this.date()));
   protected readonly isToday = computed(() => this.dateStr() === dateKey(new Date()));
@@ -270,6 +400,35 @@ export class CalendarPage {
     const booked = this.dayBookings().filter((b) => this.working().some((w) => w.id === b.staffId)).reduce((a, b) => a + b.duration, 0);
     return Math.min(100, Math.round((booked / Math.max(1, capacity)) * 100));
   });
+  /** Monday-first week containing the selected day, with a dot where bookings exist. */
+  protected readonly week = computed(() => {
+    const sel = this.date();
+    const monday = new Date(sel.getFullYear(), sel.getMonth(), sel.getDate() - ((sel.getDay() + 6) % 7));
+    const selKey = this.dateStr();
+    const today = dateKey(new Date());
+    const counts = new Map<string, number>();
+    for (const b of this.store.bookings()) if (b.status !== 'cancelled' && b.status !== 'expired') counts.set(b.date, (counts.get(b.date) ?? 0) + 1);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i);
+      const key = dateKey(d);
+      return {
+        date: d, key, selected: key === selKey, today: key === today, count: counts.get(key) ?? 0,
+        dow: d.toLocaleDateString(LOCALE(), { weekday: 'short' }),
+        aria: d.toLocaleDateString(LOCALE(), { weekday: 'long', day: 'numeric', month: 'long' }),
+      };
+    });
+  });
+  protected readonly weekMonthLabel = computed(() => this.date().toLocaleDateString(LOCALE(), { month: 'long', year: 'numeric' }));
+  protected readonly agenda = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    const qd = q.replace(/\D/g, '');
+    const st = this.staffFilter();
+    return this.dayBookings()
+      .filter((b) => (!st || b.staffId === st) && (!q || b.client.toLowerCase().includes(q) || b.serviceName.toLowerCase().includes(q) || (!!qd && (b.phone ?? '').replace(/\D/g, '').includes(qd))))
+      .sort((a, b) => a.start - b.start || a.client.localeCompare(b.client));
+  });
+  protected readonly activeCount = computed(() => this.dayBookings().filter((b) => b.status !== 'no-show').length);
+  protected readonly dayValue = computed(() => this.dayBookings().filter((b) => b.status !== 'no-show').reduce((a, b) => a + b.price, 0));
   protected readonly freeSlots = computed(() => this.store.freeSlots(this.dateStr(), 45).slice(0, 3));
   protected readonly breakBlock = computed(() => {
     const b = this.store.brk();
@@ -317,7 +476,42 @@ export class CalendarPage {
   }
   dim(b: Booking) {
     const q = this.search().trim().toLowerCase();
-    return !!q && !b.client.toLowerCase().includes(q) && !b.serviceName.toLowerCase().includes(q);
+    const qd = q.replace(/\D/g, '');
+    return !!q && !b.client.toLowerCase().includes(q) && !b.serviceName.toLowerCase().includes(q) && !(qd && (b.phone ?? '').replace(/\D/g, '').includes(qd));
+  }
+
+  setView(v: View) {
+    this.view.set(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* kept for this visit */
+    }
+  }
+  statusBar(b: Booking) {
+    if (b.status === 'in-progress') return 'border-tertiary';
+    if (b.status === 'completed') return 'border-outline';
+    if (b.status === 'no-show') return 'border-error';
+    if (b.status === 'held') return 'border-amber-500';
+    return b.status === 'vip' || b.vip ? 'border-secondary-container' : 'border-primary';
+  }
+  statusChip(b: Booking) {
+    if (b.status === 'in-progress') return 'bg-tertiary/10 text-tertiary';
+    if (b.status === 'completed') return 'bg-surface-container text-on-surface-variant';
+    if (b.status === 'no-show') return 'bg-error/10 text-error';
+    if (b.status === 'held') return 'bg-amber-500/10 text-amber-700';
+    return b.status === 'vip' || b.vip ? 'bg-secondary-container text-on-secondary-container' : 'bg-primary/10 text-primary';
+  }
+  async copyPhone(phone: string) {
+    try {
+      await navigator.clipboard.writeText(prettyPhone(phone));
+      this.toast.success('Number copied');
+    } catch {
+      this.toast.error('Could not copy the number.');
+    }
+  }
+  pickKey(key: string) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(key)) this.pick(new Date(key + 'T00:00'));
   }
 
   shift(days: number) {

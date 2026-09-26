@@ -3,11 +3,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { LangService } from '../../core/services/lang.service';
 import { inject } from '@angular/core';
 import { initials } from '../../core/utils/time';
+import { InstallButton } from '../ui/install-button';
 
 /** Minimal profile shared by the customer and stylist apps: name, phone, language, logout. */
 @Component({
   selector: 'app-profile-view',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, InstallButton],
   template: `
     <main class="flex-1 w-full max-w-screen-md mx-auto px-space-md pt-space-md pb-space-lg flex flex-col gap-space-md">
       <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold">{{ 'Profile' | translate }}</h1>
@@ -33,6 +34,8 @@ import { initials } from '../../core/utils/time';
           </div>
         </div>
       </section>
+
+      <app-install-button />
 
       <button type="button" (click)="logout.emit()" class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-error/40 text-error font-label-lg text-label-lg font-semibold hover:bg-error-container/40 transition-colors active:scale-[0.98]">
         <span class="material-symbols-outlined text-[20px]">logout</span><span>{{ 'Log out' | translate }}</span>
